@@ -1,0 +1,105 @@
+<div class="job-container">
+
+    <div class="header-banner">
+        <h2>Assign Job Orders</h2>
+        <p>Allocate tasks to partners and set priorities.</p>
+    </div>
+
+    <!-- JOBS LIST -->
+    <div class="job-list">
+        <div *ngFor="let job of jobOrders; let i = index" class="job-card box-panel" [class.minimized]="job.minimized">
+
+            <!-- MINIMIZED VIEW -->
+            <div *ngIf="job.minimized" class="job-summary" (click)="toggleCard(i)">
+                <div class="summary-info">
+                    <div class="badge primary" *ngIf="job.selectedPartner">{{ job.selectedPartner.partner_name }}</div>
+                    <div class="badge empty" *ngIf="!job.selectedPartner">No Partner Selected</div>
+
+                    <span class="detail-item"><i class="icon">📅</i> {{ job.dueDate || 'No Date' }}</span>
+                    <span class="detail-item"><i class="icon">🔥</i> {{ job.priority }}</span>
+                </div>
+
+                <div class="summary-actions">
+                    <button type="button" class="btn-text"
+                        (click)="toggleCard(i); $event.stopPropagation()">Edit</button>
+                    <button type="button" class="btn-danger-icon"
+                        (click)="deleteJobOrder(i); $event.stopPropagation()">✕</button>
+                </div>
+            </div>
+
+            <!-- EXPANDED VIEW -->
+            <div *ngIf="!job.minimized" class="job-expanded">
+
+                <div class="card-header">
+                    <h3>Job #{{ i + 1 }}</h3>
+                    <div class="header-actions">
+                        <button type="button" class="btn-text" (click)="toggleCard(i)">Minimize</button>
+                        <button type="button" class="btn-danger-icon" (click)="deleteJobOrder(i)">✕</button>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Partner -->
+                    <div class="form-group">
+                        <label>Partner</label>
+                        <select [(ngModel)]="jobOrders[i].selectedPartner" (ngModelChange)="selectPartner(i, $event)">
+                            <option [ngValue]="null">Select a Partner</option>
+                            <option *ngFor="let p of partners" [ngValue]="p">
+                                {{ p.partner_name }} ({{ p.partner_category }})
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Due Date -->
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" [(ngModel)]="jobOrders[i].dueDate">
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select [(ngModel)]="jobOrders[i].status">
+                            <option *ngFor="let s of statusList" [value]="s">{{ s }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="form-group">
+                    <label>Priority</label>
+                    <div class="radio-group">
+                        <label class="radio-badge" *ngFor="let p of jobPriorityOptions"
+                            [class.active]="job.priority === p">
+                            <input type="radio" style="display:none" [checked]="job.priority === p"
+                                (change)="onPriorityChange(p, i)">
+                            {{ p }}
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Images -->
+                <div class="form-group" *ngIf="combinedImages.length > 0">
+                    <label>Attach Reference Materials</label>
+                    <div class="thumb-grid">
+                        <div *ngFor="let img of combinedImages" class="thumb" [class.selected]="isImageSelected(img, i)"
+                            (click)="toggleImage(img, i)">
+
+                            <img [src]="img.blobUrl || img.base64">
+                            <div class="check-overlay" *ngIf="isImageSelected(img, i)">✓</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BOTTOM ACTIONS -->
+    <div class="bottom-actions">
+        <button type="button" class="btn-secondary" (click)="addNewJobOrderSection()">+ Add Job</button>
+        <button type="button" class="btn-primary" (click)="saveAllJobOrders()">Confirm & Save All</button>
+    </div>
+
+</div>

@@ -1,0 +1,26 @@
+<header class="header">
+    <h2>Job Orders</h2>
+</header>
+
+<div *ngFor="let order of orders" (click)="editOrder(order)" class="order-card">
+
+    <!-- <img [src]="order.image || 'assets/default.png'" class="order-img" /> -->
+
+    <div class="order-content">
+        <h3>{{ order.customer_name || 'Unknown' }}</h3>
+
+
+        <p class="due-date">
+            Due: {{ order.job_due_date | date:'mediumDate' }}
+        </p>
+
+        <p class="status">
+            {{ order.job_order_status }}
+        </p>
+
+        <p class="partner">
+            {{ order.partner_name }} ({{ order.partner_contact }})
+        </p>
+    </div>
+
+</div>

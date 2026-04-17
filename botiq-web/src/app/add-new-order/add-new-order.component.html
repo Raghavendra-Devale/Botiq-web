@@ -1,0 +1,205 @@
+<form #orderForm="ngForm" (ngSubmit)="onSubmit(orderForm)" class="form-container">
+
+    <!-- ================= HEADER ================= -->
+    <div class="header">
+
+        <div class="customer-inline">
+            <input name="mobile" [(ngModel)]="newOrder.mobile" (ngModelChange)="onMobileChange($event)" />
+            <input name="name" [(ngModel)]="newOrder.name" placeholder="Name" required />
+            <input name="place" [(ngModel)]="newOrder.place" placeholder="Place" />
+
+            <input type="date" name="dueDate" [(ngModel)]="newOrder.dueDate" />
+
+            <select name="status" [(ngModel)]="newOrder.orderStatus">
+                <option value="">Select Status</option>
+                <option *ngFor="let s of statusList" [value]="s.key_value">
+                    {{ s.key_name }}
+                </option>
+            </select>
+
+            <!-- Priority (using urgent boolean from TS) -->
+            <label>
+                <input type="checkbox" [(ngModel)]="newOrder.urgent" name="urgent" />
+                Urgent
+            </label>
+        </div>
+
+        <button type="submit" class="btn-primary">
+            {{ isEditMode ? 'Update Order' : 'Save Order' }}
+        </button>
+
+    </div>
+
+
+    <!-- ================= MAIN GRID ================= -->
+    <div class="main-grid">
+
+        <!-- 🔷 LEFT PANEL -->
+        <div class="left-panel">
+
+            <!-- 🧾 ORDER ITEMS -->
+            <div class="box-panel order-items">
+
+                <h3>Order Items</h3>
+
+                <div class="items-scroll">
+
+                    <!-- CATEGORY BASED ITEMS -->
+                    <div class="item-row" *ngFor="let category of workCategories">
+
+                        <!-- Select -->
+                        <input type="checkbox" [(ngModel)]="category.selected" name="cat{{category.itemName}}"
+                            (change)="toggleCategory(category)" />
+
+                        <!-- Item Name -->
+                        <input type="text" [value]="category.displayName" readonly />
+
+                        <!-- Quantity -->
+                        <input type="number" [(ngModel)]="category.quantity" name="qty{{category.itemName}}"
+                            (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
+
+                        <!-- Price -->
+                        <input type="number" [(ngModel)]="category.price" name="price{{category.itemName}}"
+                            (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
+
+                        <!-- Total -->
+                        <input type="number" [value]="(category.price || 0) * (category.quantity || 1)" readonly />
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- 💰 PAYMENT -->
+            <div class="box-panel">
+
+                <h3>Payment</h3>
+
+                <div class="payment-metrics">
+
+                    <div>
+                        <strong>Total:</strong> {{ calculateTotal() }}
+                    </div>
+
+                    <div>
+                        <strong>Advance:</strong>
+                        <input type="number" name="advance" [(ngModel)]="newOrder.advanceAmount"
+                            (ngModelChange)="updateItemTotal(null)" />
+                    </div>
+
+                    <div>
+                        <strong>Due:</strong>
+                        {{ calculateTotal() - (newOrder.advanceAmount || 0) }}
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="right-panel">
+
+            <!-- 📊 SUMMARY -->
+            <!-- <div class="box-panel">
+
+                <h3>Summary</h3>
+
+                <p><strong>Items:</strong> {{ getOrderSummary() }}</p>
+                <p><strong>Total:</strong> {{ calculateTotal() }}</p>
+                <p><strong>Advance:</strong> {{ newOrder.advanceAmount || 0 }}</p>
+                <p><strong>Due:</strong> {{ calculateTotal() - (newOrder.advanceAmount || 0) }}</p>
+
+            </div> -->
+
+
+            <!-- 📎 ATTACHMENTS -->
+            <div class="box-panel">
+
+                <h3>Attachments</h3>
+
+                <!-- Upload -->
+                <label>Measurements</label>
+                <input type="file" multiple (change)="onFileSelected($event, 'measurements')" />
+
+                <!-- Thumbnails -->
+                <div class="thumb-grid">
+                    <div class="thumb" *ngFor="let img of measurementImages; let i = index"
+                        (click)="openPreview(img.blobUrl)">
+
+                        <img [src]="img.blobUrl" />
+
+                        <span class="remove" (click)="removeImage('measurements', i); $event.stopPropagation()">
+                            ✕
+                        </span>
+                    </div>
+                </div>
+
+
+                <label>Patterns</label>
+                <input type="file" multiple (change)="onFileSelected($event, 'patterns')" />
+
+                <div class="thumb-grid">
+                    <div class="thumb" *ngFor="let img of patternImages; let i = index"
+                        (click)="openPreview(img.blobUrl)">
+
+                        <img [src]="img.blobUrl" />
+
+                        <span class="remove" (click)="removeImage('patterns', i); $event.stopPropagation()">
+                            ✕
+                        </span>
+                    </div>
+                </div>
+
+
+                <label>Materials</label>
+                <input type="file" multiple (change)="onFileSelected($event, 'materials')" />
+
+                <div class="thumb-grid">
+                    <div class="thumb" *ngFor="let img of materialImages; let i = index"
+                        (click)="openPreview(img.blobUrl)">
+
+                        <img [src]="img.blobUrl" />
+
+                        <span class="remove" (click)="removeImage('materials', i); $event.stopPropagation()">
+                            ✕
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- ➕ ADD JOB -->
+            <!-- <div class="box-panel"> -->
+
+            <h3>Job</h3>
+
+            <button type="button" class="btn-secondary" (click)="goToNextPage()" [disabled]="!isAddJobEnabled">
+                ➕ Add Job
+            </button>
+
+            <button type="button" class="btn-secondary" [disabled]="!isAddJobEnabled">
+                Bill
+            </button>
+
+            <!-- </div> -->
+
+        </div>
+
+    </div>
+
+</form>
+
+<div class="image-modal" *ngIf="previewImage">
+
+    <div class="overlay" (click)="closePreview()"></div>
+
+    <div class="modal-content">
+        <img [src]="previewImage" />
+        <button class="close-btn" (click)="closePreview()">✕</button>
+    </div>
+
+</div>

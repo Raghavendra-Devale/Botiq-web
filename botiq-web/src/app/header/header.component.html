@@ -1,0 +1,34 @@
+<header class="header">
+    <div class="header-left">
+        <!-- Search Bar -->
+        <!-- <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search orders, customers...">
+        </div> -->
+    </div>
+
+    <div class="header-right">
+        <!-- Notifications -->
+        <button class="icon-btn">
+            <i class="fas fa-bell"></i>
+            <span class="badge"></span>
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- User Profile Dropdown Simulator -->
+        <div class="user-dropdown">
+            <div class="user-info">
+                <span class="greeting">Hello,</span>
+                <span class="user-name">{{userName}}</span>
+            </div>
+            <!-- Dynamic UI avatar generator -->
+            <img class="avatar" src="assets/images/profile.png" alt="User Avatar"
+                onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'">
+
+            <button class="logout-icon-btn" (click)="logout()" title="Logout">
+                <i class="fas fa-sign-out-alt">logout</i>
+            </button>
+        </div>
+    </div>
+</header>

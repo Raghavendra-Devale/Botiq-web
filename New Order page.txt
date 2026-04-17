@@ -1,0 +1,190 @@
+New order page 
+
+this has to be final payload
+const payload = {
+  customer: {
+    customerId,
+    name,
+    mobile,
+    place
+  },
+  order: {
+    orderStatus,
+    paymentStatus,
+    orderDate,
+    dueDate,
+    orderAmount,
+    advanceAmount,
+    dueAmount,
+    orderPriority,
+    hasJobOrder,
+    jobOrderDetails
+  },
+  orderDetails: [
+    { itemName: "Shirt", quantity: 2 }
+  ],
+  details: {
+    measurements,
+    materials,
+    patterns,
+    audio,
+    handwrittenNotes
+  }
+};
+
+
+
+
+-- public.master_table definition
+
+-- Drop table
+
+-- DROP TABLE public.master_table;
+
+CREATE TABLE public.master_table (
+	key_id int4 NOT NULL,
+	key_name varchar NULL,
+	master_type varchar NOT NULL,
+	org_id int4 NOT NULL,
+	created_date timestamp NULL,
+	updated_date timestamp NULL,
+	CONSTRAINT master_table_pkey PRIMARY KEY (org_id, key_id, master_type)
+);
+
+
+-- public.org_user definition
+
+-- Drop table
+
+-- DROP TABLE public.org_user;
+
+CREATE TABLE public.org_user (
+	user_id serial4 NOT NULL,
+	enabled bool DEFAULT true NULL,
+	deleted bool DEFAULT false NULL,
+	org_name varchar NULL,
+	user_role varchar NULL,
+	email_id varchar NULL,
+	mobile_number varchar NULL,
+	created_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	first_name varchar NULL,
+	org_id int4 NOT NULL,
+	device_id varchar NULL,
+	firebase_id varchar NULL,
+	email_verified bool NULL,
+	email_verified_date timestamp NULL,
+	CONSTRAINT org_user_pkey PRIMARY KEY (org_id, user_id)
+);
+
+
+-- public.botiq_customer_w definition
+
+-- Drop table
+
+-- DROP TABLE public.botiq_customer_w;
+
+CREATE TABLE public.botiq_customer_w (
+	customer_id serial4 NOT NULL,
+	org_id int4 NOT NULL,
+	org_name varchar NULL,
+	customer_name varchar NULL,
+	contact_number varchar NULL,
+	customer_address varchar NULL,
+	enabled bool DEFAULT true NULL,
+	deleted bool DEFAULT false NULL,
+	created_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_by varchar NULL,
+	CONSTRAINT botiq_customer_w_pkey PRIMARY KEY (org_id, customer_id)
+);
+
+-- public.botiq_order_w definition
+
+-- Drop table
+
+-- DROP TABLE public.botiq_order_w;
+
+CREATE TABLE public.botiq_order_w (
+	order_id serial4 NOT NULL,
+	org_id int4 NOT NULL,
+	customer_id int4 NULL,
+	order_details text NULL,
+	order_status varchar NULL,
+	payment_status int4 NULL,
+	order_amount int4 NULL,
+	advance_amount int4 NULL,
+	due_amount int4 NULL,
+	order_date date NULL,
+	due_date date NULL,
+	has_job_order bool DEFAULT false NULL,
+	order_priority int4 NULL,
+	created_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_by varchar NULL,
+	delivered_date date NULL,
+	CONSTRAINT botiq_order_w_pkey PRIMARY KEY (org_id, order_id)
+);
+
+-- public.botiq_order_docs_w definition
+
+-- Drop table
+
+-- DROP TABLE public.botiq_order_docs_w;
+
+CREATE TABLE public.botiq_order_docs_w (
+	details_id serial4 NOT NULL,
+	order_id int4 NULL,
+	details_type int4 NULL,
+	details_data varchar NULL,
+	updated_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	org_id int4 NOT NULL,
+	CONSTRAINT botiq_order_docs_w_pkey PRIMARY KEY (org_id, details_id)
+);
+
+
+-- public.botiq_job_order_w definition
+
+-- Drop table
+
+-- DROP TABLE public.botiq_job_order_w;
+
+CREATE TABLE public.botiq_job_order_w (
+	job_id serial4 NOT NULL,
+	org_id int4 NOT NULL,
+	order_id int4 NOT NULL,
+	customer_id int4 NULL,
+	partner_id int4 NULL,
+	job_order_details text NULL,
+	job_due_date date NULL,
+	job_priority int4 NULL,
+	created_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_by varchar NULL,
+	job_order_status varchar NULL,
+	CONSTRAINT botiq_job_order_w_pkey PRIMARY KEY (org_id, job_id)
+);
+
+
+-- public.botiq_partner_w definition
+
+-- Drop table
+
+-- DROP TABLE public.botiq_partner_w;
+
+CREATE TABLE public.botiq_partner_w (
+	partner_id serial4 NOT NULL,
+	org_id int4 NOT NULL,
+	partner_name varchar NULL,
+	partner_contact varchar NULL,
+	partner_address varchar NULL,
+	partner_category_id varchar NULL,
+	partner_category varchar NULL,
+	notes varchar NULL,
+	enabled bool DEFAULT true NULL,
+	deleted bool DEFAULT false NULL,
+	updated_date timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_by varchar NULL,
+	CONSTRAINT botiq_partner_w_pkey PRIMARY KEY (org_id, partner_id)
+);
+
+

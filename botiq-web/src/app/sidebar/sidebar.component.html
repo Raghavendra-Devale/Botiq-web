@@ -1,0 +1,54 @@
+<div class="sidebar">
+    <div class="logo">
+        <img src="assets/images/profile.png" alt="Logo">
+    </div>
+
+    <ul class="menu">
+        <li class="menu-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <a routerLink="/dashboard">Dashboard</a>
+        </li>
+
+        <li class="menu-item" routerLinkActive="active">
+            <a routerLink="/order-list">Customer Orders</a>
+        </li>
+
+        <li class="menu-item" routerLinkActive="active">
+            <a routerLink="/job-order-list">Job Order</a>
+        </li>
+
+        <!-- Disabled routes -->
+        <li class="menu-item disabled">
+            <a routerLink="/user-profile">Settings</a>
+        </li>
+
+        <li class="menu-item disabled">
+            <a routerLink="/partners-list">Partners</a>
+        </li>
+
+        <li class="menu-item disabled">
+            <a routerLink="/plan-page">Support-Plan</a>
+        </li>
+
+        <!-- <li class="menu-item" routerLinkActive="active">
+            <a routerLink="/settings">
+                <i class="fas fa-cog"></i>
+                <span>Botiq Guide</span>
+            </a>
+        </li> -->
+
+    </ul>
+
+
+    <div class="user-profile">
+        <div class="user-info">
+            <div class="user-avatar">{{initial}}</div>
+            <div class="user-details">
+                <div class="user-name">{{businessName}}</div>
+                <div class="user-role">Owner</div>
+            </div>
+        </div>
+        <button class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</div>

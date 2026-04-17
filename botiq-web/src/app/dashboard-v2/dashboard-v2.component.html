@@ -1,0 +1,101 @@
+<div class="dashboard-v2">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-left">
+            <h2>Dashboard</h2>
+            <p>Total Orders Due</p>
+            <div class="big-number">
+                {{ monthlyDueSummary?.over_due || 0 }}
+            </div>
+        </div>
+
+        <div class="hero-right">
+            <button (click)="addNewOrder()">+ New Order</button>
+        </div>
+    </div>
+
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+
+        <div class="kpi-card due" (click)="goToOrderList('Custom',1)">
+            <p>Due</p>
+            <h3>{{ orderSummary?.due || 0 }}</h3>
+        </div>
+
+        <div class="kpi-card overdue" (click)="goToOrderList('Custom',2)">
+            <p>Overdue</p>
+            <h3>{{ orderSummary?.over_due || 0 }}</h3>
+        </div>
+
+        <div class="kpi-card urgent" (click)="goToOrderList('Custom',3)">
+            <p>Urgent</p>
+            <h3>{{ orderSummary?.urgent || 0 }}</h3>
+        </div>
+
+        <div class="kpi-card ready" (click)="goToOrderList('Custom',4)">
+            <p>Ready</p>
+            <h3>{{ orderSummary?.ready || 0 }}</h3>
+        </div>
+
+        <div class="kpi-card delivered" (click)="goToOrderList('Custom',5)">
+            <p>Delivered</p>
+            <h3>{{ orderSummary?.delivered || 0 }}</h3>
+        </div>
+
+    </div>
+
+
+    <!-- ORDERS + JOBS -->
+    <div class="dual-section">
+
+        <div class="panel">
+            <h3>Orders This Week</h3>
+            <div class="mini-grid">
+                <div (click)="goToOrderList('Custom',6)">New: {{ orderSummary?.newthisweek || 0 }}</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Jobs This Week</h3>
+            <div class="mini-grid">
+                <div (click)="goToJobOrderList('Custom',1)">Due: {{ jobOrderSummary?.due || 0 }}</div>
+                <div (click)="goToJobOrderList('Custom',2)">Overdue: {{ jobOrderSummary?.over_due || 0 }}</div>
+                <div (click)="goToJobOrderList('Custom',3)">Urgent: {{ jobOrderSummary?.urgent || 0 }}</div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- FINANCIAL SUMMARY -->
+    <div class="finance">
+
+        <div class="finance-card">
+            <h4>This Week</h4>
+            <p>Items: {{ dueOrderSummary?.due_this_week?.count || 0 }}</p>
+            <h3>₹ {{ dueOrderSummary?.due_this_week?.amount || 0 }}</h3>
+        </div>
+
+        <div class="finance-card overdue">
+            <h4>Overdue</h4>
+            <p>Items: {{ dueOrderSummary?.overdue?.count || 0 }}</p>
+            <h3>₹ {{ dueOrderSummary?.overdue?.amount || 0 }}</h3>
+        </div>
+
+    </div>
+
+
+    <!-- MONTHLY -->
+    <div class="monthly">
+
+        <div>{{ monthlyDueSummary?.overdue || 0 }}<span>Overdue</span></div>
+        <div>{{ monthlyDueSummary?.m1 || 0 }}<span>{{ monthLabels.m1 }}</span></div>
+        <div>{{ monthlyDueSummary?.m2 || 0 }}<span>{{ monthLabels.m2 }}</span></div>
+        <div>{{ monthlyDueSummary?.m3 || 0 }}<span>{{ monthLabels.m3 }}</span></div>
+        <div>{{ monthlyDueSummary?.later || 0 }}<span>Later</span></div>
+
+    </div>
+
+</div>

@@ -1,0 +1,149 @@
+<div *ngIf="loading" class="loader-container">
+    <div class="spinner"></div>
+    <p>{{loaderMessage}}</p>
+</div>
+
+<div *ngIf="!loading" class="profile-container">
+
+    <!-- PAGE TITLE -->
+    <h1 class="page-title">Settings</h1>
+
+    <!-- ===================== -->
+    <!-- ORGANIZATION SECTION -->
+    <!-- ===================== -->
+    <div class="card accordion-card">
+        <div class="accordion-header" (click)="isOrgSectionOpen = !isOrgSectionOpen">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <h3 class="section-title" style="margin: 0;">Organization</h3>
+                <span *ngIf="user.businessName || user.ownerName" style="font-size: 13px; color: #64748b;">
+                    {{ user.businessName }} 💠 {{ user.ownerName}} 💠 {{ user.phoneNumber }}
+                </span>
+            </div>
+            <span class="accordion-icon">{{ isOrgSectionOpen ? '▲' : '▼' }}</span>
+        </div>
+
+        <div class="accordion-content" [class.open]="isOrgSectionOpen">
+            <div class="profile-grid">
+
+                <div class="field">
+                    <label>Business Name</label>
+                    <p>{{user.businessName}}</p>
+                </div>
+
+                <div class="field">
+                    <label>Owner Name</label>
+                    <p>{{user.ownerName}}</p>
+                </div>
+
+                <div class="field">
+                    <label>Address</label>
+                    <p>{{user.address}}</p>
+                </div>
+
+                <div class="field">
+                    <label>Phone Number</label>
+                    <p>{{user.phoneNumber}}</p>
+                </div>
+
+                <div class="field">
+                    <label>Email</label>
+                    <p>{{user.email}}</p>
+                </div>
+
+            </div>
+
+            <!-- LOGO -->
+            <div class="logo-section">
+                <p>Business Logo</p>
+                <img [src]="user.businessLogo || 'assets/placeholder.png'" alt="logo">
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================== -->
+    <!-- FEATURES SECTION -->
+    <!-- ===================== -->
+    <div class="card">
+        <h3 class="section-title">Features</h3>
+
+        <div class="toggle-row">
+            <span>Enable Stylus</span>
+
+            <label class="switch">
+                <input type="checkbox" [(ngModel)]="isStylusEnabled" (change)="onStylusToggle()" />
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+
+    <!-- ===================== -->
+    <!-- CATEGORIES SECTION -->
+    <!-- ===================== -->
+    <div class="card">
+
+        <h3 class="section-title">Categories</h3>
+
+        <!-- INPUT ROW -->
+        <div class="category-input-row">
+
+            <!-- WORK INPUT -->
+            <div class="input-box">
+                <input [(ngModel)]="newWorkCategory" placeholder="Add Work Category"
+                    (keydown.enter)="addWorkCategory()" />
+
+                <span class="add-btn" (click)="addWorkCategory()">+</span>
+            </div>
+
+            <!-- JOB INPUT -->
+            <div class="input-box">
+                <input [(ngModel)]="newJobCategory" placeholder="Add Job Category" (keydown.enter)="addJobCategory()" />
+
+                <span class="add-btn" (click)="addJobCategory()">+</span>
+            </div>
+
+        </div>
+
+        <!-- DISPLAY ROW -->
+        <div class="category-display-row">
+
+            <!-- WORK -->
+            <div class="category-box">
+                <h4 class="sub-title">Work</h4>
+
+                <div class="tags-container">
+                    <span class="tag" *ngFor="let cat of workCategories; let i = index">
+                        {{cat}}
+                        <span class="remove" (click)="removeWorkCategory(i)">×</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- JOB -->
+            <div class="category-box">
+                <h4 class="sub-title">Job</h4>
+
+                <div class="tags-container">
+                    <span class="tag" *ngFor="let cat of jobCategories; let i = index">
+                        {{cat}}
+                        <span class="remove" (click)="removeJobCategory(i)">×</span>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================== -->
+    <!-- SAVE BUTTON -->
+    <!-- ===================== -->
+    <div class="save-section">
+        <button class="save-btn" [disabled]="!hasChanges()" (click)="onSaveAll()">
+            Save Changes
+        </button>
+    </div>
+
+</div>

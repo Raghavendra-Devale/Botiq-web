@@ -1,0 +1,31 @@
+<div class="header">
+    <h2>Partners</h2>
+    <button class="add-btn" (click)="addPartner()">+ Add Partner</button>
+</div>
+
+<div *ngFor="let partner of partnersList" class="partner-card">
+
+    <div class="left">
+        <h3>{{ partner.partner_name }}</h3>
+
+        <p class="contact">
+            {{ partner.partner_contact || 'No contact' }}
+        </p>
+
+        <p class="category">
+            {{ partner.partner_category || 'No category' }}
+        </p>
+    </div>
+
+    <div class="right">
+        <span class="status" [ngClass]="partner.enabled ? 'active' : 'inactive'">
+            {{ partner.enabled ? 'Active' : 'Inactive' }}
+        </span>
+
+        <div class="actions">
+            <button (click)="editPartner(partner)">Edit</button>
+            <button class="delete" (click)="deletePartner(partner)">Delete</button>
+        </div>
+    </div>
+
+</div>

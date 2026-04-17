@@ -1,0 +1,44 @@
+.header {
+    padding: 10px;
+}
+
+/* CARD */
+.order-card {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.order-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.order-content {
+    flex: 1;
+}
+
+.details {
+    font-size: 13px;
+    color: #555;
+}
+
+.due-date {
+    font-size: 12px;
+    color: #888;
+}
+
+.status {
+    font-weight: 500;
+}
+
+.partner {
+    font-size: 12px;
+    color: #666;
+}
