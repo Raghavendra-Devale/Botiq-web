@@ -56,6 +56,8 @@
             <div class="logo-section">
                 <p>Business Logo</p>
                 <img [src]="user.businessLogo || 'assets/placeholder.png'" alt="logo">
+                <input type="file" multiple (change)="onFileSelected($event, 'logo')" />
+                <!-- <button class="update-logo-btn" (click)="onUpdateLogo()">Update Logo</button> -->
             </div>
         </div>
     </div>

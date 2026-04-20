@@ -12,7 +12,7 @@
 
             <select name="status" [(ngModel)]="newOrder.orderStatus">
                 <option value="">Select Status</option>
-                <option *ngFor="let s of statusList" [value]="s.key_value">
+                <option *ngFor="let s of statusList" [value]="s.key_name">
                     {{ s.key_name }}
                 </option>
             </select>
@@ -59,7 +59,7 @@
                             (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
 
                         <!-- Price -->
-                        <input type="number" [(ngModel)]="category.price" name="price{{category.itemName}}"
+                        <input type="number" [(ngModel)]="category.price" name="price{{category.price}}"
                             (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
 
                         <!-- Total -->

@@ -25,6 +25,7 @@
         </button>
     </div>
 
+
     <div class="scroll-content">
         <!-- Notes Banner -->
         <div *ngFor="let note of notes" class="alert note-alert" [ngClass]="getNoteClass(note)">
@@ -82,9 +83,12 @@
                         <h3 class="customer-name">{{ order.customer_name }}</h3>
                         <span class="order-amount">₹{{ order.order_amount }}</span>
                     </div>
-
-                    <p class="order-details">{{ order.formattedOrderDetails }}</p>
-
+                    <span class="status" [ngClass]="order.order_status.toLowerCase()">
+                        {{ order.order_status }}
+                    </span>
+                    <p class="order-details">
+                        {{ formatOrderDetails(order.order_details) }}
+                    </p>
                     <div class="card-actions-row">
                         <div class="action-buttons">
                             <!-- Call -->
@@ -126,7 +130,7 @@
         </div>
 
         <div class="load-more-container" *ngIf="hasMore">
-            <button class="btn-load-more" (click)="fetchOrders(false)">Load More</button>
+            <!-- <button class="btn-load-more" (click)="fetchOrders(false)">Load More</button> -->
         </div>
     </div>
 

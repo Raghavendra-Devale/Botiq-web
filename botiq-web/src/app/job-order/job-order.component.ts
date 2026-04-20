@@ -19,6 +19,7 @@ export class JobOrderComponent implements OnInit {
   partners: any[] = [];
   jobOrders: any[] = [];
 
+
   statusList = ['Pending', 'In Progress', 'Completed'];
   jobPriorityOptions = ['Low', 'Medium', 'High'];
 
@@ -27,36 +28,72 @@ export class JobOrderComponent implements OnInit {
   constructor(private router: Router, private orderService: OrderService, private orderStateService: OrderestateService) { }
 
   ngOnInit() {
-    const nav = this.router.getCurrentNavigation();
-    this.orderData = nav?.extras?.state?.['orderData'];
 
-    console.log("Received Order Data:", this.orderData);
+    // ✅ Use ONLY service (single source of truth)
+    this.orderData = this.orderStateService.getOrderData();
+
+    if (!this.orderData) {
+      console.error("No order data found");
+      this.router.navigate(['/add-new-order']);
+      return;
+    }
+
+    console.log("ORDER DATA:", this.orderData);
 
     this.loadPartners();
 
-
+    // ✅ Normalize images for UI usage
     this.combinedImages = [
-      ...(this.orderData?.details?.measurements || []),
-      ...(this.orderData?.details?.patterns || []),
-      ...(this.orderData?.details?.materials || [])
-    ];
-    this.orderData = this.orderStateService.getOrderData();
-    console.log("ORDER DATA FROM SERVICE:", this.orderData);
-    console.log("ORDER DETAILS FROM SERVICE:", this.orderData.orderDetails);
-    console.log("ORDER DETAILS FROM SERVICE:", this.orderData.details);
+      ...(this.orderData.details?.measurements || []),
+      ...(this.orderData.details?.patterns || []),
+      ...(this.orderData.details?.materials || [])
+    ].map((img: any) => ({
+      base64: typeof img === 'string' ? img : img.base64,
+      temp_id: img.temp_id || Date.now() + Math.random()
+    }));
 
+    // ✅ Map backend jobOrders → UI model
+    this.jobOrders = (this.orderData.jobOrders || []).map((job: any) => ({
+      selectedPartner: null, // will map after partners load
+      partnerId: job.partner_id || null,
+      selectedJobDetails: job.job_order_details?.jobDetails || [],
+      dueDate: job.job_due_date,
+      status: job.job_order_status,
+      priority: this.reverseMapPriority(job.job_priority),
+      selectedImages: [],
+      minimized: false
+    }));
 
-
-
-    this.addNewJobOrderSection();
+    // ✅ If no jobs → create one blank
+    if (this.jobOrders.length === 0) {
+      this.addNewJobOrderSection();
+    }
   }
 
   loadPartners() {
     this.orderService.getPartners().subscribe((res: any) => {
       this.partners = res;
+
+      // ✅ Now map partner into jobOrders (after API loads)
+      this.jobOrders.forEach(job => {
+        if (job.partnerId) {
+          job.selectedPartner = this.partners.find(
+            p => p.partner_id === job.partnerId
+          ) || null;
+        }
+      });
     });
   }
 
+
+  reverseMapPriority(priority: number): string {
+    switch (priority) {
+      case 1: return 'High';
+      case 2: return 'Medium';
+      case 3: return 'Low';
+      default: return 'Medium';
+    }
+  }
 
   addNewJobOrderSection() {
     this.jobOrders.push({
@@ -142,14 +179,15 @@ export class JobOrderComponent implements OnInit {
 
     console.log("FINAL PAYLOAD:", payload);
 
-    this.orderService.saveFullOrder(payload).subscribe(res => {
-      console.log("Saved:", res);
-      this.router.navigate(['/saveJobOrders']);
-
+    this.orderService.saveFullOrder(payload).subscribe({
+      next: (res) => {
+        console.log("Saved:", res);
+        this.router.navigate(['/dashboard-v2']);
+      },
+      error: (err) => {
+        console.error("Save failed:", err);
+      }
     });
-
-    this.router.navigate(['/dashboard-v2']);
-
   }
 
 

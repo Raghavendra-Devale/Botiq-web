@@ -23,7 +23,7 @@
                 <span class="user-name">{{userName}}</span>
             </div>
             <!-- Dynamic UI avatar generator -->
-            <img class="avatar" src="assets/images/profile.png" alt="User Avatar"
+            <img class="avatar" src="{{data.org_logo}}" alt="User Avatar"
                 onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'">
 
             <button class="logout-icon-btn" (click)="logout()" title="Logout">

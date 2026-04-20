@@ -1,5 +1,7 @@
 package com.dfive.botiq.controllers;
 
+import com.dfive.botiq.entities.OrgUser;
+import com.dfive.botiq.repositories.OrgUserRepository;
 import com.dfive.botiq.util.FirebaseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,9 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/web")
@@ -21,7 +25,38 @@ public class WebController {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    OrgUserRepository orgUserRepository;
+
     ObjectMapper mapper = new ObjectMapper();
+
+    @PostMapping("/checkUserExists")
+    public ResponseEntity<?> checkUserExists(@RequestBody Map<String, Object> payload,
+            HttpServletRequest request) {
+        try {
+            String authorizationHeader = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+
+            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
+            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
+
+            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+
+            String mobile = (String) payload.get("mobile");
+
+            Optional<OrgUser> orgUser = orgUserRepository.findByMobileNumber(mobile);
+
+            if (orgUser.isPresent()) {
+                return ResponseEntity.ok(Map.of("exists", true));
+            } else {
+                return ResponseEntity.ok(Map.of("exists", false));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error searching customer");
+        }
+    }
 
     @PostMapping("/searchCustomerByPhoneNumber")
     public ResponseEntity<?> searchCustomerByPhoneNumber(@RequestBody Map<String, Object> payload,
@@ -402,42 +437,43 @@ public class WebController {
                 .body("Error fetching dashboard data");
     }
 
-    @PostMapping("/newOrder")
-    public ResponseEntity<?> newOrder(@RequestBody Map<String, Object> payload,
-            HttpServletRequest request) {
-        try {
+    // @PostMapping("/newOrder")
+    // public ResponseEntity<?> newOrder(@RequestBody Map<String, Object> payload,
+    // HttpServletRequest request) {
+    // try {
 
-            String authorizationHeader = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+    // String authorizationHeader = request.getHeader("Authorization");
+    // String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
 
-            String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
-            Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
+    // String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id =
+    // ?";
+    // Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
 
-            Integer orgId = (Integer) userInfo.get("org_id");
-            String orgName = (String) userInfo.get("org_name");
+    // Integer orgId = (Integer) userInfo.get("org_id");
+    // String orgName = (String) userInfo.get("org_name");
 
-            ObjectMapper mapper = new ObjectMapper();
-            String payloadJson = mapper.writeValueAsString(payload);
+    // ObjectMapper mapper = new ObjectMapper();
+    // String payloadJson = mapper.writeValueAsString(payload);
 
-            String sql = "SELECT save_new_order(?::jsonb, ?, ?)";
+    // String sql = "SELECT save_new_order(?::jsonb, ?, ?)";
 
-            Integer orderId = jdbcTemplate.queryForObject(
-                    sql,
-                    Integer.class,
-                    payloadJson,
-                    orgId,
-                    orgName);
+    // Integer orderId = jdbcTemplate.queryForObject(
+    // sql,
+    // Integer.class,
+    // payloadJson,
+    // orgId,
+    // orgName);
 
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "orderId", orderId));
+    // return ResponseEntity.ok(Map.of(
+    // "status", "success",
+    // "orderId", orderId));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error saving order");
-        }
-    }
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    // .body("Error saving order");
+    // }
+    // }
 
     @GetMapping("/getMasterByType")
     public ResponseEntity<?> getMasterByType(
@@ -510,9 +546,39 @@ public class WebController {
         }
     }
 
-    @PostMapping("/saveFullOrder")
-    public ResponseEntity<?> saveAll(@RequestBody Map<String, Object> payload,
-            HttpServletRequest request) {
+    // @PostMapping("/saveFullOrder")
+    // public ResponseEntity<?> saveAll(@RequestBody Map<String, Object> payload,
+    // HttpServletRequest request) {
+    // try {
+    // String authorizationHeader = request.getHeader("Authorization");
+    // String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+
+    // String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id =
+    // ?";
+    // Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
+
+    // Integer orgId = (Integer) userInfo.get("org_id");
+    // String orgName = (String) userInfo.get("org_name");
+
+    // String sql = "SELECT save_job_orders(?::jsonb, ?, ?)";
+
+    // Integer orderId = jdbcTemplate.queryForObject(
+    // sql,
+    // Integer.class,
+    // new ObjectMapper().writeValueAsString(payload),
+    // orgId,
+    // orgName);
+
+    // return ResponseEntity.ok(orderId);
+
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // return ResponseEntity.status(500).body("Error saving order");
+    // }
+    // }
+
+    @PostMapping("/save_order")
+    public ResponseEntity<?> saveOrder(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         try {
             String authorizationHeader = request.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
@@ -523,7 +589,7 @@ public class WebController {
             Integer orgId = (Integer) userInfo.get("org_id");
             String orgName = (String) userInfo.get("org_name");
 
-            String sql = "SELECT save_job_orders(?::jsonb, ?, ?)";
+            String sql = "SELECT save_order(?::jsonb, ?, ?)";
 
             Integer orderId = jdbcTemplate.queryForObject(
                     sql,
@@ -589,31 +655,94 @@ public class WebController {
 
     @GetMapping("/orders/{id}")
     public ResponseEntity<?> getOrderById(@PathVariable Long id, HttpServletRequest request) {
-        System.out.println("get order by id....." + id);
+
         String authorizationHeader = request.getHeader("Authorization");
         String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
 
         String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
         Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
-
         Integer orgId = (Integer) userInfo.get("org_id");
 
-        String sql = "SELECT " +
-                "o.*, " +
-                "c.customer_name, " +
-                "c.contact_number, " +
-                "c.customer_address " +
+        String sql = "SELECT o.*, c.customer_name, c.contact_number, c.customer_address " +
                 "FROM botiq_order_w o " +
-                "LEFT JOIN botiq_customer_w c " +
-                "ON o.customer_id = c.customer_id " +
+                "LEFT JOIN botiq_customer_w c ON o.customer_id = c.customer_id " +
                 "WHERE o.order_id = ? AND o.org_id = ?";
 
         try {
             Map<String, Object> order = jdbcTemplate.queryForMap(sql, id, orgId);
-            return ResponseEntity.ok(order);
+
+            String docsSql = "SELECT details_type, details_data FROM botiq_order_docs_w WHERE order_id = ?";
+            List<Map<String, Object>> docs = jdbcTemplate.queryForList(docsSql, id);
+
+            Map<String, List<String>> details = new HashMap<>();
+            details.put("measurements", new ArrayList<>());
+            details.put("materials", new ArrayList<>());
+            details.put("patterns", new ArrayList<>());
+
+            for (Map<String, Object> d : docs) {
+                int type = (Integer) d.get("details_type");
+                String data = (String) d.get("details_data");
+
+                if (type == 1)
+                    details.get("measurements").add(data);
+                if (type == 2)
+                    details.get("materials").add(data);
+                if (type == 3)
+                    details.get("patterns").add(data);
+            }
+
+            String jobSql = "SELECT * FROM botiq_job_order_w WHERE order_id = ?";
+            List<Map<String, Object>> jobOrders = jdbcTemplate.queryForList(jobSql, id);
+
+            Map<String, Object> response = new HashMap<>();
+            boolean hasJobOrder = jobOrders != null && !jobOrders.isEmpty();
+            // ObjectMapper mapper = new ObjectMapper();
+
+            for (Map<String, Object> job : jobOrders) {
+                String detailsStr = (String) job.get("job_order_details");
+
+                if (detailsStr != null && !detailsStr.isEmpty()) {
+                    try {
+                        Object parsed = mapper.readValue(detailsStr, Object.class);
+                        job.put("job_order_details", parsed);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            String orderDetailsStr = (String) order.get("order_details");
+
+            if (orderDetailsStr != null && !orderDetailsStr.isEmpty()) {
+                try {
+                    Object parsed = mapper.readValue(orderDetailsStr, Object.class);
+                    order.put("order_details", parsed);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            order.put("has_job_order", hasJobOrder);
+            response.put("order", order);
+
+            Map<String, Object> customer = new HashMap<>();
+            customer.put("name", order.get("customer_name"));
+            customer.put("mobile", order.get("contact_number"));
+            customer.put("place", order.get("customer_address"));
+            customer.put("customerId", order.get("customer_id"));
+
+            response.put("customer", customer);
+            response.put("details", details);
+            response.put("jobOrders", jobOrders);
+
+            System.out.println(response);
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
+
     }
 
     @Transactional
@@ -622,7 +751,9 @@ public class WebController {
             HttpServletRequest request) {
         try {
             System.out.println("update order");
+            System.out.println("👉 orderDetails from payload: " + payload.get("orderDetails"));
 
+            // 🔐 Auth
             String authorizationHeader = request.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
 
@@ -632,20 +763,60 @@ public class WebController {
             Integer orgId = (Integer) userInfo.get("org_id");
             String orgName = (String) userInfo.get("org_name");
 
+            // 📦 Extract payload
             Map<String, Object> customer = (Map<String, Object>) payload.get("customer");
             Map<String, Object> order = (Map<String, Object>) payload.get("order");
+            List<?> orderDetails = (List<?>) payload.get("orderDetails");
+
+            if (customer == null || order == null) {
+                return ResponseEntity.badRequest().body("Invalid payload");
+            }
 
             Integer customerId = (Integer) customer.get("customerId");
-            String customerName = (String) customer.get("name");
-            String mobile = (String) customer.get("mobile");
-            String address = (String) customer.get("place");
-
             Integer orderId = (Integer) order.get("order_id");
 
             if (customerId == null || orderId == null) {
                 return ResponseEntity.badRequest().body("Missing IDs for update");
             }
 
+            // 🧾 Customer fields
+            String customerName = (String) customer.get("name");
+            String mobile = (String) customer.get("mobile");
+            String address = (String) customer.get("place");
+
+            // 📊 Order fields
+            String status = (String) order.get("orderStatus");
+            Integer paymentStatus = (Integer) order.get("paymentStatus");
+            Integer orderAmount = (Integer) order.get("orderAmount");
+            Integer advanceAmount = (Integer) order.get("advanceAmount");
+            Integer dueAmount = (Integer) order.get("dueAmount");
+            Integer priority = (Integer) order.get("orderPriority");
+
+            // 📅 Date handling
+            String orderDateRaw = (String) order.get("orderDate");
+            String dueDate = (String) order.get("dueDate");
+
+            String orderDate = (orderDateRaw != null && orderDateRaw.contains("T"))
+                    ? orderDateRaw.split("T")[0]
+                    : orderDateRaw;
+
+            // 🔁 Boolean handling (robust)
+            boolean hasJobOrder = false;
+            Object value = order.get("hasJobOrder");
+
+            if (value instanceof Boolean) {
+                hasJobOrder = (Boolean) value;
+            } else if (value instanceof Integer) {
+                hasJobOrder = ((Integer) value) == 1;
+            }
+
+            // 🧠 Convert orderDetails → JSON
+            String orderDetailsJson = "[]";
+            if (orderDetails != null) {
+                orderDetailsJson = mapper.writeValueAsString(orderDetails);
+            }
+
+            // ================= CUSTOMER UPDATE =================
             String updateCustomerSql = """
                         UPDATE botiq_customer_w
                         SET
@@ -670,6 +841,7 @@ public class WebController {
                     false,
                     customerId);
 
+            // ================= ORDER UPDATE =================
             String updateOrderSql = """
                         UPDATE botiq_order_w
                         SET
@@ -690,33 +862,27 @@ public class WebController {
                             ELSE NULL
                           END,
                           updated_date = NOW()
-                        WHERE order_id = ?
+                        WHERE order_id = ? AND org_id = ?
                     """;
-
-            Object value = order.get("hasJobOrder");
-
-            boolean hasJobOrder = false;
-
-            if (value != null) {
-                hasJobOrder = ((Integer) value) == 1;
-            }
+            System.out.println("👉 JSON: " + orderDetailsJson);
+            System.out.println("👉 Updating order with ID: " + orderId);
             jdbcTemplate.update(updateOrderSql,
                     orgId,
                     customerId,
-                    order.get("orderDetails"),
-                    order.get("orderStatus"),
-                    order.get("paymentStatus"),
-                    order.get("orderAmount"),
-                    order.get("advanceAmount"),
-                    order.get("dueAmount"),
-                    order.get("orderDate"),
-                    order.get("dueDate"),
-                    // order.get("hasJobOrder"),
+                    orderDetailsJson,
+                    status,
+                    paymentStatus,
+                    orderAmount,
+                    advanceAmount,
+                    dueAmount,
+                    orderDate,
+                    dueDate,
                     hasJobOrder,
-                    order.get("orderPriority"),
-                    order.get("orderStatus"),
-                    orderId);
-
+                    priority,
+                    status,
+                    orderId,
+                    orgId // ✅ IMPORTANT
+            );
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "orderId", orderId));

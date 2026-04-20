@@ -13,6 +13,7 @@ import { UserProfileComponent } from './user-profile/user-profile.component';
 import { AddPartnerComponent } from './add-partner/add-partner.component';
 import { DashboardV2Component } from './dashboard-v2/dashboard-v2.component';
 import { PlanPageComponent } from './plan-page/plan-page.component';
+import { RegisterComponent } from './register/register.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [publicGuard] },
@@ -33,6 +34,7 @@ export const routes: Routes = [
     { path: 'dashboard-v2', component: DashboardV2Component, canActivate: [authGuard] },
     { path: 'partner/:id', component: AddPartnerComponent, canActivate: [authGuard] },
     { path: 'plan-page', component: PlanPageComponent, canActivate: [authGuard] },
+    { path: 'register', component: RegisterComponent },
     {
         path: 'add-new-order',
         component: TabsContainerComponent,

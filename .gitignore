@@ -60,4 +60,6 @@ Thumbs.db
 *.swp
 *.swo
 
-serviceAccountKey.json
+*.serviceAccountKey.json
+*.txt
+Botiq-Backend/src/main/resources/serviceAccountKey.json

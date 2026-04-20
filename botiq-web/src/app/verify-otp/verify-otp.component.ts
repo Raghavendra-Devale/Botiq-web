@@ -14,11 +14,15 @@ import { Router, RouterLink } from '@angular/router';
 export class VerifyOtpComponent implements OnInit {
 
   otpDigits: string[] = ['', '', '', '', '', ''];
+  registerData: any;
 
   constructor(
     private authService: AuthService,
     private router: Router
-  ) { }
+  ) {
+    const navigation = this.router.getCurrentNavigation();
+    this.registerData = navigation?.extras.state?.['registerData'];
+  }
 
   ngOnInit() {
     if (!this.authService.hasConfirmationResult()) {
@@ -69,6 +73,11 @@ export class VerifyOtpComponent implements OnInit {
       const token = await result.user.getIdToken();
 
       localStorage.setItem('token', token);
+
+      if (this.registerData) {
+        // TODO: The user is verified! Add backend API call here to save this.registerData
+        console.log('User verified globally. Ready to save registerData:', this.registerData);
+      }
 
       this.router.navigate(['/dashboard']);
 

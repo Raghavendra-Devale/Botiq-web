@@ -27,6 +27,21 @@ interface OptionalSettings {
   styleUrl: './user-profile.component.css'
 })
 export class UserProfileComponent {
+  onFileSelected(event: any, type: string) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const base64 = e.target.result;
+
+      if (type === 'logo') {
+        this.user.businessLogo = base64;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
 
   loading = true;
   loaderMessage = "Loading user profile...";

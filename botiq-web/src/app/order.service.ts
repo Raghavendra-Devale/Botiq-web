@@ -6,6 +6,10 @@ import { environment } from '../environments/environment';
   providedIn: 'root'
 })
 export class OrderService {
+
+  checkUserExists(mobile: string) {
+    return this.http.post<any>(this.baseUrl + "/checkUserExists", { mobile });
+  }
   searchCustomerByPhoneNumber(mobile: string) {
     return this.http.post<any>(this.baseUrl + "/searchCustomerByPhoneNumber", { mobile });
   }
@@ -19,7 +23,7 @@ export class OrderService {
     return this.http.get(this.baseUrl + "/orders/" + id);
   }
   saveFullOrder(payload: any) {
-    return this.http.post<any>(this.baseUrl + "/saveFullOrder", payload);
+    return this.http.post<any>(this.baseUrl + "/save_order", payload);
   }
 
   getPartnersById(id: number) {
@@ -37,7 +41,7 @@ export class OrderService {
     console.log(payload, "payload");
     console.log(this.baseUrl);
 
-    return this.http.post<any>(this.baseUrl + "/newOrder", payload);
+    return this.http.post<any>(this.baseUrl + "/save_order", payload);
   }
 
   getCategories() {

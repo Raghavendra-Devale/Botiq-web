@@ -14,10 +14,13 @@ export class SidebarComponent {
   userName = '';
   initial = '';
   businessName = '';
+  orgLogo = '';
 
   ngOnInit() {
     this.userName = localStorage.getItem("owner_name") || '';
     this.businessName = localStorage.getItem("businessName") || '';
+    // this.orgLogo = localStorage.getItem("org_logo") || '';
     this.initial = this.businessName.charAt(0);
+    // console.log("orgLogo :", this.orgLogo);
   }
 }

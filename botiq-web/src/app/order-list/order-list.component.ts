@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { retry } from 'rxjs';
 
 @Component({
   selector: 'app-order-list',
@@ -20,6 +21,7 @@ export class OrderListComponent {
   orders: any[] = [];
   filteredOrders: any[] = [];
   notes: any[] = [];
+  selectedItems: any[] = [];
 
   selectedSegment: string = 'All';
   searchQuery: string = '';
@@ -85,14 +87,17 @@ export class OrderListComponent {
     if (reset) {
       this.orders = [];
       this.filteredOrders = [];
+      this.selectedItems = [];
       this.offset = 0;
     }
 
     this.orderService.getAllOrders().subscribe({
       next: (res: any) => {
         this.orders = res;
-
-        this.filterOrders();
+        this.selectedItems = res[0].order_details;
+        console.log(this.selectedItems);
+        // this.filterOrders(); // filtering based on status
+        this.applyFilters(); // filtering based on status and search
 
       },
       error: (err: any) => {
@@ -127,18 +132,21 @@ export class OrderListComponent {
   onSearchInput(event: any) {
     this.searchQuery = event.target.value;
     console.log('Search:', this.searchQuery);
-    this.fetchOrders(true);
+    // this.fetchOrders(true); should not fetch data everytime use local data
+    // this.filterOrders(); // filtering based on status
+    this.applyFilters(); // filtering based on status and search
   }
 
   onSegmentChange(segment: string) {
     this.selectedSegment = segment;
-    this.filterOrders();
+    // this.filterOrders(); // filtering based on status
+    this.applyFilters(); // filtering based on status and search
   }
 
   onCancelSearch() {
     this.searchQuery = '';
     console.log('Search cleared');
-    this.fetchOrders(true);
+    this.filterOrders();
   }
   dismissNote(id: number) {
     console.log('Dismiss note:', id);
@@ -178,18 +186,47 @@ export class OrderListComponent {
 
 
 
+  applyFilters() {
+    let temp = [...this.orders];
+
+    // 🔹 Filter by segment (status)
+    if (this.selectedSegment && this.selectedSegment !== 'All') {
+      temp = temp.filter(order =>
+        order.order_status?.toLowerCase() === this.selectedSegment.toLowerCase()
+      );
+    }
+
+    // 🔹 Filter by search
+    if (this.searchQuery && this.searchQuery.trim() !== '') {
+      const query = this.searchQuery.toLowerCase();
+
+      temp = temp.filter(order =>
+        order.customer_name?.toLowerCase().includes(query) ||
+        order.order_details?.toLowerCase().includes(query)
+      );
+    }
+
+    console.log("Selected:", this.selectedSegment);
+    console.log("Filtered:", temp.length);
+
+    this.filteredOrders = temp;
+  }
+
   filterOrders() {
     let result = [...this.orders];
 
     if (this.tabId > 0) {
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       switch (this.tabId) {
         case 1: // Due this week
           result = result.filter(order => {
             const due = new Date(order.due_date);
-            const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-            return diff >= 0 && diff <= 7;
+            due.setHours(0, 0, 0, 0); const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+            return (
+              due < today && order.order_status !== 'Delivered'
+            );
           });
           break;
 
@@ -212,7 +249,7 @@ export class OrderListComponent {
             if (!order.delivered_date) return false;
             const delivered = new Date(order.delivered_date);
             const diff = (today.getTime() - delivered.getTime()) / (1000 * 60 * 60 * 24);
-            return diff <= 7;
+            return diff >= 0 && diff <= 7;
           });
           break;
 
@@ -220,7 +257,7 @@ export class OrderListComponent {
           result = result.filter(order => {
             const created = new Date(order.order_date);
             const diff = (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-            return diff <= 7;
+            return diff >= 0 && diff <= 7;
           });
           break;
       }
@@ -242,30 +279,40 @@ export class OrderListComponent {
       );
     }
 
-    this.orders = result.map(order => this.transformOrder(order));
+    // this.orders = result.map(order => this.transformOrder(order));
+    this.filteredOrders = result.map(order => this.transformOrder(order));
     this.filteredOrders = [...this.orders];
-    console.log(" datattata ", this.orders[0]);
+    console.log(" filtered data  ", this.filteredOrders[0]);
+    console.log("api data ", this.orders);
+
 
 
   }
 
 
   transformOrder(order: any) {
-    let items: any[] = [];
+    console.log('BEFORE:', order);
 
-    try {
-      items = order.order_details ? JSON.parse(order.order_details) : [];
-    } catch {
-      items = [];
-    }
-
-    return {
+    const transformed = {
       ...order,
-
-      formattedOrderDetails: items.length
-        ? items.map(i => i.itemName).join(', ')
-        : ''
+      order_details:
+        typeof order.order_details === 'string'
+          ? JSON.parse(order.order_details)
+          : order.order_details
     };
+
+    console.log('AFTER:', transformed);
+
+    return transformed;
+  }
+
+  formatOrderDetails(details: any): string {
+    try {
+      const parsed = typeof details === 'string' ? JSON.parse(details) : details;
+      return parsed.map((item: any) => `${item.itemName} x${item.quantity}`).join(', ');
+    } catch {
+      return '';
+    }
   }
 
 }

@@ -43,6 +43,7 @@ export class AddNewOrderComponent {
   isOrderLoaded = false;
   isCategoryLoaded = false;
   pending: any;
+  jobOrders: any[] = [];
 
   calculateRowTotal(item: any): number {
     return (Number(item.price) || 0) * (Number(item.quantity) || 1);
@@ -146,6 +147,8 @@ export class AddNewOrderComponent {
     });
     this.orderService.getStatusList().subscribe(res => {
       this.statusList = res;
+      console.log("status list", this.statusList);
+
     });
   }
 
@@ -160,46 +163,59 @@ export class AddNewOrderComponent {
     });
   }
 
-  fillForm(order: any) {
+  fillForm(res: any) {
 
-    this.newOrder.customerId = order.customer_id;
-    this.newOrder.name = order.customer_name;
-    this.newOrder.mobile = order.contact_number;
-    this.newOrder.place = order.customer_address;
-    this.orderId = order.order_id;
+    this.newOrder.customerId = res.customer.customerId;
+    this.newOrder.name = res.customer.name;
+    this.newOrder.mobile = res.customer.mobile;
+    this.newOrder.place = res.customer.place;
+    this.orderId = res.order.order_id;
+
+    this.newOrder.orderStatus = res.order.order_status;
+    this.newOrder.dueDate = res.order.due_date?.split('T')[0];
+    this.newOrder.orderAmount = res.order.order_amount;
+    this.newOrder.advanceAmount = res.order.advance_amount;
+    this.newOrder.dueAmount = res.order.due_amount;
+
+    this.newOrder.urgent = res.order.order_priority === 1;
+
+    // ✅ FIXED boolean
+    this.newOrder.hasJobOrder = !!res.order.has_job_order;
+
+    // ✅ FIXED source of order items
+    this.orderDetails = (res.order.order_details || []).map((item: any) => ({
+      itemName: (item.itemName || item.item_name || '')
+        .trim()
+        .toLowerCase(),
+      quantity: item.quantity || 1,
+      price: item.price || 0
+    }));
+
+    // ✅ Measurements
+    this.measurementImages = (res.details?.measurements || []).map((base64: string) => ({
+      base64,
+      blobUrl: this.convertBase64ToBlobUrl(base64)
+    }));
+
+    // ✅ Patterns
+    this.patternImages = (res.details?.patterns || []).map((base64: string) => ({
+      base64,
+      blobUrl: this.convertBase64ToBlobUrl(base64)
+    }));
+
+    // ✅ Materials
+    this.materialImages = (res.details?.materials || []).map((base64: string) => ({
+      base64,
+      blobUrl: this.convertBase64ToBlobUrl(base64)
+    }));
+
+    this.jobOrders = res.jobOrders || [];
 
 
-    this.newOrder.orderStatus = order.order_status;
-    this.newOrder.dueDate = order.due_date?.split('T')[0];
-    this.newOrder.orderAmount = order.order_amount;
-    this.newOrder.advanceAmount = order.advance_amount;
-    this.newOrder.dueAmount = order.due_amount;
-
-    this.newOrder.urgent = order.order_priority === 1;
-    this.newOrder.hasJobOrder = order.has_job_order === 1;
-
-    console.log("order_details from API:", order.order_details);
-    if (order.order_details) {
-      try {
-        let parsed = typeof order.order_details === 'string'
-          ? JSON.parse(order.order_details)
-          : order.order_details;
-
-        this.orderDetails = parsed.map((item: any) => ({
-          itemName: (item.itemName || item.item_name || '')
-            .trim()
-            .toLowerCase(),
-          quantity: item.quantity || 1,
-          price: item.price || 0
-        }));
-      } catch (e) {
-        this.orderDetails = [];
-      }
-    }
     this.isOrderLoaded = true;
     this.trySync();
-    console.log('Form filled:', this.newOrder);
 
+    console.log('Form filled:', this.newOrder);
   }
 
   syncCategoriesWithOrder() {
@@ -395,7 +411,9 @@ export class AddNewOrderComponent {
         measurements: this.measurementImages,
         patterns: this.patternImages,
         materials: this.materialImages
-      }
+      },
+
+      jobOrders: this.jobOrders
     };
     this.orderState.setOrderData(payload);
 
