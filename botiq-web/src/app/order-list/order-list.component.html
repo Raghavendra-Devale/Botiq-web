@@ -64,6 +64,14 @@
         <!-- Filter Segments -->
         <div class="segments-wrapper">
             <div class="segments">
+                <!-- Dynamically rendered Custom Tab (from Dashboard navigation) -->
+                <button *ngIf="showCustomTab"
+                    [class.active]="selectedSegment === 'Custom'" 
+                    (click)="onSegmentChange('Custom')" 
+                    class="segment-btn custom-tab">
+                    {{ tabLabel }}
+                </button>
+
                 <button *ngFor="let tab of ['All','Pending','Started','Ready','Delivered','Hold']"
                     [class.active]="selectedSegment === tab" (click)="onSegmentChange(tab)" class="segment-btn">
                     {{ tab }}

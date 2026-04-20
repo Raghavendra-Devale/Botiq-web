@@ -121,7 +121,7 @@ export class OrderListComponent {
     this.orderService.deleteOrder({ id: order.order_id }).subscribe({
       next: () => {
         this.orders.splice(index, 1); // remove from UI
-        this.filterOrders();
+        this.applyFilters();
       },
       error: (err: any) => {
         console.log(err);
@@ -146,7 +146,7 @@ export class OrderListComponent {
   onCancelSearch() {
     this.searchQuery = '';
     console.log('Search cleared');
-    this.filterOrders();
+    this.applyFilters();
   }
   dismissNote(id: number) {
     console.log('Dismiss note:', id);
@@ -189,8 +189,62 @@ export class OrderListComponent {
   applyFilters() {
     let temp = [...this.orders];
 
-    // 🔹 Filter by segment (status)
-    if (this.selectedSegment && this.selectedSegment !== 'All') {
+    if (this.selectedSegment === 'Custom' && this.tabId > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      switch (this.tabId) {
+        case 1: // Due this week
+          temp = temp.filter(order => {
+            if (!order.due_date) return false;
+            const due = new Date(order.due_date);
+            due.setHours(0, 0, 0, 0); 
+            // logic: due < today ?? Wait, the old logic checked due < today for tabId=1
+            // Let's implement logic: "Due this week" (diff >= 0 and diff <= 7) or just "due < today" like the previous code
+            // Actually original code for due this week did:
+            // "due < today && order.order_status !== 'Delivered'". Let's fix it accurately.
+            const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+            return diff >= 0 && diff <= 7 && order.order_status !== 'Delivered';
+          });
+          break;
+
+        case 2: // Overdue
+          temp = temp.filter(order => {
+            if (!order.due_date) return false;
+            const due = new Date(order.due_date);
+            due.setHours(0, 0, 0, 0);
+            return due < today && order.order_status !== 'Delivered';
+          });
+          break;
+
+        case 3: // Urgent
+          temp = temp.filter(order => order.order_priority === 1);
+          break;
+
+        case 4: // Ready
+          temp = temp.filter(order => order.order_status === 'Ready');
+          break;
+
+        case 5: // Delivered this week
+          temp = temp.filter(order => {
+            if (!order.delivered_date) return false;
+            const delivered = new Date(order.delivered_date);
+            const diff = (today.getTime() - delivered.getTime()) / (1000 * 60 * 60 * 24);
+            return diff >= 0 && diff <= 7;
+          });
+          break;
+
+        case 6: // New orders this week
+          temp = temp.filter(order => {
+            if (!order.order_date) return false;
+            const created = new Date(order.order_date);
+            const diff = (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+            return diff >= 0 && diff <= 7;
+          });
+          break;
+      }
+    } else if (this.selectedSegment && this.selectedSegment !== 'All') {
+      // 🔹 Filter by segment (status)
       temp = temp.filter(order =>
         order.order_status?.toLowerCase() === this.selectedSegment.toLowerCase()
       );
@@ -202,92 +256,16 @@ export class OrderListComponent {
 
       temp = temp.filter(order =>
         order.customer_name?.toLowerCase().includes(query) ||
-        order.order_details?.toLowerCase().includes(query)
-      );
-    }
-
-    console.log("Selected:", this.selectedSegment);
-    console.log("Filtered:", temp.length);
-
-    this.filteredOrders = temp;
-  }
-
-  filterOrders() {
-    let result = [...this.orders];
-
-    if (this.tabId > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      switch (this.tabId) {
-        case 1: // Due this week
-          result = result.filter(order => {
-            const due = new Date(order.due_date);
-            due.setHours(0, 0, 0, 0); const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-            return (
-              due < today && order.order_status !== 'Delivered'
-            );
-          });
-          break;
-
-        case 2: // Overdue
-          result = result.filter(order => {
-            return new Date(order.due_date) < today;
-          });
-          break;
-
-        case 3: // Urgent
-          result = result.filter(order => order.order_priority === 1);
-          break;
-
-        case 4: // Ready
-          result = result.filter(order => order.order_status === 'Ready');
-          break;
-
-        case 5: // Delivered this week
-          result = result.filter(order => {
-            if (!order.delivered_date) return false;
-            const delivered = new Date(order.delivered_date);
-            const diff = (today.getTime() - delivered.getTime()) / (1000 * 60 * 60 * 24);
-            return diff >= 0 && diff <= 7;
-          });
-          break;
-
-        case 6: // New orders this week
-          result = result.filter(order => {
-            const created = new Date(order.order_date);
-            const diff = (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-            return diff >= 0 && diff <= 7;
-          });
-          break;
-      }
-    }
-
-    if (this.selectedSegment !== 'All' && this.selectedSegment !== 'Custom') {
-      result = result.filter(order =>
-        order.order_status === this.selectedSegment
-      );
-    }
-
-
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-
-      result = result.filter(order =>
-        order.customer_name?.toLowerCase().includes(query) ||
+        (typeof order.order_details === 'string' ? order.order_details.toLowerCase().includes(query) : false) ||
         order.contact_number?.includes(query)
       );
     }
 
-    // this.orders = result.map(order => this.transformOrder(order));
-    this.filteredOrders = result.map(order => this.transformOrder(order));
-    this.filteredOrders = [...this.orders];
-    console.log(" filtered data  ", this.filteredOrders[0]);
-    console.log("api data ", this.orders);
-
-
-
+    // Transform and assign
+    this.filteredOrders = temp.map(order => this.transformOrder(order));
   }
+
+
 
 
   transformOrder(order: any) {

@@ -75,7 +75,7 @@ export class DashboardComponent {
   goToJobOrderList(jobSegment: string, tabId: number) {
 
     console.log("going to job order list", jobSegment, tabId);
-    this.router.navigate(['/order-list'],
+    this.router.navigate(['/job-order-list'],
       {
         queryParams: { jobSegment, tabId }
       });
