@@ -9,6 +9,8 @@
             <input name="place" [(ngModel)]="newOrder.place" placeholder="Place" />
 
             <input type="date" name="dueDate" [(ngModel)]="newOrder.dueDate" />
+            <input type="date" name="deliveredDate" [(ngModel)]="newOrder.deliveredDate"
+                [disabled]="newOrder.orderStatus !== 'Delivered'" />
 
             <select name="status" [(ngModel)]="newOrder.orderStatus">
                 <option value="">Select Status</option>

@@ -61,8 +61,15 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .brand-header {
@@ -166,7 +173,7 @@
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
-.custom-input:focus + .input-icon {
+.custom-input:focus+.input-icon {
     color: #667eea;
 }
 
@@ -207,11 +214,11 @@
     transition: all 0.2s ease;
 }
 
-.checkbox-container:hover input ~ .checkmark {
+.checkbox-container:hover input~.checkmark {
     background-color: #e2e8f0;
 }
 
-.checkbox-container input:checked ~ .checkmark {
+.checkbox-container input:checked~.checkmark {
     background-color: #667eea;
     border-color: #667eea;
 }
@@ -222,7 +229,7 @@
     display: none;
 }
 
-.checkbox-container input:checked ~ .checkmark:after {
+.checkbox-container input:checked~.checkmark:after {
     display: block;
 }
 
@@ -302,7 +309,7 @@
         flex-direction: column;
         gap: 1.25rem;
     }
-    
+
     .register-card {
         padding: 2rem 1.5rem;
     }

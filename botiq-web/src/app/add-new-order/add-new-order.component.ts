@@ -27,6 +27,7 @@ interface OrderModel {
   urgent: boolean;
   paymentStatus: number;
   orderDate: string;
+  deliveredDate: string;
 }
 
 @Component({
@@ -39,7 +40,7 @@ interface OrderModel {
 export class AddNewOrderComponent {
 
 
-
+  showDeliveredDate = false;
   isOrderLoaded = false;
   isCategoryLoaded = false;
   pending: any;
@@ -106,7 +107,8 @@ export class AddNewOrderComponent {
     jobOrderDetails: '',
     urgent: false,
     paymentStatus: 0,
-    orderDate: new Date().toISOString()
+    orderDate: new Date().toISOString(),
+    deliveredDate: new Date().toISOString()
   };
   orderId: any;
 
@@ -179,10 +181,8 @@ export class AddNewOrderComponent {
 
     this.newOrder.urgent = res.order.order_priority === 1;
 
-    // ✅ FIXED boolean
     this.newOrder.hasJobOrder = !!res.order.has_job_order;
 
-    // ✅ FIXED source of order items
     this.orderDetails = (res.order.order_details || []).map((item: any) => ({
       itemName: (item.itemName || item.item_name || '')
         .trim()
@@ -191,19 +191,16 @@ export class AddNewOrderComponent {
       price: item.price || 0
     }));
 
-    // ✅ Measurements
     this.measurementImages = (res.details?.measurements || []).map((base64: string) => ({
       base64,
       blobUrl: this.convertBase64ToBlobUrl(base64)
     }));
 
-    // ✅ Patterns
     this.patternImages = (res.details?.patterns || []).map((base64: string) => ({
       base64,
       blobUrl: this.convertBase64ToBlobUrl(base64)
     }));
 
-    // ✅ Materials
     this.materialImages = (res.details?.materials || []).map((base64: string) => ({
       base64,
       blobUrl: this.convertBase64ToBlobUrl(base64)
@@ -216,6 +213,22 @@ export class AddNewOrderComponent {
     this.trySync();
 
     console.log('Form filled:', this.newOrder);
+  }
+
+  formatDateOnly(date: any): string | null {
+    if (!date) return null;
+
+    if (typeof date === 'string' && !date.includes('T')) {
+      return date;
+    }
+
+    const d = new Date(date);
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   syncCategoriesWithOrder() {
@@ -400,7 +413,7 @@ export class AddNewOrderComponent {
         orderAmount: this.newOrder.orderAmount,
         advanceAmount: this.newOrder.advanceAmount,
         dueAmount: this.newOrder.dueAmount,
-
+        deliveredDate: this.formatDateOnly(this.newOrder.deliveredDate),
         hasJobOrder: this.newOrder.hasJobOrder ? 1 : 0,
         orderPriority: this.newOrder.orderPriority,
       },
@@ -454,7 +467,6 @@ export class AddNewOrderComponent {
     this.newOrder.dueAmount = this.newOrder.orderAmount - (this.newOrder.advanceAmount || 0);
     this.newOrder.orderPriority = this.newOrder.urgent ? 1 : 0;
     this.newOrder.hasJobOrder = !!this.newOrder.hasJobOrder;
-
     const payload = {
       customer: {
         customerId: this.newOrder.customerId,
@@ -475,7 +487,10 @@ export class AddNewOrderComponent {
         dueAmount: this.newOrder.dueAmount,
 
         hasJobOrder: this.newOrder.hasJobOrder ? 1 : 0,
-        orderPriority: this.newOrder.orderPriority || 0
+        orderPriority: this.newOrder.orderPriority || 0,
+        deliveredDate: this.newOrder.orderStatus === 'Delivered'
+          ? this.newOrder.deliveredDate
+          : null
       },
 
       orderDetails: this.orderDetails,

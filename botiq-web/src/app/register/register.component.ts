@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { OrderService } from '../order.service';
@@ -13,7 +12,7 @@ import { AuthService } from '../auth/auth.service';
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
 })
-export class RegisterComponent {
+export class RegisterComponent implements AfterViewInit {
 
   registerData = {
     orgName: '',
@@ -22,58 +21,94 @@ export class RegisterComponent {
     phone: '',
     address: '',
     terms: false
-  }
+  };
 
-  recaptchaVerifier!: any;
+  isLoading = false;
 
-
-  constructor(private router: Router, private http: HttpClient,
+  constructor(
+    private router: Router,
     private orderService: OrderService,
     private authService: AuthService
   ) { }
 
-  ngOnInit() {
+  ngAfterViewInit() {
     this.authService.setupRecaptcha('recaptcha-container');
   }
 
-  onSubmit(registerForm: any) {
-    this.registerData.orgName = registerForm.controls['orgName'].value;
-    this.registerData.ownerName = registerForm.controls['ownerName'].value;
-    this.registerData.email = registerForm.controls['email'].value;
-    this.registerData.phone = registerForm.controls['phone'].value;
-    this.registerData.address = registerForm.controls['address'].value;
-    this.registerData.terms = registerForm.controls['terms'].value;
+  onSubmit(form: any) {
+    this.registerData.phone = this.normalizeIndianPhone(this.registerData.phone);
+    this.trimInputs();
 
-    this.searchByPhoneNumber();
-  }
-
-  async sendOtp() {
-    try {
-      if (!this.registerData.phone || this.registerData.phone.length !== 10) {
-        alert('Enter a valid 10-digit number');
-        return;
-      }
-      await this.authService.sendOTP('+91' + this.registerData.phone);
-      this.router.navigate(['/verify-otp'], { state: { registerData: this.registerData } });
-    } catch (err) {
-      console.error(err);
-      alert('Failed to send OTP');
+    if (form.invalid) {
+      alert('Please fill all required fields correctly');
+      return;
     }
+
+    const phoneRegex = /^[6-9]\d{9}$/;
+
+    if (!phoneRegex.test(this.registerData.phone)) {
+      alert('Enter a valid Indian mobile number');
+      return;
+    }
+
+    this.handleRegistrationFlow();
+  }
+  private normalizeIndianPhone(phone: string): string {
+    phone = phone.replace(/\D/g, '');
+
+
+    if (phone.startsWith('91') && phone.length === 12) {
+      phone = phone.substring(2);
+    }
+
+    return phone;
+  }
+  private trimInputs() {
+    this.registerData = {
+      ...this.registerData,
+      orgName: this.registerData.orgName.trim(),
+      ownerName: this.registerData.ownerName.trim(),
+      email: this.registerData.email.trim(),
+      phone: this.registerData.phone.trim(),
+      address: this.registerData.address.trim()
+    };
   }
 
-searchByPhoneNumber() {
-  if (this.registerData.phone.length === 10) {
+  private handleRegistrationFlow() {
+    if (this.isLoading) return;
+
+    this.isLoading = true;
+
     this.orderService.checkUserExists(this.registerData.phone).subscribe({
-      next: (res: any) => {
-        console.log(res);
+      next: async (res: any) => {
         if (res.exists) {
+          alert('User already exists. Please login.');
           this.router.navigate(['/login']);
         } else {
-          this.sendOtp();
+          await this.sendOtpAndNavigate();
         }
       },
-      error: (err: any) => console.log(err)
+      error: (err) => {
+        console.error(err);
+        alert('Something went wrong');
+        this.isLoading = false;
+      }
     });
   }
-}
+
+  private async sendOtpAndNavigate() {
+    try {
+      await this.authService.sendOTP('+91' + this.registerData.phone);
+
+      this.router.navigate(['/verify-otp'], {
+        state: { registerData: this.registerData }
+      });
+
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || 'Failed to send OTP');
+    } finally {
+      this.isLoading = false;
+    }
+  }
 }
