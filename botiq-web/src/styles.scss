@@ -1,0 +1,122 @@
+// @use '@angular/material' as mat;
+
+// Load your custom theme
+@use './styles/theme/custom-theme' as *;
+
+/* 
+ * Botiq-Web Premium Design System 
+ * Global Styles and Variables
+ */
+
+:root {
+  /* Brand Colors */
+  --primary-accent: #3b82f6;
+  /* Brilliant blue */
+  --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --secondary-accent: #10b981;
+  /* Emerald */
+  --secondary-gradient: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  --warning-accent: #f59e0b;
+  /* Amber */
+  --danger-accent: #ef4444;
+  /* Coral red */
+
+  /* Backgrounds */
+  --bg-primary: #f8fafc;
+  /* Soft page background */
+  --bg-card: rgba(255, 255, 255, 0.85);
+  /* Glassmorphism card bg */
+  --bg-card-solid: #ffffff;
+
+  /* Text Colors */
+  --text-primary: #1e293b;
+  /* Dark slate */
+  --text-secondary: #64748b;
+  /* Medium slate */
+  --text-light: #ffffff;
+
+  /* Borders and Shadows */
+  --border-light: rgba(0, 0, 0, 0.05);
+  --border-strong: #e2e8f0;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  --shadow-floating: 0 20px 40px -10px rgba(59, 130, 246, 0.15);
+
+  /* Typography */
+  --font-base: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: 'Outfit', -apple-system, sans-serif;
+
+  /* Interactions */
+  --transition-fast: 0.15s ease-out;
+  --transition-md: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --border-radius-sm: 8px;
+  --border-radius-md: 16px;
+  --border-radius-lg: 24px;
+  --border-radius-pill: 9999px;
+}
+
+/* Global Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-base);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+a {
+  text-decoration: none;
+  color: var(--primary-accent);
+  transition: color var(--transition-fast);
+}
+
+/* Base Form Styling overrides useful globally */
+button {
+  font-family: var(--font-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Global Utility Classes */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--border-radius-md);
+}
+
+.gradient-text {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

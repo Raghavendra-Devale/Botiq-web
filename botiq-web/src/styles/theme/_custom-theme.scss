@@ -1,0 +1,64 @@
+@use '@angular/material' as mat;
+
+// 1. Core (only once in whole app)
+@include mat.core();
+
+// 2. Define custom palette FIRST
+$my-primary: (
+    50: #eef2ff,
+    100: #e0e7ff,
+    200: #c7d2fe,
+    300: #a5b4fc,
+    400: #818cf8,
+    500: #6366f1,
+    600: #4f46e5,
+    700: #4338ca,
+    800: #3730a3,
+    900: #312e81,
+    contrast: (50: black,
+        100: black,
+        200: black,
+        300: black,
+        400: white,
+        500: white,
+        600: white,
+        700: white,
+        800: white,
+        900: white)
+);
+
+// 3. Create palettes
+$primary: mat.define-palette($my-primary, 600);
+$accent: mat.define-palette($my-primary, 300);
+$warn: mat.define-palette(mat.$red-palette);
+
+// 4. Create theme
+$theme: mat.define-light-theme((color: (primary: $primary,
+                accent: $accent,
+                warn: $warn,
+            ),
+            typography: mat.define-typography-config(),
+            density: 0));
+
+
+:root {
+    /* Primary */
+    --primary: #{mat.get-color-from-palette($primary, 500)};
+    --primary-dark: #{mat.get-color-from-palette($primary, 700)};
+    --primary-light: #{mat.get-color-from-palette($primary, 100)};
+
+    /* Accent (optional) */
+    --accent: #{mat.get-color-from-palette($accent, 500)};
+
+    /* Warn */
+    --warn: #{mat.get-color-from-palette($warn, 500)};
+
+    /* Neutral UI */
+    --bg-surface: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+}
+
+// 5. Apply theme
+@include mat.all-component-themes($theme);
