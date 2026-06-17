@@ -11,6 +11,12 @@ import jakarta.servlet.http.HttpServletRequest;
 public class FirebaseUtils {
     
     public static String extractUidFromAuthorization(String authorizationHeader) {
+        org.springframework.security.core.Authentication auth = 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.dfive.botiq.entities.UserPrincipal) {
+            return ((com.dfive.botiq.entities.UserPrincipal) auth.getPrincipal()).getFirebaseUid();
+        }
+
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new IllegalArgumentException("Authorization header missing or malformed.");
         }

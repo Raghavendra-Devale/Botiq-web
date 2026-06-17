@@ -2,6 +2,7 @@ package com.dfive.botiq.controllers;
 
 import com.dfive.botiq.entities.BotiqCustomer;
 import com.dfive.botiq.entities.OrgUser;
+import com.dfive.botiq.entities.UserPrincipal;
 import com.dfive.botiq.repositories.OrgUserRepository;
 import com.dfive.botiq.util.FirebaseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,14 +14,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.net.http.HttpClient;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
+
+import java.time.LocalDate;
+import java.sql.Date;
 
 @RestController
 @RequestMapping("/web")
@@ -31,8 +41,58 @@ public class WebController {
     @Autowired
     OrgUserRepository orgUserRepository;
 
+    @Autowired
+    private CacheManager cacheManager;
+
     ObjectMapper mapper = new ObjectMapper();
 
+    private UserPrincipal getUserPrincipal() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal) {
+            return (UserPrincipal) auth.getPrincipal();
+        }
+        throw new org.springframework.security.authentication.BadCredentialsException(
+                "User session is invalid or expired");
+    }
+
+    private void evictPartnersCache(Integer orgId) {
+        System.out.println("evictPartnersCache");
+        if (orgId != null && cacheManager != null) {
+            org.springframework.cache.Cache cache = cacheManager.getCache("partners");
+            if (cache != null) {
+                cache.evict(orgId);
+                System.out.println("Evicted partners cache for orgId: " + orgId);
+            }
+        }
+    }
+
+    private void evictGetSettingsData(Integer orgId) {
+        System.out.println("Evicting settings data for orgId: " + orgId);
+        if (orgId != null && cacheManager != null) {
+            org.springframework.cache.Cache cache = cacheManager.getCache("settings");
+            if (cache != null) {
+                cache.evict(orgId);
+                System.out.println("Evicted settings cache for orgId: " + orgId);
+            }
+        }
+    }
+
+    private void evictGetMasterData() {
+        System.out.println("Evicting master data");
+        if (cacheManager != null) {
+
+            org.springframework.cache.Cache cache = cacheManager.getCache("masterData");
+
+            if (cache != null) {
+
+                cache.clear();
+
+                System.out.println(
+                        "Evicted all masterData cache entries");
+            }
+        }
+    }
 
     @PostMapping("/saveOrderDetails")
     public ResponseEntity<?> saveOrderDetails(
@@ -42,46 +102,36 @@ public class WebController {
         try {
 
             Integer orderId = ((Number) payload.get("orderId")).intValue();
+
             Integer detailsType = ((Number) payload.get("detailsType")).intValue();
+
             String detailsData = (String) payload.get("detailsData");
 
-            String authorization =
-                    request.getHeader("Authorization");
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
-            String uid =
-                    FirebaseUtils.extractUidFromAuthorization(
-                            authorization);
-
-            Integer orgId =
-                    jdbcTemplate.queryForObject(
-                            "SELECT org_id FROM org_user WHERE firebase_id = ?",
-                            Integer.class,
-                            uid);
-
-            Integer detailsId =
-                    jdbcTemplate.queryForObject(
-                            """
+            Integer detailsId = jdbcTemplate.queryForObject(
+                    """
                             INSERT INTO botiq_order_docs_w
                             (
                                 order_id,
                                 org_id,
                                 details_type,
                                 details_data,
-                                updated_date,
-                                updated_by
+                                updated_date
                             )
                             VALUES
                             (
-                                ?, ?, ?, ?, NOW(), ?
+                                ?, ?, ?, ?, NOW()
                             )
                             RETURNING details_id
                             """,
-                            Integer.class,
-                            orderId,
-                            orgId,
-                            detailsType,
-                            detailsData,
-                            uid);
+                    Integer.class,
+                    orderId,
+                    orgId,
+                    detailsType,
+                    detailsData);
 
             return ResponseEntity.ok(
                     Map.of(
@@ -89,13 +139,13 @@ public class WebController {
                             "detailsId", detailsId));
 
         } catch (Exception e) {
+
             e.printStackTrace();
 
             return ResponseEntity.status(500)
                     .body("Error saving order details");
         }
     }
-
 
     @PostMapping("/saveOrUpdateJobOrder")
     public ResponseEntity<?> saveOrUpdateJobOrder(
@@ -104,43 +154,50 @@ public class WebController {
 
         try {
 
-            String authorization =
-                    request.getHeader("Authorization");
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
-            String uid =
-                    FirebaseUtils.extractUidFromAuthorization(
-                            authorization);
+            LocalDate jobDueDate = null;
 
-            Integer orgId =
-                    jdbcTemplate.queryForObject(
-                            "SELECT org_id FROM org_user WHERE firebase_id = ?",
-                            Integer.class,
-                            uid);
+            if (jobOrder.get("jobDueDate") != null) {
+
+                String dueDateStr = jobOrder.get("jobDueDate").toString();
+
+                jobDueDate = Instant.parse(dueDateStr)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+            }
+
+            Date sqlDueDate = jobDueDate != null
+                    ? Date.valueOf(jobDueDate)
+                    : null;
 
             Integer jobId = null;
 
             if (jobOrder.get("jobId") != null) {
-                jobId = ((Number) jobOrder.get("jobId")).intValue();
+                jobId = ((Number) jobOrder.get("jobId"))
+                        .intValue();
             }
 
             // UPDATE
             if (jobId != null && jobId > 0) {
 
                 String updateSql = """
-                    UPDATE botiq_job_order_w
-                    SET
-                        order_id = ?,
-                        customer_id = ?,
-                        partner_id = ?,
-                        job_order_details = ?,
-                        job_due_date = ?,
-                        job_priority = ?,
-                        job_order_status = ?,
-                        updated_date = NOW(),
-                        updated_by = ?
-                    WHERE job_id = ?
-                      AND org_id = ?
-                    """;
+                        UPDATE botiq_job_order_w
+                        SET
+                            order_id = ?,
+                            customer_id = ?,
+                            partner_id = ?,
+                            job_order_details = ?,
+                            job_due_date = ?,
+                            job_priority = ?,
+                            job_order_status = ?,
+                            updated_date = NOW(),
+                            updated_by = ?
+                        WHERE job_id = ?
+                          AND org_id = ?
+                        """;
 
                 int rows = jdbcTemplate.update(
                         updateSql,
@@ -148,7 +205,7 @@ public class WebController {
                         jobOrder.get("customerId"),
                         jobOrder.get("partnerId"),
                         jobOrder.get("jobOrderDetails"),
-                        jobOrder.get("jobDueDate"),
+                        sqlDueDate,
                         jobOrder.get("jobPriority"),
                         jobOrder.get("jobOrderStatus"),
                         uid,
@@ -161,33 +218,36 @@ public class WebController {
                                     "status", "updated",
                                     "jobId", jobId));
                 }
+
+                return ResponseEntity.badRequest()
+                        .body("Job Order not found");
             }
 
             // INSERT
             String insertSql = """
-                INSERT INTO botiq_job_order_w
-                (
-                    org_id,
-                    order_id,
-                    customer_id,
-                    partner_id,
-                    job_order_details,
-                    job_due_date,
-                    job_priority,
-                    job_order_status,
-                    created_date,
-                    updated_date,
-                    updated_by
-                )
-                VALUES
-                (
-                    ?, ?, ?, ?, ?, ?, ?, ?,
-                    NOW(),
-                    NOW(),
-                    ?
-                )
-                RETURNING job_id
-                """;
+                    INSERT INTO botiq_job_order_w
+                    (
+                        org_id,
+                        order_id,
+                        customer_id,
+                        partner_id,
+                        job_order_details,
+                        job_due_date,
+                        job_priority,
+                        job_order_status,
+                        created_date,
+                        updated_date,
+                        updated_by
+                    )
+                    VALUES
+                    (
+                        ?, ?, ?, ?, ?, ?, ?, ?,
+                        NOW(),
+                        NOW(),
+                        ?
+                    )
+                    RETURNING job_id
+                    """;
 
             Integer newJobId = jdbcTemplate.queryForObject(
                     insertSql,
@@ -197,7 +257,7 @@ public class WebController {
                     jobOrder.get("customerId"),
                     jobOrder.get("partnerId"),
                     jobOrder.get("jobOrderDetails"),
-                    jobOrder.get("jobDueDate"),
+                    sqlDueDate,
                     jobOrder.get("jobPriority"),
                     jobOrder.get("jobOrderStatus"),
                     uid);
@@ -208,13 +268,13 @@ public class WebController {
                             "jobId", newJobId));
 
         } catch (Exception e) {
+
             e.printStackTrace();
 
             return ResponseEntity.status(500)
                     .body("Error saving job order");
         }
     }
-
 
     @PostMapping("/deleteJobDoc")
     public ResponseEntity<?> deleteJobDoc(
@@ -236,26 +296,18 @@ public class WebController {
                         .body("jobDocId and jobId are required");
             }
 
-            String authorization = request.getHeader("Authorization");
-
-            String uid =
-                    FirebaseUtils.extractUidFromAuthorization(
-                            authorization);
-
-            Integer orgId =
-                    jdbcTemplate.queryForObject(
-                            "SELECT org_id FROM org_user WHERE firebase_id = ?",
-                            Integer.class,
-                            uid);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             int rows = jdbcTemplate.update("""
-                DELETE FROM botiq_job_docs_w jd
-                USING botiq_job_order_w jo
-                WHERE jd.job_doc_id = ?
-                  AND jd.job_id = ?
-                  AND jd.job_id = jo.job_id
-                  AND jo.org_id = ?
-                """,
+                    DELETE FROM botiq_job_docs_w jd
+                    USING botiq_job_order_w jo
+                    WHERE jd.job_doc_id = ?
+                      AND jd.job_id = ?
+                      AND jd.job_id = jo.job_id
+                      AND jo.org_id = ?
+                    """,
                     jobDocId,
                     jobId,
                     orgId);
@@ -295,34 +347,27 @@ public class WebController {
                         .body("Partner ID is required");
             }
 
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            Integer orgId = jdbcTemplate.queryForObject(
-                    "SELECT org_id FROM org_user WHERE firebase_id = ?",
-                    Integer.class,
-                    uid);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             String sql = """
-                SELECT partner_category_id,
-                       partner_category
-                FROM botiq_partner_w
-                WHERE partner_id = ?
-                  AND org_id = ?
-                """;
+                    SELECT partner_category_id,
+                           partner_category
+                    FROM botiq_partner_w
+                    WHERE partner_id = ?
+                      AND org_id = ?
+                    """;
 
-            List<Map<String, Object>> result =
-                    jdbcTemplate.queryForList(sql, partnerId, orgId);
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, partnerId, orgId);
 
             if (result.isEmpty()) {
                 return ResponseEntity.ok(Collections.emptyList());
             }
 
-            String categoryIds =
-                    (String) result.get(0).get("partner_category_id");
+            String categoryIds = (String) result.get(0).get("partner_category_id");
 
-            String categoryNames =
-                    (String) result.get(0).get("partner_category");
+            String categoryNames = (String) result.get(0).get("partner_category");
 
             if (categoryIds == null || categoryIds.isBlank()) {
                 return ResponseEntity.ok(Collections.emptyList());
@@ -372,39 +417,29 @@ public class WebController {
 
             Integer tabId = payload.get("tabId") != null ? ((Number) payload.get("tabId")).intValue() : null;
 
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String orgSql = """
-                SELECT org_id
-                FROM org_user
-                WHERE firebase_id = ?
-                """;
-
-            Integer orgId = jdbcTemplate.queryForObject(
-                    orgSql,
-                    Integer.class,
-                    uid);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             StringBuilder sql = new StringBuilder("""
-                SELECT
-                    o.*,
-                    c.customer_name,
-                    c.contact_number,
-                    c.customer_address,
-                    (
-                        SELECT od.details_data
-                        FROM botiq_order_docs_w od
-                        WHERE od.order_id = o.order_id
-                          AND od.details_type = 2
-                        ORDER BY od.details_id
-                        LIMIT 1
-                    ) AS details_data
-                FROM botiq_order_w o
-                LEFT JOIN botiq_customer_w c
-                    ON o.customer_id = c.customer_id
-                WHERE o.org_id = ?
-                """);
+                    SELECT
+                        o.*,
+                        c.customer_name,
+                        c.contact_number,
+                        c.customer_address,
+                        (
+                            SELECT od.details_data
+                            FROM botiq_order_docs_w od
+                            WHERE od.order_id = o.order_id
+                              AND od.details_type = 2
+                            ORDER BY od.details_id
+                            LIMIT 1
+                        ) AS details_data
+                    FROM botiq_order_w o
+                    LEFT JOIN botiq_customer_w c
+                        ON o.customer_id = c.customer_id
+                    WHERE o.org_id = ?
+                    """);
 
             List<Object> params = new ArrayList<>();
             params.add(orgId);
@@ -417,59 +452,59 @@ public class WebController {
                     // Due this week
                     case 1:
                         sql.append("""
-                            AND o.order_status NOT IN ('Delivered','Hold')
-                            AND o.due_date >= date_trunc('week', CURRENT_DATE)::date
-                            AND o.due_date < (
-                                date_trunc('week', CURRENT_DATE)
-                                + interval '7 days'
-                            )::date
-                            """);
+                                AND o.order_status NOT IN ('Delivered','Hold')
+                                AND o.due_date >= date_trunc('week', CURRENT_DATE)::date
+                                AND o.due_date < (
+                                    date_trunc('week', CURRENT_DATE)
+                                    + interval '7 days'
+                                )::date
+                                """);
                         break;
 
                     // Overdue
                     case 2:
                         sql.append("""
-                            AND o.order_status NOT IN ('Delivered','Hold')
-                            AND o.due_date < date_trunc('week', CURRENT_DATE)::date
-                            """);
+                                AND o.order_status NOT IN ('Delivered','Hold')
+                                AND o.due_date < date_trunc('week', CURRENT_DATE)::date
+                                """);
                         break;
 
                     // Priority
                     case 3:
                         sql.append("""
-                            AND o.order_status NOT IN ('Delivered','Hold')
-                            AND o.order_priority = 1
-                            """);
+                                AND o.order_status NOT IN ('Delivered','Hold')
+                                AND o.order_priority = 1
+                                """);
                         break;
 
                     // Ready
                     case 4:
                         sql.append("""
-                            AND o.order_status = 'Ready'
-                            """);
+                                AND o.order_status = 'Ready'
+                                """);
                         break;
 
                     // Delivered this week
                     case 5:
                         sql.append("""
-                            AND o.order_status = 'Delivered'
-                            AND o.delivered_date >= date_trunc('week', CURRENT_DATE)::date
-                            AND o.delivered_date < (
-                                date_trunc('week', CURRENT_DATE)
-                                + interval '7 days'
-                            )::date
-                            """);
+                                AND o.order_status = 'Delivered'
+                                AND o.delivered_date >= date_trunc('week', CURRENT_DATE)::date
+                                AND o.delivered_date < (
+                                    date_trunc('week', CURRENT_DATE)
+                                    + interval '7 days'
+                                )::date
+                                """);
                         break;
 
                     // Orders created this week
                     case 6:
                         sql.append("""
-                            AND o.order_date >= date_trunc('week', CURRENT_DATE)::date
-                            AND o.order_date < (
-                                date_trunc('week', CURRENT_DATE)
-                                + interval '7 days'
-                            )::date
-                            """);
+                                AND o.order_date >= date_trunc('week', CURRENT_DATE)::date
+                                AND o.order_date < (
+                                    date_trunc('week', CURRENT_DATE)
+                                    + interval '7 days'
+                                )::date
+                                """);
                         break;
                 }
 
@@ -478,8 +513,8 @@ public class WebController {
                     && !"Custom".equals(status)) {
 
                 sql.append("""
-                    AND o.order_status = ?
-                    """);
+                        AND o.order_status = ?
+                        """);
 
                 params.add(status);
             }
@@ -490,29 +525,28 @@ public class WebController {
                 String search = "%" + searchCriteria.trim() + "%";
 
                 sql.append("""
-                    AND (
-                        c.customer_name ILIKE ?
-                        OR c.contact_number ILIKE ?
-                    )
-                    """);
+                        AND (
+                            c.customer_name ILIKE ?
+                            OR c.contact_number ILIKE ?
+                        )
+                        """);
 
                 params.add(search);
                 params.add(search);
             }
 
             sql.append("""
-                ORDER BY o.updated_date DESC
-                LIMIT ?
-                OFFSET ?
-                """);
+                    ORDER BY o.updated_date DESC
+                    LIMIT ?
+                    OFFSET ?
+                    """);
 
             params.add(limit);
             params.add(offset);
 
-            List<Map<String, Object>> orders =
-                    jdbcTemplate.queryForList(
-                            sql.toString(),
-                            params.toArray());
+            List<Map<String, Object>> orders = jdbcTemplate.queryForList(
+                    sql.toString(),
+                    params.toArray());
 
             return ResponseEntity.ok(orders);
 
@@ -522,7 +556,6 @@ public class WebController {
                     .body("Error fetching orders");
         }
     }
-
 
     @Transactional
     @PostMapping("/deleteCompleteOrder")
@@ -536,59 +569,53 @@ public class WebController {
 
         try {
 
-            String authorization = request.getHeader("Authorization");
-
-            String uid = FirebaseUtils.extractUidFromAuthorization(
-                            authorization);
-
-            Integer orgId = jdbcTemplate.queryForObject(
-                            "SELECT org_id FROM org_user WHERE firebase_id = ?",
-                            Integer.class,
-                            uid);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             Integer exists = jdbcTemplate.queryForObject(
-                            """
+                    """
                             SELECT COUNT(*)
                             FROM botiq_order_w
                             WHERE order_id = ?
                               AND org_id = ?
                             """,
-                            Integer.class,
-                            orderId,
-                            orgId);
+                    Integer.class,
+                    orderId,
+                    orgId);
 
             if (exists == null || exists == 0) {
                 return ResponseEntity.status(404).body("Order not found");
             }
 
             jdbcTemplate.update("""
-                DELETE FROM botiq_order_docs_w
-                WHERE order_id = ?
-                """, orderId);
+                    DELETE FROM botiq_order_docs_w
+                    WHERE order_id = ?
+                    """, orderId);
 
             jdbcTemplate.update("""
-                DELETE FROM botiq_job_docs_w jd
-                USING botiq_job_order_w jo
-                WHERE jd.job_id = jo.job_id
-                  AND jo.order_id = ?
-                  AND jo.org_id = ?
-                """,
+                    DELETE FROM botiq_job_docs_w jd
+                    USING botiq_job_order_w jo
+                    WHERE jd.job_id = jo.job_id
+                      AND jo.order_id = ?
+                      AND jo.org_id = ?
+                    """,
                     orderId,
                     orgId);
 
             jdbcTemplate.update("""
-                DELETE FROM botiq_job_order_w
-                WHERE order_id = ?
-                  AND org_id = ?
-                """,
+                    DELETE FROM botiq_job_order_w
+                    WHERE order_id = ?
+                      AND org_id = ?
+                    """,
                     orderId,
                     orgId);
 
             jdbcTemplate.update("""
-                DELETE FROM botiq_order_w
-                WHERE order_id = ?
-                  AND org_id = ?
-                """,
+                    DELETE FROM botiq_order_w
+                    WHERE order_id = ?
+                      AND org_id = ?
+                    """,
                     orderId,
                     orgId);
 
@@ -604,13 +631,11 @@ public class WebController {
         }
     }
 
-
-
     @PostMapping("/addOrUpdatePartner")
     public ResponseEntity<?> addOrUpdatePartner(@RequestBody Map<String, Object> partner, HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             String insertPartner = """
                     INSERT INTO botiq_partner_w
@@ -634,6 +659,13 @@ public class WebController {
                     partner.get("notes"),
                     partner.get("enabled"));
 
+            Object orgIdObj = partner.get("orgId");
+            Integer orgId = null;
+            if (orgIdObj != null) {
+                orgId = ((Number) orgIdObj).intValue();
+            }
+            evictPartnersCache(orgId);
+
             return ResponseEntity.ok(Map.of("success", true, "message", "Partner added successfully"));
         } catch (Exception e) {
             e.printStackTrace();
@@ -644,8 +676,8 @@ public class WebController {
 
     @PostMapping("/isPartnerUsedInJobOrder")
     public ResponseEntity<?> isPartnerUsedInJobOrder(@RequestBody Integer partnerId, HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+        UserPrincipal principal = getUserPrincipal();
+        String uid = principal.getFirebaseUid();
 
         String partnerUsed = "SELECT COUNT(*) as count FROM botiq_job_order_w WHERE partner_id = ?";
 
@@ -660,8 +692,8 @@ public class WebController {
     public ResponseEntity<?> isSkillLinkedToJobOrders(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             Integer skillId = ((Number) payload.get("skillId")).intValue();
             Integer partnerId = ((Number) payload.get("partnerId")).intValue();
@@ -681,8 +713,8 @@ public class WebController {
     public ResponseEntity<?> removeSkillFromPartner(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             Integer partnerId = ((Number) payload.get("partnerId")).intValue();
             Integer categoryId = ((Number) payload.get("categoryId")).intValue();
@@ -722,8 +754,8 @@ public class WebController {
     public ResponseEntity<?> removeSkillFromJobOrders(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             Integer skillId = ((Number) payload.get("skillId")).intValue();
             Integer partnerId = ((Number) payload.get("partnerId")).intValue();
@@ -759,19 +791,18 @@ public class WebController {
         }
     }
 
-    @PostMapping("/getSettingsData")
-    public ResponseEntity<?> getSettingsData(HttpServletRequest request) {
+    @Cacheable(value = "settings", key = "#settingsId")
+    @PostMapping("/getSettingsData/{settingsId}")
+    public ResponseEntity<?> getSettingsData(@PathVariable int settingsId, HttpServletRequest request) {
+        System.out.println("Database hit for settings ");
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
+            if (settingsId != orgId) {
+                return ResponseEntity.status(404).body("Settings not found");
             }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
-
             String sql = "SELECT * FROM org_settings WHERE org_id = ?";
             List<Map<String, Object>> settings = jdbcTemplate.queryForList(sql, orgId);
 
@@ -811,15 +842,9 @@ public class WebController {
     @PostMapping("/saveMasterCategory")
     public ResponseEntity<?> saveMasterCategory(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             String type = (String) payload.get("type"); // "workCategories" or "partnerCategories"
             String category = (String) payload.get("category");
@@ -837,7 +862,8 @@ public class WebController {
                         "VALUES ((SELECT COALESCE(MAX(key_id), 0) + 1 FROM master_table WHERE master_type = ? AND org_id = ?), ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
                 jdbcTemplate.update(insertSql, type, orgId, category, type, orgId);
             }
-
+            evictGetMasterData(); // clearing cache
+            evictGetSettingsData(orgId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             e.printStackTrace();
@@ -845,18 +871,20 @@ public class WebController {
         }
     }
 
-    @PostMapping("/getMasterData")
-    public ResponseEntity<?> getMasterData(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
-        try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+    @Cacheable(value = "masterData", key = "#masterDataId + '_' + #payload['type']", unless = "#result.body == null")
+    @PostMapping("/getMasterData/{masterDataId}")
+    public ResponseEntity<?> getMasterData(@PathVariable int masterDataId, @RequestBody Map<String, Object> payload,
+            HttpServletRequest request) {
 
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
+        System.out.println("HITTING DB FOR MASTER DATA");
+
+        try {
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
+            if (orgId != masterDataId) {
+                return ResponseEntity.status(404).body("Org ID not found");
             }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
             String type = (String) payload.get("type"); // "workCategories" or "partnerCategories"
 
             String sql = "SELECT key_id, key_name FROM master_table WHERE org_id = ? AND master_type = ? ORDER BY key_id ASC";
@@ -882,15 +910,9 @@ public class WebController {
     @PostMapping("/isWorkCategoryUsed")
     public ResponseEntity<?> isWorkCategoryUsed(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
             String categoryName = (String) payload.get("categoryName");
 
             String sql = "SELECT 1 FROM botiq_order_w WHERE org_id = ? AND (order_details LIKE ? OR CAST(order_details AS text) LIKE ?) LIMIT 1";
@@ -910,22 +932,18 @@ public class WebController {
     public ResponseEntity<?> deleteCategoryFromMaster(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             Integer categoryId = ((Number) payload.get("categoryId")).intValue();
             String type = (String) payload.get("type"); // "workCategories" or "partnerCategories"
 
             String sql = "DELETE FROM master_table WHERE key_id = ? AND master_type = ? AND org_id = ?";
             int rows = jdbcTemplate.update(sql, categoryId, type, orgId);
-
+            // clearing cache
+            evictGetMasterData();
+            evictGetSettingsData(orgId);
             return ResponseEntity.ok(Map.of("success", rows > 0, "categoryId", categoryId));
         } catch (Exception e) {
             e.printStackTrace();
@@ -937,15 +955,9 @@ public class WebController {
     public ResponseEntity<?> isPartnerCategoryUsed(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             Integer categoryId = ((Number) payload.get("categoryId")).intValue();
             String categoryIdStr = categoryId.toString();
@@ -965,15 +977,9 @@ public class WebController {
     public ResponseEntity<?> updatePartnerCategory(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             Integer categoryId = ((Number) payload.get("categoryId")).intValue();
             String categoryName = (String) payload.get("categoryName");
@@ -992,6 +998,10 @@ public class WebController {
 
             int rows = jdbcTemplate.update(updateQuery, categoryIdStr, categoryName, updatedDate, orgId, pattern);
 
+            // clearing cache
+            evictGetSettingsData(orgId);
+            evictGetMasterData();
+
             return ResponseEntity.ok(Map.of("success", true, "updatedRows", rows));
         } catch (Exception e) {
             e.printStackTrace();
@@ -1002,21 +1012,17 @@ public class WebController {
     @PostMapping("/clearOrgLogo")
     public ResponseEntity<?> clearOrgLogo(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             Integer orgSettId = ((Number) payload.get("orgSettId")).intValue();
 
             String sql = "UPDATE org_settings SET org_logo = NULL WHERE org_sett_id = ? AND org_id = ?";
             int rows = jdbcTemplate.update(sql, orgSettId, orgId);
-
+            // clearing cache
+            evictGetSettingsData(orgId);
+            evictGetMasterData();
             return ResponseEntity.ok(Map.of("success", rows > 0));
         } catch (Exception e) {
             e.printStackTrace();
@@ -1027,15 +1033,9 @@ public class WebController {
     @PostMapping("/saveBusinessData")
     public ResponseEntity<?> saveBusinessData(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-            if (users.isEmpty()) {
-                return ResponseEntity.status(404).body("User not found");
-            }
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             Integer orgSettId = ((Number) payload.get("orgSettId")).intValue();
             String workCategories = (String) payload.get("workCategories");
@@ -1051,7 +1051,9 @@ public class WebController {
 
             jdbcTemplate.update(sql, workCategories, workCategoryIds, partnerCategories, partnerCategoryIds, orgLogo,
                     orgSettId, orgId);
-
+            // clearing cache
+            evictGetSettingsData(orgId);
+            evictGetMasterData();
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             e.printStackTrace();
@@ -1063,8 +1065,8 @@ public class WebController {
     public ResponseEntity<?> updateUserEmailVerified(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             String mobileNumber = (String) payload.get("mobileNumber");
             Boolean verified = (Boolean) payload.get("verified");
@@ -1085,9 +1087,8 @@ public class WebController {
 
         try {
 
-            String authorization = request.getHeader("Authorization");
-
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             String orgUserQuery = """
                     SELECT
@@ -1228,13 +1229,9 @@ public class WebController {
     public ResponseEntity<?> checkUserExists(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            String authorizationHeader = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-
-            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
-
-            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
 
             String mobile = (String) payload.get("mobile");
 
@@ -1257,8 +1254,8 @@ public class WebController {
 
         try {
 
-            String authorizationHeader = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
 
             // job_doc_id
             Integer jobDocId = null;
@@ -1845,9 +1842,12 @@ public class WebController {
             int rows = jdbcTemplate.update(deleteSql, id, orgId);
 
             if (rows == 0) {
+                System.out.println("deleted partner");
                 return ResponseEntity.status(404)
                         .body("Partner not found");
             }
+
+            evictPartnersCache(orgId);
 
             return ResponseEntity.ok(Map.of("message", "Partner deleted successfully"));
 
@@ -1920,29 +1920,25 @@ public class WebController {
 
         try {
 
-            String authorization =
-                    request.getHeader("Authorization");
+            String authorization = request.getHeader("Authorization");
 
-            String uid =
-                    FirebaseUtils.extractUidFromAuthorization(
-                            authorization);
+            String uid = FirebaseUtils.extractUidFromAuthorization(
+                    authorization);
 
-            Integer orgId =
-                    jdbcTemplate.queryForObject(
-                            "SELECT org_id FROM org_user WHERE firebase_id = ?",
-                            Integer.class,
-                            uid);
+            Integer orgId = jdbcTemplate.queryForObject(
+                    "SELECT org_id FROM org_user WHERE firebase_id = ?",
+                    Integer.class,
+                    uid);
 
-            Integer exists =
-                    jdbcTemplate.queryForObject("""
-                        SELECT COUNT(*)
-                        FROM botiq_job_order_w
-                        WHERE job_id = ?
-                          AND org_id = ?
-                        """,
-                            Integer.class,
-                            jobId,
-                            orgId);
+            Integer exists = jdbcTemplate.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM botiq_job_order_w
+                    WHERE job_id = ?
+                      AND org_id = ?
+                    """,
+                    Integer.class,
+                    jobId,
+                    orgId);
 
             if (exists == 0) {
                 return ResponseEntity.status(404)
@@ -1951,17 +1947,17 @@ public class WebController {
 
             // Delete child records first
             jdbcTemplate.update("""
-                DELETE FROM botiq_job_docs_w
-                WHERE job_id = ?
-                """,
+                    DELETE FROM botiq_job_docs_w
+                    WHERE job_id = ?
+                    """,
                     jobId);
 
             // Delete parent record
             jdbcTemplate.update("""
-                DELETE FROM botiq_job_order_w
-                WHERE job_id = ?
-                  AND org_id = ?
-                """,
+                    DELETE FROM botiq_job_order_w
+                    WHERE job_id = ?
+                      AND org_id = ?
+                    """,
                     jobId,
                     orgId);
 
@@ -1977,6 +1973,75 @@ public class WebController {
                     .body("Error deleting job order");
         }
     }
+
+    @PostMapping("/deleteOrderDocByDetailsId")
+    public ResponseEntity<?> deleteOrderDocByDetailsId(
+            @RequestBody Map<String, Object> payload,
+            HttpServletRequest request) {
+        try {
+            Integer detailsId = ((Number) payload.get("detailsId")).intValue();
+            String authorization = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            Integer orgId = jdbcTemplate.queryForObject(
+                    "SELECT org_id FROM org_user WHERE firebase_id = ?",
+                    Integer.class,
+                    uid);
+
+            int rows = jdbcTemplate.update("""
+                    DELETE FROM botiq_order_docs_w
+                    WHERE details_id = ? AND org_id = ?
+                    """,
+                    detailsId,
+                    orgId);
+
+            return ResponseEntity.ok(Map.of("success", rows > 0));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error deleting order document");
+        }
+    }
+
+    @Transactional
+    @PostMapping("/deleteJobOrdersByOrderId")
+    public ResponseEntity<?> deleteJobOrdersByOrderId(
+            @RequestBody Map<String, Object> payload,
+            HttpServletRequest request) {
+        try {
+            Integer orderId = ((Number) payload.get("orderId")).intValue();
+            String authorization = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+            Integer orgId = jdbcTemplate.queryForObject(
+                    "SELECT org_id FROM org_user WHERE firebase_id = ?",
+                    Integer.class,
+                    uid);
+
+            // Delete child job docs first
+            jdbcTemplate.update("""
+                    DELETE FROM botiq_job_docs_w jd
+                    USING botiq_job_order_w jo
+                    WHERE jd.job_id = jo.job_id
+                      AND jo.order_id = ?
+                      AND jo.org_id = ?
+                    """,
+                    orderId,
+                    orgId);
+
+            // Delete parent job orders
+            int rows = jdbcTemplate.update("""
+                    DELETE FROM botiq_job_order_w
+                    WHERE order_id = ?
+                      AND org_id = ?
+                    """,
+                    orderId,
+                    orgId);
+
+            return ResponseEntity.ok(Map.of("success", true, "deletedCount", rows));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error deleting job orders by order ID");
+        }
+    }
+
     @PostMapping("/saveProfile")
     public ResponseEntity<?> saveProfile(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
@@ -2097,10 +2162,12 @@ public class WebController {
         }
     }
 
-    @GetMapping("/getPartnerByOrgId/{id}")
-    public ResponseEntity<?> getPartnerById(@PathVariable Integer id,
+    @Cacheable(value = "partners", key = "#id", unless = "#result.body == null")
+    @GetMapping("/getPartnersByOrgId/{id}")
+    public ResponseEntity<?> getPartnersByOrgId(@PathVariable Integer id,
             HttpServletRequest request) {
 
+        System.out.println("HITTING DB");
         try {
             String authorizationHeader = request.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
@@ -2125,7 +2192,10 @@ public class WebController {
                         map.put("partnerName", rs.getString("partnerName"));
                         map.put("partnerContact", rs.getString("partnerContact"));
                         map.put("partnerAddress", rs.getString("partnerAddress"));
-                        map.put("partnerCategoryId", rs.getLong("partnerCategoryId"));
+
+                        Long partnerCategoryId = rs.getLong("partnerCategoryId");
+                        map.put("partnerCategoryId", rs.wasNull() ? null : partnerCategoryId);
+
                         map.put("partnerCategory", rs.getString("partnerCategory"));
                         map.put("notes", rs.getString("notes"));
                         map.put("enabled", rs.getBoolean("enabled"));
@@ -2133,8 +2203,58 @@ public class WebController {
                         return map;
                     });
 
-            System.out.println("Partner: " + partners);
+            System.out.println("Partners: " + partners);
             return ResponseEntity.ok(partners);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching partners");
+        }
+    }
+
+    @GetMapping("/getPartnerById/{id}")
+    public ResponseEntity<?> getPartnerById(@PathVariable Integer id,
+            HttpServletRequest request) {
+
+        try {
+            String authorizationHeader = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+
+            String query = """
+                    SELECT partner_id AS partnerId, org_id AS orgId, partner_name AS partnerName, partner_contact AS partnerContact,
+                           partner_address AS partnerAddress, partner_category_id AS partnerCategoryId,
+                           partner_category AS partnerCategory, notes, enabled
+                    FROM botiq_partner_w
+                    WHERE partner_id = ?
+                    """;
+
+            List<Map<String, Object>> partners = jdbcTemplate.query(query, new Object[] { id },
+                    (rs, rowNum) -> {
+                        Map<String, Object> map = new LinkedHashMap<>();
+
+                        map.put("partnerId", rs.getLong("partnerId"));
+                        map.put("orgId", rs.getLong("orgId"));
+                        map.put("partnerName", rs.getString("partnerName"));
+                        map.put("partnerContact", rs.getString("partnerContact"));
+                        map.put("partnerAddress", rs.getString("partnerAddress"));
+
+                        Long partnerCategoryId = rs.getLong("partnerCategoryId");
+                        map.put("partnerCategoryId", rs.wasNull() ? null : partnerCategoryId);
+
+                        map.put("partnerCategory", rs.getString("partnerCategory"));
+                        map.put("notes", rs.getString("notes"));
+                        map.put("enabled", rs.getBoolean("enabled"));
+
+                        return map;
+                    });
+
+            if (partners.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Partner not found");
+            }
+
+            System.out.println("Partner: " + partners.get(0));
+            return ResponseEntity.ok(partners.get(0));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -2154,7 +2274,11 @@ public class WebController {
             String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
             Integer orgId = jdbcTemplate.queryForObject(userSql, Integer.class, uid);
 
-            Integer partnerId = (Integer) payload.get("partnerId");
+            Integer partnerId = null;
+            Object partnerIdObj = payload.get("partnerId");
+            if (partnerIdObj != null) {
+                partnerId = ((Number) partnerIdObj).intValue();
+            }
             String partnerName = (String) payload.get("partnerName");
             String partnerContact = (String) payload.get("partnerContact");
             String partnerAddress = (String) payload.get("partnerAddress");
@@ -2163,9 +2287,23 @@ public class WebController {
             String notes = (String) payload.get("notes");
             Object enabledObj = payload.get("enabled");
             boolean isEnabled = enabledObj != null && (Boolean) enabledObj;
+
             Integer categoryId = null;
-            if (payload.get("partnerCategoryId") != null) {
-                categoryId = ((Number) payload.get("partnerCategoryId")).intValue();
+            Object categoryIdObj = payload.get("partnerCategoryId");
+            if (categoryIdObj != null) {
+                if (categoryIdObj instanceof Number) {
+                    categoryId = ((Number) categoryIdObj).intValue();
+                } else if (categoryIdObj instanceof String && !((String) categoryIdObj).trim().isEmpty()) {
+                    try {
+                        String strVal = (String) categoryIdObj;
+                        if (strVal.contains(",")) {
+                            strVal = strVal.split(",")[0].trim();
+                        }
+                        categoryId = Integer.parseInt(strVal);
+                    } catch (NumberFormatException e) {
+                        // ignore
+                    }
+                }
             }
             if (partnerId != null) {
 
@@ -2187,6 +2325,8 @@ public class WebController {
                         notes,
                         isEnabled,
                         partnerId);
+
+                evictPartnersCache(orgId);
 
                 return ResponseEntity.ok(Map.of(
                         "status", "updated",
@@ -2213,6 +2353,8 @@ public class WebController {
 
                 Integer newId = jdbcTemplate.queryForObject("SELECT LASTVAL()", Integer.class);
 
+                evictPartnersCache(orgId);
+
                 return ResponseEntity.ok(Map.of(
                         "status", "inserted",
                         "partnerId", newId));
@@ -2222,6 +2364,62 @@ public class WebController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error saving partner");
+        }
+    }
+
+    @PostMapping("/getChartSummary")
+    public ResponseEntity<?> getChartSummary(HttpServletRequest request) {
+        try {
+            String authorization = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorization);
+
+            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
+            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
+            if (users.isEmpty()) {
+                return ResponseEntity.status(404).body("User not found");
+            }
+            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+
+            String sql = """
+                    WITH week_series AS (
+                      SELECT gs::date AS week_start, (gs + interval '6 days')::date AS week_end
+                      FROM generate_series(
+                        date_trunc('week', current_date) - interval '7 weeks',
+                        date_trunc('week', current_date),
+                        '1 week'::interval
+                      ) gs
+                    )
+                    SELECT
+                      ws.week_start,
+                      ws.week_end,
+                      'W' || to_char(ws.week_start, 'IW') AS week_number,
+                      COALESCE(o.order_count, 0) AS order_count,
+                      COALESCE(c.delivered_count, 0) AS delivered_count
+                    FROM week_series ws
+                    LEFT JOIN (
+                      SELECT
+                        date_trunc('week', order_date)::date AS week_start,
+                        COUNT(*) AS order_count
+                      FROM botiq_order_w
+                      WHERE org_id = ?
+                      GROUP BY week_start
+                    ) o ON o.week_start = ws.week_start
+                    LEFT JOIN (
+                      SELECT
+                        date_trunc('week', delivered_date)::date AS week_start,
+                        COUNT(*) AS delivered_count
+                      FROM botiq_order_w
+                      WHERE org_id = ? AND order_status = 'Delivered'
+                      GROUP BY week_start
+                    ) c ON c.week_start = ws.week_start
+                    ORDER BY ws.week_start;
+                    """;
+
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, orgId, orgId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error getting chart summary: " + e.getMessage());
         }
     }
 
@@ -2325,6 +2523,7 @@ public class WebController {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error fetching master data");
         }
+
     }
 
     @GetMapping("/getPartners")
@@ -2338,20 +2537,20 @@ public class WebController {
             Integer orgId = jdbcTemplate.queryForObject(userSql, Integer.class, uid);
 
             String query = """
-    SELECT
-        partner_id,
-        partner_name,
-        partner_contact,
-        partner_address,
-        partner_category_id,
-        partner_category,
-        notes,
-        enabled
-    FROM botiq_partner_w
-    WHERE org_id = ?
-      AND deleted = false
-    ORDER BY partner_name
-    """;
+                    SELECT
+                        partner_id,
+                        partner_name,
+                        partner_contact,
+                        partner_address,
+                        partner_category_id,
+                        partner_category,
+                        notes,
+                        enabled
+                    FROM botiq_partner_w
+                    WHERE org_id = ?
+                      AND deleted = false
+                    ORDER BY partner_name
+                    """;
 
             List<Map<String, Object>> partners = jdbcTemplate.queryForList(query, orgId);
 
@@ -2397,14 +2596,10 @@ public class WebController {
     @PostMapping("/saveOrder")
     public ResponseEntity<?> saveOrder(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
         try {
-            String authorizationHeader = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-
-            String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
-            Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
-
-            Integer orgId = (Integer) userInfo.get("org_id");
-            String orgName = (String) userInfo.get("org_name");
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
+            String orgName = principal.getOrgName();
 
             String sql = "SELECT save_order(?::jsonb, ?, ?)";
 
@@ -2428,14 +2623,10 @@ public class WebController {
 
         System.out.println("get all orders.....");
         try {
-            String authorizationHeader = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-
-            String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
-            Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
-
-            Integer orgId = (Integer) userInfo.get("org_id");
-            String orgName = (String) userInfo.get("org_name");
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
+            String orgName = principal.getOrgName();
 
             String sql = "SELECT \r\n" + //
                     "  o.*,\r\n" + //
@@ -2448,7 +2639,7 @@ public class WebController {
                     "  ON o.customer_id = c.customer_id\r\n" + //
                     "LEFT JOIN LATERAL (\r\n" + //
                     "  SELECT details_data\r\n" + //
-                    "  FROM botiq_order_docs\r\n" + //
+                    "  FROM botiq_order_docs_w\r\n" + //
                     "  WHERE order_id = o.order_id \r\n" + //
                     "    AND details_type = 2\r\n" + //
                     "  ORDER BY details_id\r\n" + //
@@ -2479,12 +2670,9 @@ public class WebController {
         }
         Long id = Long.valueOf(orderIdObj.toString());
 
-        String authorizationHeader = request.getHeader("Authorization");
-        String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-
-        String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
-        Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
-        Integer orgId = (Integer) userInfo.get("org_id");
+        UserPrincipal principal = getUserPrincipal();
+        String uid = principal.getFirebaseUid();
+        Integer orgId = principal.getOrgId();
 
         String sql = "SELECT o.*, c.customer_name, c.contact_number, c.customer_address " +
                 "FROM botiq_order_w o " +
@@ -2495,24 +2683,35 @@ public class WebController {
             Map<String, Object> order = jdbcTemplate.queryForMap(sql, id, orgId);
             System.out.println("DEBUG order map: " + order);
 
-            String docsSql = "SELECT details_type, details_data FROM botiq_order_docs_w WHERE order_id = ?";
+            String docsSql = "SELECT details_id, details_type, details_data FROM botiq_order_docs_w WHERE order_id = ?";
             List<Map<String, Object>> docs = jdbcTemplate.queryForList(docsSql, id);
 
-            Map<String, List<String>> details = new HashMap<>();
+            Map<String, List<Map<String, Object>>> details = new HashMap<>();
             details.put("measurements", new ArrayList<>());
             details.put("materials", new ArrayList<>());
             details.put("patterns", new ArrayList<>());
+            details.put("audio", new ArrayList<>());
+            details.put("handwrittenNotes", new ArrayList<>());
 
             for (Map<String, Object> d : docs) {
                 int type = (Integer) d.get("details_type");
                 String data = (String) d.get("details_data");
+                Long detailsId = ((Number) d.get("details_id")).longValue();
+
+                Map<String, Object> docMap = new HashMap<>();
+                docMap.put("details_id", detailsId);
+                docMap.put("details_data", data);
 
                 if (type == 1)
-                    details.get("measurements").add(data);
+                    details.get("measurements").add(docMap);
                 if (type == 2)
-                    details.get("materials").add(data);
+                    details.get("materials").add(docMap);
                 if (type == 3)
-                    details.get("patterns").add(data);
+                    details.get("patterns").add(docMap);
+                if (type == 4)
+                    details.get("audio").add(docMap);
+                if (type == 5)
+                    details.get("handwrittenNotes").add(docMap);
             }
 
             String jobSql = "SELECT * FROM botiq_job_order_w WHERE order_id = ?";
@@ -2577,15 +2776,10 @@ public class WebController {
             System.out.println("update order");
             System.out.println("👉 orderDetails from payload: " + payload.get("orderDetails"));
 
-            // 🔐 Auth
-            String authorizationHeader = request.getHeader("Authorization");
-            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-
-            String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
-            Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
-
-            Integer orgId = (Integer) userInfo.get("org_id");
-            String orgName = (String) userInfo.get("org_name");
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
+            String orgName = principal.getOrgName();
 
             // 📦 Extract payload
             Map<String, Object> customer = (Map<String, Object>) payload.get("customer");
@@ -2720,13 +2914,9 @@ public class WebController {
     @GetMapping("/getJobOrdes")
     public ResponseEntity<?> getJobOrdes(HttpServletRequest request) {
 
-        String authorizationHeader = request.getHeader("Authorization");
-        String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-
-        String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
-        Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
-
-        Integer orgId = (Integer) userInfo.get("org_id");
+        UserPrincipal principal = getUserPrincipal();
+        String uid = principal.getFirebaseUid();
+        Integer orgId = principal.getOrgId();
 
         String query = "SELECT \r\n" + //
                 "  j.job_id,\r\n" + //
