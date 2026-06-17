@@ -2,55 +2,39 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { getAuth, signOut } from 'firebase/auth';
-import { from, throwError } from 'rxjs';
-import { switchMap, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = getAuth();
   const router = inject(Router);
 
-  // Wait for Firebase to read from persistence (IndexedDB/localStorage)
-  // before inspecting auth.currentUser
-  return from(auth.authStateReady()).pipe(
-    switchMap(() => {
-      const user = auth.currentUser;
+  // Check if the request is targeted to our backend
+  const isBackendRequest = req.url.startsWith(environment.apiUrl) ||
+                           req.url.startsWith('http://localhost:8080') ||
+                           !req.url.startsWith('http');
 
-      if (!user) {
-        return next(req);
+  if (!isBackendRequest) {
+    return next(req);
+  }
+
+  // All backend requests (including session establishment) need withCredentials: true
+  // so that cookies (JSESSIONID) are successfully stored (at login) and sent (subsequently).
+  const clonedReq = req.clone({
+    withCredentials: true
+  });
+
+  return next(clonedReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // Catch 401 Unauthorized or 403 Forbidden errors from Spring Boot Backend
+      if (error.status === 401 || error.status === 403) {
+        signOut(auth).then(() => {
+          // localStorage.removeItem('token'); // Uncomment if you use local storage key clearing
+          router.navigate(['/login']);
+        });
       }
-
-      // user.getIdToken() has built-in caching and refresh logic
-      return from(user.getIdToken()).pipe(
-        switchMap((token) => {
-          const clonedReq = req.clone({
-            setHeaders: {
-              Authorization: `Bearer ${token}`
-            }
-          });
-
-          // Catch 401 Unauthorized errors from your Spring Boot Backend
-          return next(clonedReq).pipe(
-            catchError((error: HttpErrorResponse) => {
-              if (error.status === 401) {
-                signOut(auth).then(() => {
-                  localStorage.removeItem('token');
-                  router.navigate(['/login']);
-                });
-              }
-              return throwError(() => error);
-            })
-          );
-        }),
-        // Catch Firebase internal errors (e.g., if the long-lived refresh token actually expired or user account was disabled)
-        catchError((error) => {
-          signOut(auth).then(() => {
-            localStorage.removeItem('token');
-            router.navigate(['/login']);
-          });
-          return throwError(() => error);
-        })
-      );
+      return throwError(() => error);
     })
   );
 };
-

@@ -123,19 +123,20 @@ export class AddPartnerComponent {
     await this.partnerService.getPartnerById(id).subscribe((res: any) => {
 
       this.partner = {
-        partnerId: res.partner_id,
-        name: res.partner_name,
+        partnerId: res.partnerId !== undefined ? res.partnerId : res.partner_id,
+        name: res.partnerName !== undefined ? res.partnerName : res.partner_name,
         email: '',
-        address: res.partner_address,
-        phone: res.partner_contact,
+        address: res.partnerAddress !== undefined ? res.partnerAddress : res.partner_address,
+        phone: res.partnerContact !== undefined ? res.partnerContact : res.partner_contact,
         notes: res.notes,
         status: res.enabled,
         partnerCategory: null
       };
 
       if (this.selectCategory) {
+        const catId = res.partnerCategoryId !== undefined ? res.partnerCategoryId : res.partner_category_id;
         this.partner.partnerCategory = this.selectCategory.find(
-          (c: any) => c.key_id == res.partner_category_id
+          (c: any) => c.key_id == catId
         );
       }
 

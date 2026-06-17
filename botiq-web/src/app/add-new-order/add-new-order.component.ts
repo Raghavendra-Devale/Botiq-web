@@ -167,23 +167,23 @@ export class AddNewOrderComponent {
 
   fillForm(res: any) {
 
-    this.newOrder.customerId = res.customer.customerId;
-    this.newOrder.name = res.customer.name;
-    this.newOrder.mobile = res.customer.mobile;
-    this.newOrder.place = res.customer.place;
-    this.orderId = res.order.order_id;
+    this.newOrder.customerId = res.customer.customerId || res.customer.customer_id;
+    this.newOrder.name = res.customer.name || res.customer.customerName;
+    this.newOrder.mobile = res.customer.mobile || res.customer.contactNumber;
+    this.newOrder.place = res.customer.place || res.customer.customerAddress;
+    this.orderId = res.order.order_id !== undefined ? res.order.order_id : res.order.orderId;
 
-    this.newOrder.orderStatus = res.order.order_status;
-    this.newOrder.dueDate = res.order.due_date?.split('T')[0];
-    this.newOrder.orderAmount = res.order.order_amount;
-    this.newOrder.advanceAmount = res.order.advance_amount;
-    this.newOrder.dueAmount = res.order.due_amount;
+    this.newOrder.orderStatus = res.order.order_status !== undefined ? res.order.order_status : res.order.orderStatus;
+    this.newOrder.dueDate = (res.order.due_date !== undefined ? res.order.due_date : res.order.dueDate)?.split('T')[0];
+    this.newOrder.orderAmount = res.order.order_amount !== undefined ? res.order.order_amount : res.order.orderAmount;
+    this.newOrder.advanceAmount = res.order.advance_amount !== undefined ? res.order.advance_amount : res.order.advanceAmount;
+    this.newOrder.dueAmount = res.order.due_amount !== undefined ? res.order.due_amount : res.order.dueAmount;
 
-    this.newOrder.urgent = res.order.order_priority === 1;
+    this.newOrder.urgent = (res.order.order_priority !== undefined ? res.order.order_priority : res.order.orderPriority) === 1;
 
-    this.newOrder.hasJobOrder = !!res.order.has_job_order;
+    this.newOrder.hasJobOrder = !!(res.order.has_job_order !== undefined ? res.order.has_job_order : res.order.hasJobOrder);
 
-    this.orderDetails = (res.order.order_details || []).map((item: any) => ({
+    this.orderDetails = (res.order.order_details || res.order.orderDetails || []).map((item: any) => ({
       itemName: (item.itemName || item.item_name || '')
         .trim()
         .toLowerCase(),
@@ -191,20 +191,29 @@ export class AddNewOrderComponent {
       price: item.price || 0
     }));
 
-    this.measurementImages = (res.details?.measurements || []).map((base64: string) => ({
-      base64,
-      blobUrl: this.convertBase64ToBlobUrl(base64)
-    }));
+    this.measurementImages = (res.details?.measurements || []).map((item: any) => {
+      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
+      return {
+        base64,
+        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
+      };
+    }).filter((img: any) => img.base64);
 
-    this.patternImages = (res.details?.patterns || []).map((base64: string) => ({
-      base64,
-      blobUrl: this.convertBase64ToBlobUrl(base64)
-    }));
+    this.patternImages = (res.details?.patterns || []).map((item: any) => {
+      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
+      return {
+        base64,
+        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
+      };
+    }).filter((img: any) => img.base64);
 
-    this.materialImages = (res.details?.materials || []).map((base64: string) => ({
-      base64,
-      blobUrl: this.convertBase64ToBlobUrl(base64)
-    }));
+    this.materialImages = (res.details?.materials || []).map((item: any) => {
+      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
+      return {
+        base64,
+        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
+      };
+    }).filter((img: any) => img.base64);
 
     this.jobOrders = res.jobOrders || [];
 
@@ -378,6 +387,7 @@ export class AddNewOrderComponent {
       );
     }
 
+    this.newOrder.orderAmount = this.calculateTotal();
     this.updateAddJobState();
 
 

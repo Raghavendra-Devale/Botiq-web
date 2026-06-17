@@ -72,13 +72,16 @@ export class VerifyOtpComponent implements OnInit {
       const result = await this.authService.verifyOTP(code);
       const token = await result.user.getIdToken();
 
-      localStorage.setItem('token', token);
+      // Establish session with backend using Firebase token
+      await this.authService.createSession(token);
+
+      // localStorage.setItem('token', token);
 
       if (this.registerData) {
         // TODO: The user is verified! Add backend API call here to save this.registerData
         console.log('User verified globally. Ready to save registerData:', this.registerData);
       }
-
+      console.log("navigating to dashboard");
       this.router.navigate(['/dashboard']);
 
     } catch (error) {

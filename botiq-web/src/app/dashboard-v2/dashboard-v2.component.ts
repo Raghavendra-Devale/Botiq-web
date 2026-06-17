@@ -60,7 +60,7 @@ export class DashboardV2Component {
   }
 
   goToJobOrderList(jobSegment: string, tabId: number) {
-    this.router.navigate(['/order-list'], {
+    this.router.navigate(['/job-order-list'], {
       queryParams: { jobSegment, tabId }
     });
   }

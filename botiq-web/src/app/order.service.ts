@@ -20,14 +20,14 @@ export class OrderService {
     return this.http.post<any>(this.baseUrl + "/updateOrder", payload);
   }
   getOrderById(id: number) {
-    return this.http.get(this.baseUrl + "/orders/" + id);
+    return this.http.post<any>(this.baseUrl + "/getOrderById", { order_id: id });
   }
   saveFullOrder(payload: any) {
-    return this.http.post<any>(this.baseUrl + "/save_order", payload);
+    return this.http.post<any>(this.baseUrl + "/saveOrder", payload);
   }
 
   getPartnersById(id: number) {
-    return this.http.get<any>(this.baseUrl + "/getPartners" + id);
+    return this.http.get<any>(this.baseUrl + "/getPartners");
   }
   getPartners() {
     return this.http.get<any>(this.baseUrl + "/getPartners");
@@ -41,7 +41,7 @@ export class OrderService {
     console.log(payload, "payload");
     console.log(this.baseUrl);
 
-    return this.http.post<any>(this.baseUrl + "/save_order", payload);
+    return this.http.post<any>(this.baseUrl + "/saveOrder", payload);
   }
 
   getCategories() {

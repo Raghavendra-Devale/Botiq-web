@@ -19,7 +19,7 @@ export class PartnerService {
   deletePartner(id: number): any {
     console.log(("deleting partber " + id));
 
-    return this.http.post<any>(this.baseUrl + "/deletePartner", { id });
+    return this.http.post<any>(this.baseUrl + "/deletePartner", { partner_id: id });
   }
 
   getPartnerById(id: number): any {

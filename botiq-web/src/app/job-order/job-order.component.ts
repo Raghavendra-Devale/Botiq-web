@@ -47,19 +47,22 @@ export class JobOrderComponent implements OnInit {
       ...(this.orderData.details?.measurements || []),
       ...(this.orderData.details?.patterns || []),
       ...(this.orderData.details?.materials || [])
-    ].map((img: any) => ({
-      base64: typeof img === 'string' ? img : img.base64,
-      temp_id: img.temp_id || Date.now() + Math.random()
-    }));
+    ].map((img: any) => {
+      const base64 = typeof img === 'string' ? img : (img.base64 || img.details_data || img.detailsData || '');
+      return {
+        base64,
+        temp_id: img.temp_id || Date.now() + Math.random()
+      };
+    }).filter((img: any) => img.base64);
 
-    // ✅ Map backend jobOrders → UI model
+    // ✅ Map backend jobOrders → UI model (supporting both snake_case and camelCase)
     this.jobOrders = (this.orderData.jobOrders || []).map((job: any) => ({
       selectedPartner: null, // will map after partners load
-      partnerId: job.partner_id || null,
-      selectedJobDetails: job.job_order_details?.jobDetails || [],
-      dueDate: job.job_due_date,
-      status: job.job_order_status,
-      priority: this.reverseMapPriority(job.job_priority),
+      partnerId: job.partner_id || job.partnerId || null,
+      selectedJobDetails: (job.job_order_details || job.jobOrderDetails)?.jobDetails || [],
+      dueDate: job.job_due_date || job.jobDueDate || '',
+      status: job.job_order_status || job.jobOrderStatus || 'Pending',
+      priority: this.reverseMapPriority(job.job_priority !== undefined ? job.job_priority : job.jobPriority),
       selectedImages: [],
       minimized: false
     }));
@@ -78,7 +81,7 @@ export class JobOrderComponent implements OnInit {
       this.jobOrders.forEach(job => {
         if (job.partnerId) {
           job.selectedPartner = this.partners.find(
-            p => p.partner_id === job.partnerId
+            p => (p.partner_id || p.partnerId) === job.partnerId
           ) || null;
         }
       });

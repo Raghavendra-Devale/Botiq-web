@@ -51,7 +51,7 @@
 
                         <!-- Select -->
                         <input type="checkbox" [(ngModel)]="category.selected" name="cat{{category.itemName}}"
-                            (change)="toggleCategory(category)" />
+                            (ngModelChange)="toggleCategory(category)" />
 
                         <!-- Item Name -->
                         <input type="text" [value]="category.displayName" readonly />
@@ -61,7 +61,7 @@
                             (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
 
                         <!-- Price -->
-                        <input type="number" [(ngModel)]="category.price" name="price{{category.price}}"
+                        <input type="number" [(ngModel)]="category.price" name="price{{category.itemName}}"
                             (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
 
                         <!-- Total -->

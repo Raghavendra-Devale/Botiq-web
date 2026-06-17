@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import {
   Auth,
@@ -5,6 +6,7 @@ import {
   ConfirmationResult,
   RecaptchaVerifier
 } from '@angular/fire/auth';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +16,7 @@ export class AuthService {
   private recaptchaVerifier!: RecaptchaVerifier;
   private confirmationResult!: ConfirmationResult;
 
-  constructor(@Inject(Auth) private auth: Auth) { }
+  constructor(@Inject(Auth) private auth: Auth, private http:HttpClient) { }
 
   setupRecaptcha(containerId: string) {
     this.recaptchaVerifier = new RecaptchaVerifier(
@@ -49,5 +51,18 @@ export class AuthService {
   hasConfirmationResult() {
     return !!this.confirmationResult;
   }
+
+  createSession(firebaseToken: string) {
+
+  return this.http.post(`${environment.apiUrl}/auth/session`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${firebaseToken}`
+      },
+      withCredentials: true
+    }
+  ).toPromise();
+}
 
 }

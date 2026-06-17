@@ -93,8 +93,8 @@ export class OrderListComponent {
 
     this.orderService.getAllOrders().subscribe({
       next: (res: any) => {
-        this.orders = res;
-        this.selectedItems = res[0].order_details;
+        this.orders = res || [];
+        this.selectedItems = (this.orders.length > 0) ? this.orders[0].order_details : [];
         console.log(this.selectedItems);
         // this.filterOrders(); // filtering based on status
         this.applyFilters(); // filtering based on status and search
@@ -270,13 +270,21 @@ export class OrderListComponent {
 
   transformOrder(order: any) {
     console.log('BEFORE:', order);
+    let details = order.order_details;
+    if (typeof details === 'string' && details.trim() !== '') {
+      try {
+        details = JSON.parse(details);
+      } catch (e) {
+        console.error('Failed to parse order_details JSON string:', details, e);
+        details = [];
+      }
+    } else if (!details) {
+      details = [];
+    }
 
     const transformed = {
       ...order,
-      order_details:
-        typeof order.order_details === 'string'
-          ? JSON.parse(order.order_details)
-          : order.order_details
+      order_details: details
     };
 
     console.log('AFTER:', transformed);
