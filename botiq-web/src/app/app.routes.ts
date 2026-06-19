@@ -14,6 +14,9 @@ import { AddPartnerComponent } from './add-partner/add-partner.component';
 import { DashboardV2Component } from './dashboard-v2/dashboard-v2.component';
 import { PlanPageComponent } from './plan-page/plan-page.component';
 import { RegisterComponent } from './register/register.component';
+import { SetupMpinComponent } from './pages/auth/setup-mpin/setup-mpin.component';
+import { MpinLoginComponent } from './pages/auth/mpin-login/mpin-login.component';
+import { DevicesComponent } from './pages/security/devices/devices.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [publicGuard] },
@@ -35,6 +38,9 @@ export const routes: Routes = [
     { path: 'partner/:id', component: AddPartnerComponent, canActivate: [authGuard] },
     { path: 'plan-page', component: PlanPageComponent, canActivate: [authGuard] },
     { path: 'register', component: RegisterComponent },
+    {path: 'setup-mpin',component: SetupMpinComponent},
+    {path: 'mpin-login',component: MpinLoginComponent},
+    {path: 'devices', component: DevicesComponent, canActivate: [authGuard]},
     {
         path: 'add-new-order',
         component: TabsContainerComponent,

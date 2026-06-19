@@ -61,32 +61,74 @@ export class VerifyOtpComponent implements OnInit {
   }
 
   async verifyOtp() {
-    const code = this.otpDigits.join('');
 
-    if (code.length !== 6) {
-      alert('Enter valid OTP');
-      return;
-    }
+  const code = this.otpDigits.join('');
 
-    try {
-      const result = await this.authService.verifyOTP(code);
-      const token = await result.user.getIdToken();
-
-      // Establish session with backend using Firebase token
-      await this.authService.createSession(token);
-
-      // localStorage.setItem('token', token);
-
-      if (this.registerData) {
-        // TODO: The user is verified! Add backend API call here to save this.registerData
-        console.log('User verified globally. Ready to save registerData:', this.registerData);
-      }
-      console.log("navigating to dashboard");
-      this.router.navigate(['/dashboard']);
-
-    } catch (error) {
-      console.error(error);
-      alert('Invalid OTP');
-    }
+  if (code.length !== 6) {
+    alert('Enter valid OTP');
+    return;
   }
+
+  try {
+
+    const result =
+      await this.authService.verifyOTP(code);
+
+    const token =
+      await result.user.getIdToken();
+
+    await this.authService
+      .createSession(token)
+      .toPromise();
+
+    this.authService
+      .getDeviceStatus()
+      .subscribe({
+
+        next: (response: any) => {
+
+          console.log('DEVICE STATUS', response);
+
+          if (response.knownDevice) {
+
+            console.log(
+              'Known Device -> Dashboard'
+            );
+
+            this.router.navigate([
+              '/dashboard'
+            ]);
+
+          } else {
+
+            console.log(
+              'New Device -> Setup MPIN'
+            );
+
+            this.router.navigate([
+              '/setup-mpin'
+            ]);
+          }
+        },
+
+        error: (err) => {
+
+          console.error(
+            'Device status failed',
+            err
+          );
+
+          this.router.navigate([
+            '/setup-mpin'
+          ]);
+        }
+      });
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert('Invalid OTP');
+  }
+}
 }

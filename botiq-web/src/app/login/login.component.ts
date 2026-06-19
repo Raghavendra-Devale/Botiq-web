@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink,CommonModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -16,13 +17,48 @@ export class LoginComponent implements OnInit {
   userStatus: number | any;
 
 
-  constructor(private authService: AuthService,
-    private router: Router
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
-  ngOnInit() {
-    this.authService.setupRecaptcha('recaptcha-container');
+  loading = true;
+
+ngOnInit() {
+
+  const forceOtp =
+    this.route.snapshot.queryParamMap.get('otp');
+
+  if (forceOtp === 'true') {
+
+    this.loading = false;
+
+    return;
   }
+
+  this.authService.getDeviceStatus()
+    .subscribe({
+      next: (response: any) => {
+
+        if (response.knownDevice) {
+
+          this.router.navigate([
+            '/mpin-login'
+          ]);
+
+          return;
+        }
+
+        this.loading = false;
+      },
+
+      error: () => {
+
+        this.loading = false;
+      }
+    });
+}
 
   async requestOtp() {
     if (!this.phoneNumber || this.phoneNumber.length !== 10) {
@@ -31,6 +67,7 @@ export class LoginComponent implements OnInit {
     }
 
     try {
+      this.authService.setupRecaptcha('recaptcha-container');
       await this.authService.sendOTP('+91' + this.phoneNumber);
       this.router.navigate(['/verify-otp']);
     } catch (err) {

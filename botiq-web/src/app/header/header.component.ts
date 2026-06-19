@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { DataService } from '../data.service';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -13,7 +14,8 @@ export class HeaderComponent {
 
   constructor(private router: Router,
     private http: HttpClient,
-    private dataService: DataService
+    private dataService: DataService,
+    private authService: AuthService
   ) { }
   userName = '';
   businessName = '';
@@ -37,8 +39,14 @@ export class HeaderComponent {
 
   }
 
-  logout() {
-    localStorage.clear();
-    this.router.navigate(['/login']);
+  async logout() {
+    try {
+      await this.authService.logout();
+    } catch (err) {
+      console.error('Logout error', err);
+    } finally {
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    }
   }
 }

@@ -4,9 +4,12 @@ import {
   Auth,
   signInWithPhoneNumber,
   ConfirmationResult,
-  RecaptchaVerifier
+  RecaptchaVerifier,
+  signOut
 } from '@angular/fire/auth';
 import { environment } from '../../environments/environment';
+import { Observable, of, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -16,31 +19,49 @@ export class AuthService {
   private recaptchaVerifier!: RecaptchaVerifier;
   private confirmationResult!: ConfirmationResult;
 
-  constructor(@Inject(Auth) private auth: Auth, private http:HttpClient) { }
+  private currentUser: any = null;
+  private sessionChecked = false;
+
+  constructor(
+    @Inject(Auth) private auth: Auth,
+    private http: HttpClient
+  ) {}
 
   setupRecaptcha(containerId: string) {
+
+    if (this.recaptchaVerifier) {
+      try {
+        this.recaptchaVerifier.clear();
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
     this.recaptchaVerifier = new RecaptchaVerifier(
       this.auth,
       containerId,
       {
         size: 'invisible'
       }
-    )
+    );
   }
 
   async sendOTP(phoneNumber: string) {
+
     if (!this.recaptchaVerifier) {
       throw new Error('Recaptcha not initialized');
     }
 
-    this.confirmationResult = await signInWithPhoneNumber(
-      this.auth,
-      phoneNumber,
-      this.recaptchaVerifier
-    )
+    this.confirmationResult =
+      await signInWithPhoneNumber(
+        this.auth,
+        phoneNumber,
+        this.recaptchaVerifier
+      );
   }
 
   async verifyOTP(otp: string) {
+
     if (!this.confirmationResult) {
       throw new Error('Confirmation result not found');
     }
@@ -54,15 +75,154 @@ export class AuthService {
 
   createSession(firebaseToken: string) {
 
-  return this.http.post(`${environment.apiUrl}/auth/session`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${firebaseToken}`
+    this.sessionChecked = false;
+    this.currentUser = null;
+
+    return this.http.post(
+      `${environment.apiUrl}/auth/session`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${firebaseToken}`
+        },
+        withCredentials: true
+      }
+    );
+  }
+
+  registerDevice() {
+    return this.http.post(
+      `${environment.apiUrl}/auth/register-device`,
+      {},
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  setupMpin(mpin: string) {
+    this.sessionChecked = false;
+    this.currentUser = null;
+    return this.http.post(
+      `${environment.apiUrl}/auth/setup-mpin`,
+      {
+        mpin
       },
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  loginWithMPin(mpin: string) {
+    this.sessionChecked = false;
+    this.currentUser = null;
+    return this.http.post(
+      `${environment.apiUrl}/auth/mpin-login`,
+      {
+        mpin
+      },
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  getDeviceStatus() {
+    return this.http.get(
+      `${environment.apiUrl}/auth/device-status`,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  getDevices() {
+    return this.http.get(
+      `${environment.apiUrl}/auth/devices`,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  deleteDevice(id: number) {
+
+  return this.http.delete(
+    `${environment.apiUrl}/auth/devices/${id}`,
+    {
       withCredentials: true
     }
-  ).toPromise();
+  );
 }
 
+  getCurrentUser() {
+    return this.http.get(
+      `${environment.apiUrl}/auth/me`,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  isAuthenticated(): Observable<any> {
+
+    if (this.sessionChecked) {
+
+      if (this.currentUser) {
+        return of(this.currentUser);
+      }
+
+      return throwError(() =>
+        new Error('Not authenticated')
+      );
+    }
+
+    return this.http.get(
+      `${environment.apiUrl}/auth/me`,
+      {
+        withCredentials: true
+      }
+    ).pipe(
+      map(user => {
+
+        this.currentUser = user;
+        this.sessionChecked = true;
+
+        return user;
+      }),
+      catchError(err => {
+
+        this.currentUser = null;
+        this.sessionChecked = true;
+
+        return throwError(() => err);
+      })
+    );
+  }
+
+  clearSession() {
+
+    this.currentUser = null;
+    this.sessionChecked = false;
+  }
+
+  async logout() {
+
+    this.clearSession();
+
+    try {
+      await signOut(this.auth);
+    } catch (e) {
+      console.warn(e);
+    }
+
+    return this.http.post(
+      `${environment.apiUrl}/auth/logout`,
+      {},
+      {
+        withCredentials: true
+      }
+    ).toPromise();
+  }
 }

@@ -32,7 +32,6 @@ export class RegisterComponent implements AfterViewInit {
   ) { }
 
   ngAfterViewInit() {
-    this.authService.setupRecaptcha('recaptcha-container');
   }
 
   onSubmit(form: any) {
@@ -98,6 +97,7 @@ export class RegisterComponent implements AfterViewInit {
 
   private async sendOtpAndNavigate() {
     try {
+      this.authService.setupRecaptcha('recaptcha-container');
       await this.authService.sendOTP('+91' + this.registerData.phone);
 
       this.router.navigate(['/verify-otp'], {

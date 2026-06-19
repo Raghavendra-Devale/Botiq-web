@@ -15,16 +15,27 @@ import { getAuth, onIdTokenChanged } from 'firebase/auth';
 })
 export class AppComponent implements OnInit {
   title = 'botiq-web';
-  isPublicRoute = false;
+  isPublicRoute = typeof window !== 'undefined' && (
+    window.location.pathname.includes('/login') ||
+    window.location.pathname.includes('/verify-otp') ||
+    window.location.pathname.includes('/register') ||
+    window.location.pathname.includes('/setup-mpin') ||
+    window.location.pathname.includes('/mpin-login')
+  );
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngOnInit() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       const url = event.urlAfterRedirects || event.url;
-      this.isPublicRoute = url.includes('/login') || url.includes('/verify-otp') || url.includes('/register');
+      this.isPublicRoute =
+    url.includes('/login') ||
+    url.includes('/verify-otp') ||
+    url.includes('/register') ||
+    url.includes('/setup-mpin') ||
+    url.includes('/mpin-login');
     });
 
     const auth = getAuth();
