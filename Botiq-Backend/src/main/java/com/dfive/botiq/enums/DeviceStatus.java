@@ -1,4 +1,9 @@
-package com.dfive.botiq.dto;
+package com.dfive.botiq.enums;
 
-public class DeviceStatus {
+
+public enum DeviceStatus {
+    ACTIVE,
+    LOCKED,
+    REVOKED,
+    EXPIRED
 }

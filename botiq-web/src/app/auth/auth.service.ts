@@ -21,6 +21,15 @@ export class AuthService {
 
   private currentUser: any = null;
   private sessionChecked = false;
+  private firebaseToken: string | null = null;
+
+  setFirebaseToken(token: string | null) {
+    this.firebaseToken = token;
+  }
+
+  getFirebaseToken(): string | null {
+    return this.firebaseToken;
+  }
 
   constructor(
     @Inject(Auth) private auth: Auth,

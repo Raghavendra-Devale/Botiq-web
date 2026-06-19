@@ -4,7 +4,8 @@
         <div class="brand-content">
             <h1>Botiq<span class="dot">.</span></h1>
             <h2>Secure your account<br>with ease.</h2>
-            <p>We use state-of-the-art security protocols to keep your business data completely safe and accessible only to you.</p>
+            <p>We use state-of-the-art security protocols to keep your business data completely safe and accessible only
+                to you.</p>
         </div>
         <div class="brand-overlay"></div>
     </div>
@@ -21,7 +22,8 @@
 
             <div class="otp-group">
                 <input *ngFor="let digit of otpDigits; let i = index; trackBy: trackByIndex" type="text" maxlength="1"
-                    [(ngModel)]="otpDigits[i]" (input)="onInput(i, $event)" (keydown)="handleBackspace(i, $event)" />
+                    [(ngModel)]="otpDigits[i]" (input)="onInput(i, $event)" (keydown)="handleBackspace(i, $event)"
+                    placeholder="-" title="OTP Digit {{i + 1}}" [attr.aria-label]="'OTP Digit ' + (i + 1)" />
             </div>
 
             <button class="btn-primary" (click)="verifyOtp()">

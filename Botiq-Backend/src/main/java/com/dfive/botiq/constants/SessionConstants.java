@@ -1,4 +1,4 @@
-package com.dfive.botiq.configuration;
+package com.dfive.botiq.constants;
 
 public final class SessionConstants {
 

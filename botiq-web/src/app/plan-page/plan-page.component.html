@@ -63,8 +63,8 @@
 
         <!-- CTA -->
         <div class="actions">
-            <button type="button" class="btn-primary" [disabled]="!selectedPlan">
-                Request Callback
+            <button type="button" class="btn-primary" [disabled]="!selectedPlan" (click)="handleCTA()">
+                {{ isPaidPlan(selectedPlan) ? 'Proceed to Pay' : 'Request Callback' }}
             </button>
         </div>
     </form>

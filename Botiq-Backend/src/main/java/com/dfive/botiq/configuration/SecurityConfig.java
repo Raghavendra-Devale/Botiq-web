@@ -54,7 +54,11 @@ public class SecurityConfig {
                                 "/public/**",
                                 "/organization/**",
                                 "/payment/**",
-                                "/web/auth/**"
+                                "/web/auth/session",
+                                "/web/auth/device-status",
+                                "/web/auth/mpin-login",
+                                "/web/notifications/**"
+
                         )
                         .permitAll()
 

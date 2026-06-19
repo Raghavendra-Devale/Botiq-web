@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OrderestateService } from '../orderestate.service';
+import { NotificationService } from '../notification.service';
 
 interface ImageData {
   base64: string,
@@ -112,10 +113,14 @@ export class AddNewOrderComponent {
   };
   orderId: any;
 
-  constructor(private orderService: OrderService,
+
+
+  constructor(
+    private orderService: OrderService,
     private router: Router,
     private orderState: OrderestateService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit() {
@@ -126,7 +131,7 @@ export class AddNewOrderComponent {
 
       if (this.orderId) {
         this.isEditMode = true;
-        this.loadOrder(this.orderId);
+        this.loadOrder(this.orderId);        
       } else {
         console.log("create new");
       }
@@ -520,6 +525,11 @@ export class AddNewOrderComponent {
       this.orderService.updateOrder(payload).subscribe({
         next: (res: any) => {
           console.log("Order updated:", res);
+          this.notificationService.createNotification({
+            messageType: 'INFO',
+            messageText: `Order #${this.orderId} updated successfully.`,
+            priority: 'LOW'
+          }).subscribe();
           this.router.navigate(['/dashboard']);
         },
         error: (err: any) => {
@@ -530,6 +540,12 @@ export class AddNewOrderComponent {
       this.orderService.saveOrder(payload).subscribe({
         next: (res: any) => {
           console.log("Order saved:", res);
+          const newId = res || 'New';
+          this.notificationService.createNotification({
+            messageType: 'INFO',
+            messageText: `New Order #${newId} created successfully!`,
+            priority: 'LOW'
+          }).subscribe();
           this.router.navigate(['/dashboard']);
         },
         error: (err: any) => {

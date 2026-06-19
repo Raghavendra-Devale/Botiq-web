@@ -1,6 +1,6 @@
 package com.dfive.botiq.filters;
 
-import com.dfive.botiq.configuration.SessionConstants;
+import com.dfive.botiq.constants.SessionConstants;
 import com.dfive.botiq.entities.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

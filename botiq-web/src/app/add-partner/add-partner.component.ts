@@ -4,6 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OrderService } from '../order.service';
 import { PartnerService } from '../partner.service';
+import { NotificationService } from '../notification.service';
 
 interface Partner {
   partnerId: null;
@@ -34,7 +35,8 @@ export class AddPartnerComponent {
   constructor(public router: Router,
     private orderService: OrderService,
     private route: ActivatedRoute,
-    private partnerService: PartnerService
+    private partnerService: PartnerService,
+    private notificationService: NotificationService
   ) {
 
   }
@@ -77,8 +79,13 @@ export class AddPartnerComponent {
     await this.orderService.addOrUpdatePartner(payload).subscribe({
       next: (res) => {
         console.log('Saved:', res);
+        const action = this.isEditMode ? 'updated' : 'added';
+        this.notificationService.createNotification({
+          messageType: 'INFO',
+          messageText: `Partner "${payload.partnerName}" has been ${action} successfully.`,
+          priority: 'LOW'
+        }).subscribe();
         this.router.navigate(['/partners-list']);
-
       },
       error: (err) => {
         console.error('Error:', err);

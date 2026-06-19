@@ -28,5 +28,6 @@ Optional<UserOrgDetailsDto> findUserWithOrgDetails(@Param("mobileNumber") String
 
     Optional<OrgUser>findByfirebaseId(String uid);
 
-    
-} 
+
+    Optional<OrgUser> findByUserId(Integer userId);
+}

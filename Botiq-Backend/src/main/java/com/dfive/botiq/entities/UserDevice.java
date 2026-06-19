@@ -1,5 +1,6 @@
 package com.dfive.botiq.entities;
 
+import com.dfive.botiq.enums.DeviceStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,7 +38,10 @@ public class UserDevice {
 
     private String ipAddress;
 
-    private String status;
+//    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private DeviceStatus status;
 
     private Integer failedAttempts;
 

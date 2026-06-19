@@ -96,7 +96,7 @@ export class VerifyOtpComponent implements OnInit {
             );
 
             this.router.navigate([
-              '/dashboard'
+              '/setup-mpin'
             ]);
 
           } else {

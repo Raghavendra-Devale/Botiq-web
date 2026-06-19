@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { HeaderComponent } from "./header/header.component";
 import { getAuth, onIdTokenChanged } from 'firebase/auth';
+import { AuthService } from './auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -23,7 +24,7 @@ export class AppComponent implements OnInit {
     window.location.pathname.includes('/mpin-login')
   );
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private authService: AuthService) { }
 
   ngOnInit() {
     this.router.events.pipe(
@@ -40,13 +41,13 @@ export class AppComponent implements OnInit {
 
     const auth = getAuth();
     // Listen to Firebase token changes (login, logout, AND automatic token refreshes)
-    // and seamlessly update it within the browser's localStorage.
+    // and seamlessly update it within in-memory store.
     onIdTokenChanged(auth, async (user) => {
       if (user) {
         const token = await user.getIdToken();
-        localStorage.setItem('token', token);
+        this.authService.setFirebaseToken(token);
       } else {
-        localStorage.removeItem('token');
+        this.authService.setFirebaseToken(null);
       }
     });
   }
