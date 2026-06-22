@@ -6,6 +6,8 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { HeaderComponent } from "./header/header.component";
 import { getAuth, onIdTokenChanged } from 'firebase/auth';
 import { AuthService } from './auth/auth.service';
+import { NotificationMessagingService } from '../notification_essaging.service';
+import { NotificationService } from './notification.service';
 
 @Component({
   selector: 'app-root',
@@ -24,9 +26,14 @@ export class AppComponent implements OnInit {
     window.location.pathname.includes('/mpin-login')
   );
 
-  constructor(private router: Router, private authService: AuthService) { }
+  constructor(
+    private router: Router, 
+    private authService: AuthService,
+    private notificationService: NotificationMessagingService,
+    private notificationApiService: NotificationService
+  ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
@@ -50,5 +57,34 @@ export class AppComponent implements OnInit {
         this.authService.setFirebaseToken(null);
       }
     });
+
+    try {
+
+    const fcmToken =
+      await this.notificationService
+        .requestPermission();
+
+    console.log('FCM TOKEN');
+    console.log(fcmToken);
+
+    if (fcmToken) {
+      this.notificationApiService
+        .registerPushToken(fcmToken)
+        .subscribe({
+          next: () => console.log('FCM Token registered successfully'),
+          error: (err) => console.error('Error registering FCM token:', err)
+        });
+    }
+
+    this.notificationService.listen();
+
+  } catch (e) {
+
+    console.error(
+      'FCM initialization failed',
+      e
+    );
+  }
+    
   }
 }

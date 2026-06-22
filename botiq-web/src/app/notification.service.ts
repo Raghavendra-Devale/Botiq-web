@@ -40,4 +40,18 @@ export class NotificationService {
       withCredentials: true
     });
   }
+
+  registerPushToken(token: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/notifications/register-token`,
+      {
+        fcmToken: token,
+        deviceType: 'WEB'
+      },
+      {
+        withCredentials: true
+      }
+    );
+  }
 }
+

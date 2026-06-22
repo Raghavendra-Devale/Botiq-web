@@ -1,4 +1,4 @@
-package com.dfive.botiq.service;
+package com.dfive.botiq.services;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;

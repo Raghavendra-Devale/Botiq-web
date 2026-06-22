@@ -57,7 +57,8 @@ public class SecurityConfig {
                                 "/web/auth/session",
                                 "/web/auth/device-status",
                                 "/web/auth/mpin-login",
-                                "/web/notifications/**"
+                                "/web/notifications/**",
+                                "/web/push/test"
 
                         )
                         .permitAll()
