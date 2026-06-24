@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth/auth.service';
 import { Router, RouterLink } from '@angular/router';
+import { NotificationMessagingService } from '../notification_essaging.service';
 
 @Component({
   selector: 'app-verify-otp',
@@ -18,7 +19,8 @@ export class VerifyOtpComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationMessagingService
   ) {
     const navigation = this.router.getCurrentNavigation();
     this.registerData = navigation?.extras.state?.['registerData'];
@@ -80,6 +82,8 @@ export class VerifyOtpComponent implements OnInit {
     await this.authService
       .createSession(token)
       .toPromise();
+
+    this.notificationService.initialize();
 
     this.authService
       .getDeviceStatus()

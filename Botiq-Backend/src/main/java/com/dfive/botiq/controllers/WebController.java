@@ -44,6 +44,12 @@ public class WebController {
     @Autowired
     private CacheManager cacheManager;
 
+    @Autowired
+    private com.dfive.botiq.services.PushNotificationService pushNotificationService;
+
+    @Autowired
+    private com.dfive.botiq.services.SseService sseService;
+
     ObjectMapper mapper = new ObjectMapper();
 
     private UserPrincipal getUserPrincipal() {
@@ -91,6 +97,86 @@ public class WebController {
                 System.out.println(
                         "Evicted all masterData cache entries");
             }
+        }
+    }
+
+    private Long getUserIdFromFirebaseUid(String firebaseUid) {
+        if (firebaseUid == null)
+            return null;
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT user_id FROM org_user WHERE firebase_id = ? LIMIT 1",
+                    Long.class,
+                    firebaseUid);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void notifyOrderStatusUpdate(Integer orgId, Integer orderId, String status, String actionType,
+            Long excludeUserId) {
+        if (orgId == null || orderId == null)
+            return;
+        try {
+            String title = "Order Status Alert";
+            String body = "";
+            if ("CREATED".equals(actionType)) {
+                title = "New Order Created";
+                body = "A new Order #" + orderId + " has been created.";
+            } else if ("COMPLETED".equals(actionType)) {
+                title = "Order Completed";
+                body = "Order #" + orderId + " has been completed.";
+            } else {
+                title = "Order Updated";
+                body = "Order #" + orderId + " status updated to: " + (status != null ? status : "Updated") + ".";
+            }
+            pushNotificationService.sendToOrg(orgId.longValue(), title, body, excludeUserId);
+        } catch (Exception e) {
+            System.err.println("Error notifying order status update: " + e.getMessage());
+        }
+    }
+
+    private void notifyJobAssignment(Integer orgId, Object partnerIdObj, Object jobIdObj) {
+        if (partnerIdObj == null || jobIdObj == null) {
+            return;
+        }
+        try {
+            Long partnerId = ((Number) partnerIdObj).longValue();
+            Long jobId = ((Number) jobIdObj).longValue();
+            if (partnerId <= 0)
+                return;
+
+            List<Map<String, Object>> partners = jdbcTemplate.queryForList(
+                    "SELECT partner_name, partner_contact FROM botiq_partner_w WHERE partner_id = ? AND org_id = ?",
+                    partnerId, orgId);
+            if (partners.isEmpty())
+                return;
+
+            String contact = (String) partners.get(0).get("partner_contact");
+            if (contact == null || contact.trim().isEmpty())
+                return;
+
+            String normalizedContact = contact.replaceAll("[^0-9]", "");
+            if (normalizedContact.length() > 10) {
+                normalizedContact = normalizedContact.substring(normalizedContact.length() - 10);
+            }
+
+            String userSql = "SELECT user_id FROM org_user WHERE org_id = ? AND (email_id = ? OR mobile_number LIKE ?)";
+            List<Integer> userIds = jdbcTemplate.queryForList(
+                    userSql,
+                    Integer.class,
+                    orgId,
+                    contact.trim(),
+                    "%" + normalizedContact);
+
+            if (!userIds.isEmpty()) {
+                pushNotificationService.sendToUser(
+                        userIds.get(0).longValue(),
+                        "New Job Assignment",
+                        "You have been assigned to Job #" + jobId);
+            }
+        } catch (Exception e) {
+            System.err.println("Error notifying job assignment: " + e.getMessage());
         }
     }
 
@@ -213,6 +299,7 @@ public class WebController {
                         orgId);
 
                 if (rows > 0) {
+                    notifyJobAssignment(orgId, jobOrder.get("partnerId"), jobId);
                     return ResponseEntity.ok(
                             Map.of(
                                     "status", "updated",
@@ -262,6 +349,7 @@ public class WebController {
                     jobOrder.get("jobOrderStatus"),
                     uid);
 
+            notifyJobAssignment(orgId, jobOrder.get("partnerId"), newJobId);
             return ResponseEntity.ok(
                     Map.of(
                             "status", "inserted",
@@ -665,6 +753,12 @@ public class WebController {
                 orgId = ((Number) orgIdObj).intValue();
             }
             evictPartnersCache(orgId);
+
+            Map<String, Object> ssePayload = new HashMap<>();
+            ssePayload.put("event", "ADD_PARTNER");
+            ssePayload.put("orgId", orgId);
+            ssePayload.put("partnerName", partner.get("partnerName"));
+            sseService.sendToOrg(orgId, ssePayload);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Partner added successfully"));
         } catch (Exception e) {
@@ -1624,6 +1718,17 @@ public class WebController {
 
                 if (updatedRows > 0) {
                     System.out.println("updated order ");
+                    String action = ("Delivered".equalsIgnoreCase(orderStatus)
+                            || "Completed".equalsIgnoreCase(orderStatus)) ? "COMPLETED" : "UPDATED";
+                    notifyOrderStatusUpdate(orgId, orderId, orderStatus, action, null);
+
+                    Map<String, Object> ssePayload = new HashMap<>();
+                    ssePayload.put("event", "UPDATE_ORDER");
+                    ssePayload.put("orgId", orgId);
+                    ssePayload.put("orderId", orderId);
+                    ssePayload.put("status", orderStatus);
+                    sseService.sendToOrg(orgId, ssePayload);
+
                     return ResponseEntity.ok(Map.of("status", "updated", "orderId", orderId));
                 } else {
                     System.out.println("order not found for update, performing insert with id: " + orderId);
@@ -1650,6 +1755,15 @@ public class WebController {
                             orderPriority,
                             deliveredDate,
                             uid);
+                    notifyOrderStatusUpdate(orgId, orderId, orderStatus, "CREATED", null);
+
+                    Map<String, Object> ssePayload = new HashMap<>();
+                    ssePayload.put("event", "CREATE_ORDER");
+                    ssePayload.put("orgId", orgId);
+                    ssePayload.put("orderId", orderId);
+                    ssePayload.put("status", orderStatus);
+                    sseService.sendToOrg(orgId, ssePayload);
+
                     return ResponseEntity.ok(Map.of("status", "inserted", "orderId", orderId));
                 }
             } else {
@@ -1679,6 +1793,15 @@ public class WebController {
 
                 Integer newId = jdbcTemplate.queryForObject("SELECT LASTVAL()", Integer.class);
                 System.out.println("inserted order with ID: " + newId);
+                notifyOrderStatusUpdate(orgId, newId, orderStatus, "CREATED", null);
+
+                Map<String, Object> ssePayload = new HashMap<>();
+                ssePayload.put("event", "CREATE_ORDER");
+                ssePayload.put("orgId", orgId);
+                ssePayload.put("orderId", newId);
+                ssePayload.put("status", orderStatus);
+                sseService.sendToOrg(orgId, ssePayload);
+
                 return ResponseEntity.ok(Map.of("status", "inserted", "orderId", newId));
             }
 
@@ -2328,6 +2451,13 @@ public class WebController {
 
                 evictPartnersCache(orgId);
 
+                Map<String, Object> ssePayload = new HashMap<>();
+                ssePayload.put("event", "EDIT_PARTNER");
+                ssePayload.put("orgId", orgId);
+                ssePayload.put("partnerId", partnerId);
+                ssePayload.put("partnerName", partnerName);
+                sseService.sendToOrg(orgId, ssePayload);
+
                 return ResponseEntity.ok(Map.of(
                         "status", "updated",
                         "partnerId", partnerId));
@@ -2354,6 +2484,13 @@ public class WebController {
                 Integer newId = jdbcTemplate.queryForObject("SELECT LASTVAL()", Integer.class);
 
                 evictPartnersCache(orgId);
+
+                Map<String, Object> ssePayload = new HashMap<>();
+                ssePayload.put("event", "ADD_PARTNER");
+                ssePayload.put("orgId", orgId);
+                ssePayload.put("partnerId", newId);
+                ssePayload.put("partnerName", partnerName);
+                sseService.sendToOrg(orgId, ssePayload);
 
                 return ResponseEntity.ok(Map.of(
                         "status", "inserted",
@@ -2609,6 +2746,40 @@ public class WebController {
                     new ObjectMapper().writeValueAsString(payload),
                     orgId,
                     orgName);
+
+             if (orderId != null && orderId > 0) {
+                notifyOrderStatusUpdate(orgId, orderId, null, "CREATED", null);
+
+                try {
+                    Map<String, Object> orderMap = (Map<String, Object>) payload.get("order");
+                    boolean isUpdate = false;
+                    String orderStatus = null;
+                    if (orderMap != null) {
+                        Object orderIdObj = orderMap.get("orderId") != null ? orderMap.get("orderId") : orderMap.get("order_id");
+                        if (orderIdObj != null) {
+                            long idVal = ((Number) orderIdObj).longValue();
+                            if (idVal > 0) {
+                                isUpdate = true;
+                            }
+                        }
+                        Object orderStatusObj = orderMap.get("orderStatus") != null ? orderMap.get("orderStatus") : orderMap.get("order_status");
+                        if (orderStatusObj != null) {
+                            orderStatus = orderStatusObj.toString();
+                        }
+                    }
+
+                    Map<String, Object> ssePayload = new HashMap<>();
+                    ssePayload.put("event", isUpdate ? "UPDATE_ORDER" : "CREATE_ORDER");
+                    ssePayload.put("orgId", orgId);
+                    ssePayload.put("orderId", orderId);
+                    if (orderStatus != null) {
+                        ssePayload.put("status", orderStatus);
+                    }
+                    sseService.sendToOrg(orgId, ssePayload);
+                } catch (Exception ex) {
+                    System.err.println("Failed to send SSE in saveOrder: " + ex.getMessage());
+                }
+            }
 
             return ResponseEntity.ok(orderId);
 
@@ -2899,8 +3070,24 @@ public class WebController {
                     priority,
                     status,
                     orderId,
-                    orgId // ✅ IMPORTANT
-            );
+                    orgId);
+            String action = ("Delivered".equalsIgnoreCase(status) || "Completed".equalsIgnoreCase(status)) ? "COMPLETED"
+                    : "UPDATED";
+            notifyOrderStatusUpdate(orgId, orderId, status, action, null);
+
+            try {
+                Map<String, Object> ssePayload = new HashMap<>();
+                ssePayload.put("event", "UPDATE_ORDER");
+                ssePayload.put("orgId", orgId);
+                ssePayload.put("orderId", orderId);
+                if (status != null) {
+                    ssePayload.put("status", status);
+                }
+                sseService.sendToOrg(orgId, ssePayload);
+            } catch (Exception ex) {
+                System.err.println("Failed to send SSE in updateOrder: " + ex.getMessage());
+            }
+
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "orderId", orderId));

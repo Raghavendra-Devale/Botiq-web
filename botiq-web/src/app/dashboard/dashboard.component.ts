@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { DashboardService } from '../dashboard.service';
+import { SseService } from '../sse-service.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -30,12 +31,25 @@ export class DashboardComponent {
   constructor(
     private router: Router,
     private auth: Auth,
-    private dashboardService: DashboardService
+    private dashboardService: DashboardService,
+    private sseService: SseService
   ) { }
 
   async ngOnInit(): Promise<void> {
 
     this.loadDashboardData();
+
+    this.sseService.connect();
+
+    this.sseService.messages$.subscribe({
+      next: (msg) => {
+        console.log('SSE Event => ', msg);
+        alert(JSON.stringify(msg));
+        if (msg && (msg.event === 'CREATE_ORDER' || msg.event === 'UPDATE_ORDER')) {
+          this.loadDashboardData();
+        }
+      }
+    });
   }
 
   addNewOrder() {

@@ -31,6 +31,8 @@ public class NotificationDeviceController {
         UserPrincipal principal =
                 (UserPrincipal) auth.getPrincipal();
 
+        System.out.println("Registering FCM token for user ID: " + principal.getUserId() + ", device: " + request.getDeviceType() + ", token: " + request.getFcmToken());
+
         service.registerToken(
                 principal.getUserId(),
                 request);

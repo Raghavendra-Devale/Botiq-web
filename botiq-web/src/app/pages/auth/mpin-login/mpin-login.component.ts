@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
+import { NotificationMessagingService } from '../../../notification_essaging.service';
 
 @Component({
   selector: 'app-mpin-login',
@@ -20,7 +21,8 @@ export class MpinLoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationMessagingService
   ) {}
 
   login() {
@@ -41,13 +43,14 @@ export class MpinLoginComponent {
       .subscribe({
 
         next: () => {
-
-          this.loading = false;
-
-          this.router.navigate([
-            '/dashboard'
-          ]);
-        },
+ 
+           this.loading = false;
+           this.notificationService.initialize();
+ 
+           this.router.navigate([
+             '/dashboard'
+           ]);
+         },
 
         error: (err) => {
 
