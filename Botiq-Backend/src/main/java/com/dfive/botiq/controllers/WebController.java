@@ -2208,8 +2208,52 @@ public class WebController {
             System.out.println("OrgId: " + orgId);
 
             if (rows == 0) {
-                return ResponseEntity.status(404).body("Settings not found for org_id: " + orgId);
+                String insertSql = """
+                            INSERT INTO org_settings (
+                                org_id, optional_settings, work_categories, partner_categories, org_logo, created_date, updated_date
+                            ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        """;
+                jdbcTemplate.update(
+                        insertSql,
+                        orgId,
+                        optionalSettings,
+                        workCategories,
+                        partnerCategories,
+                        orgLogo);
+                System.out.println("New org_settings inserted for orgId: " + orgId);
             }
+
+            // Sync work categories to master_table
+            jdbcTemplate.update("DELETE FROM master_table WHERE org_id = ? AND (master_type = 'WORK_CATEGORY' OR master_type = 'workCategories')", orgId);
+            if (workCategories != null && !workCategories.trim().isEmpty()) {
+                String[] wcs = workCategories.split(",");
+                for (int i = 0; i < wcs.length; i++) {
+                    String cat = wcs[i].trim();
+                    if (!cat.isEmpty()) {
+                        String insertSql = "INSERT INTO master_table (key_id, key_name, master_type, org_id, created_date, updated_date) " +
+                                "VALUES (?, ?, 'WORK_CATEGORY', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+                        jdbcTemplate.update(insertSql, i + 1, cat, orgId);
+                    }
+                }
+            }
+
+            // Sync partner categories to master_table
+            jdbcTemplate.update("DELETE FROM master_table WHERE org_id = ? AND (master_type = 'PARTNER_CATEGORY' OR master_type = 'partnerCategories')", orgId);
+            if (partnerCategories != null && !partnerCategories.trim().isEmpty()) {
+                String[] pcs = partnerCategories.split(",");
+                for (int i = 0; i < pcs.length; i++) {
+                    String cat = pcs[i].trim();
+                    if (!cat.isEmpty()) {
+                        String insertSql = "INSERT INTO master_table (key_id, key_name, master_type, org_id, created_date, updated_date) " +
+                                "VALUES (?, ?, 'PARTNER_CATEGORY', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+                        jdbcTemplate.update(insertSql, i + 1, cat, orgId);
+                    }
+                }
+            }
+
+            // Evict caches to keep UI and other endpoints synchronized
+            evictGetSettingsData(orgId);
+            evictGetMasterData();
 
             return ResponseEntity.ok(Map.of("message", "Profile saved successfully"));
 
@@ -2264,6 +2308,32 @@ public class WebController {
 
             Map<String, Object> profile = profileInfo.get(0);
 
+            // Query work categories from master_table
+            String workCategoriesSql = """
+                SELECT DISTINCT key_name FROM master_table 
+                WHERE org_id = ? AND (UPPER(master_type) = 'WORK_CATEGORY' OR UPPER(master_type) = 'WORKCATEGORIES')
+                ORDER BY key_name
+            """;
+            List<String> wCats = jdbcTemplate.queryForList(workCategoriesSql, String.class, orgId);
+            if (wCats.isEmpty()) {
+                wCats = jdbcTemplate.queryForList(workCategoriesSql, String.class, 0);
+            }
+            wCats.removeIf(Objects::isNull);
+            String workCategoriesStr = String.join(",", wCats);
+
+            // Query partner categories from master_table
+            String partnerCategoriesSql = """
+                SELECT DISTINCT key_name FROM master_table 
+                WHERE org_id = ? AND (UPPER(master_type) = 'PARTNER_CATEGORY' OR UPPER(master_type) = 'PARTNERCATEGORIES')
+                ORDER BY key_name
+            """;
+            List<String> pCats = jdbcTemplate.queryForList(partnerCategoriesSql, String.class, orgId);
+            if (pCats.isEmpty()) {
+                pCats = jdbcTemplate.queryForList(partnerCategoriesSql, String.class, 0);
+            }
+            pCats.removeIf(Objects::isNull);
+            String partnerCategoriesStr = String.join(",", pCats);
+
             Map<String, Object> response = new HashMap<>();
             response.put("org_id", userInfo.get("org_id"));
             response.put("org_name", userInfo.get("org_name"));
@@ -2274,9 +2344,9 @@ public class WebController {
             response.put("email_id", profile.get("email_id"));
             response.put("mobile_number", profile.get("mobile_number"));
             response.put("optional_settings", profile.get("optionalSettings"));
-            response.put("work_categories", profile.get("work_categories"));
-            response.put("partner_categories", profile.get("partner_categories"));
-            System.out.println(profile.get("work_categories"));
+            response.put("work_categories", workCategoriesStr);
+            response.put("partner_categories", partnerCategoriesStr);
+            System.out.println("Fetched work categories: " + workCategoriesStr);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -2637,6 +2707,100 @@ public class WebController {
 
             String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
             Integer orgId = jdbcTemplate.queryForObject(userSql, Integer.class, uid);
+
+            if ("WORK_CATEGORY".equals(type) || "WORKCATEGORIES".equals(type)) {
+                // Try reading from master_table first
+                String query = """
+                            SELECT DISTINCT ON (key_name) key_id, key_name
+                            FROM master_table
+                            WHERE (UPPER(master_type) = 'WORK_CATEGORY' OR UPPER(master_type) = 'WORKCATEGORIES')
+                              AND org_id = ?
+                            ORDER BY key_name, org_id DESC
+                        """;
+                List<Map<String, Object>> masterRows = jdbcTemplate.queryForList(query, orgId);
+                if (!masterRows.isEmpty()) {
+                    return ResponseEntity.ok(masterRows);
+                }
+
+                // Fallback to org_settings if empty
+                String settingsSql = "SELECT work_categories FROM org_settings WHERE org_id = ? ORDER BY org_sett_id DESC LIMIT 1";
+                List<Map<String, Object>> settingsRows = jdbcTemplate.queryForList(settingsSql, orgId);
+                if (!settingsRows.isEmpty()) {
+                    String wc = (String) settingsRows.get(0).get("work_categories");
+                    if (wc != null && !wc.trim().isEmpty()) {
+                        String[] categories = wc.split(",");
+                        List<Map<String, Object>> result = new ArrayList<>();
+                        for (int i = 0; i < categories.length; i++) {
+                            String catName = categories[i].trim();
+                            if (!catName.isEmpty()) {
+                                Map<String, Object> item = new HashMap<>();
+                                item.put("key_id", i + 1);
+                                item.put("key_name", catName);
+                                result.add(item);
+                            }
+                        }
+                        System.out.println("Fetched work categories from org_settings fallback: " + result);
+                        return ResponseEntity.ok(result);
+                    }
+                }
+
+                // If still empty, query master_table with org_id = 0
+                query = """
+                            SELECT DISTINCT ON (key_name) key_id, key_name
+                            FROM master_table
+                            WHERE (UPPER(master_type) = 'WORK_CATEGORY' OR UPPER(master_type) = 'WORKCATEGORIES')
+                              AND (org_id = ? OR org_id = 0)
+                            ORDER BY key_name, org_id DESC
+                        """;
+                return ResponseEntity.ok(jdbcTemplate.queryForList(query, orgId));
+            }
+
+            if ("PARTNER_CATEGORY".equals(type) || "PARTNERCATEGORIES".equals(type)) {
+                // Try reading from master_table first
+                String query = """
+                            SELECT DISTINCT ON (key_name) key_id, key_name
+                            FROM master_table
+                            WHERE (UPPER(master_type) = 'PARTNER_CATEGORY' OR UPPER(master_type) = 'PARTNERCATEGORIES')
+                              AND org_id = ?
+                            ORDER BY key_name, org_id DESC
+                        """;
+                List<Map<String, Object>> masterRows = jdbcTemplate.queryForList(query, orgId);
+                if (!masterRows.isEmpty()) {
+                    return ResponseEntity.ok(masterRows);
+                }
+
+                // Fallback to org_settings if empty
+                String settingsSql = "SELECT partner_categories FROM org_settings WHERE org_id = ? ORDER BY org_sett_id DESC LIMIT 1";
+                List<Map<String, Object>> settingsRows = jdbcTemplate.queryForList(settingsSql, orgId);
+                if (!settingsRows.isEmpty()) {
+                    String pc = (String) settingsRows.get(0).get("partner_categories");
+                    if (pc != null && !pc.trim().isEmpty()) {
+                        String[] categories = pc.split(",");
+                        List<Map<String, Object>> result = new ArrayList<>();
+                        for (int i = 0; i < categories.length; i++) {
+                            String catName = categories[i].trim();
+                            if (!catName.isEmpty()) {
+                                Map<String, Object> item = new HashMap<>();
+                                item.put("key_id", i + 1);
+                                item.put("key_name", catName);
+                                result.add(item);
+                            }
+                        }
+                        System.out.println("Fetched partner categories from org_settings fallback: " + result);
+                        return ResponseEntity.ok(result);
+                    }
+                }
+
+                // If still empty, query master_table with org_id = 0
+                query = """
+                            SELECT DISTINCT ON (key_name) key_id, key_name
+                            FROM master_table
+                            WHERE (UPPER(master_type) = 'PARTNER_CATEGORY' OR UPPER(master_type) = 'PARTNERCATEGORIES')
+                              AND (org_id = ? OR org_id = 0)
+                            ORDER BY key_name, org_id DESC
+                        """;
+                return ResponseEntity.ok(jdbcTemplate.queryForList(query, orgId));
+            }
 
             String query = """
                         SELECT DISTINCT ON (key_name) key_id, key_name

@@ -18,6 +18,7 @@ export class DashboardComponent {
   orderSummary: any = {};
   jobOrderSummary: any = {};
   dueOrderSummary: any = {};
+  todayDate: string = '';
   monthLabels = {
     m1: 'Jan',
     m2: 'Feb',
@@ -36,7 +37,7 @@ export class DashboardComponent {
   ) { }
 
   async ngOnInit(): Promise<void> {
-
+    this.setTodayDate();
     this.loadDashboardData();
 
     this.sseService.connect();
@@ -50,6 +51,15 @@ export class DashboardComponent {
         }
       }
     });
+  }
+
+  setTodayDate(): void {
+    const today = new Date();
+    const weekday = today.toLocaleDateString('en-US', { weekday: 'long' });
+    const day = today.getDate();
+    const month = today.toLocaleDateString('en-US', { month: 'long' });
+    const year = today.getFullYear();
+    this.todayDate = `${weekday}, ${day} ${month} ${year}`;
   }
 
   addNewOrder() {
@@ -105,7 +115,13 @@ export class DashboardComponent {
     return { m1, m2, m3 };
   }
 
-
+  formatAmount(amount: any): string {
+    if (amount === undefined || amount === null) return '0';
+    const num = Number(amount);
+    if (isNaN(num)) return '0';
+    return new Intl.NumberFormat('en-IN').format(num);
+  }
 
 
 }
+

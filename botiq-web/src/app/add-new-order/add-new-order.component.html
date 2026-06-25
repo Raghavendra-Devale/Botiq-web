@@ -1,193 +1,350 @@
 <form #orderForm="ngForm" (ngSubmit)="onSubmit(orderForm)" class="form-container">
 
-    <!-- ================= HEADER ================= -->
-    <div class="header">
-
-        <div class="customer-inline">
-            <input name="mobile" [(ngModel)]="newOrder.mobile" (ngModelChange)="onMobileChange($event)" />
-            <input name="name" [(ngModel)]="newOrder.name" placeholder="Name" required />
-            <input name="place" [(ngModel)]="newOrder.place" placeholder="Place" />
-
-            <input type="date" name="dueDate" [(ngModel)]="newOrder.dueDate" />
-            <input type="date" name="deliveredDate" [(ngModel)]="newOrder.deliveredDate"
-                [disabled]="newOrder.orderStatus !== 'Delivered'" />
-
-            <select name="status" [(ngModel)]="newOrder.orderStatus">
-                <option value="">Select Status</option>
-                <option *ngFor="let s of statusList" [value]="s.key_name">
-                    {{ s.key_name }}
-                </option>
-            </select>
-
-            <!-- Priority (using urgent boolean from TS) -->
-            <label>
-                <input type="checkbox" [(ngModel)]="newOrder.urgent" name="urgent" />
-                Urgent
-            </label>
+    <!-- ================= PREMIUM PAGE HEADER ================= -->
+    <div class="form-header-row">
+        <div class="header-title-section">
+            <h2 class="form-page-title">
+                {{ isEditMode ? 'Edit Order #' + orderId : 'Create New Order' }}
+            </h2>
+            <p class="form-page-subtitle">Configure customer details, items list, and billing payments</p>
         </div>
 
-        <button type="submit" class="btn-primary">
-            {{ isEditMode ? 'Update Order' : 'Save Order' }}
-        </button>
-
+        <div class="header-action-buttons">
+            <button type="submit" class="btn-primary" [disabled]="!orderForm.valid">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    class="btn-icon">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                {{ isEditMode ? 'Update Order' : 'Save Order' }}
+            </button>
+        </div>
     </div>
 
-
-    <!-- ================= MAIN GRID ================= -->
+    <!-- ================= MAIN CARD GRID ================= -->
     <div class="main-grid">
 
-        <!-- 🔷 LEFT PANEL -->
+        <!-- 🔷 LEFT COLUMN -->
         <div class="left-panel">
 
-            <!-- 🧾 ORDER ITEMS -->
-            <div class="box-panel order-items">
+            <!-- 🧑 CUSTOMER DETAILS CARD -->
+            <div class="box-panel customer-details-card">
+                <h3 class="panel-heading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Customer & Delivery Details
+                </h3>
 
-                <h3>Order Items</h3>
+                <div class="customer-grid">
+                    <div class="input-group">
+                        <label class="field-label">Mobile Number</label>
+                        <div class="input-wrapper">
+                            <input name="mobile" [(ngModel)]="newOrder.mobile" (ngModelChange)="onMobileChange($event)"
+                                placeholder="Enter mobile number" />
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="field-label">Customer Name</label>
+                        <div class="input-wrapper">
+                            <input name="name" [(ngModel)]="newOrder.name" placeholder="Enter customer name" required />
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="field-label">Place</label>
+                        <div class="input-wrapper">
+                            <input name="place" [(ngModel)]="newOrder.place" placeholder="Enter place" />
+                        </div>
+                    </div>
 
-                <div class="items-scroll">
+                    <div class="input-group">
+                        <label class="field-label">Due Date</label>
+                        <div class="input-wrapper">
+                            <input type="date" name="dueDate" [(ngModel)]="newOrder.dueDate" />
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="field-label">Delivered Date</label>
+                        <div class="input-wrapper">
+                            <input type="date" name="deliveredDate" [(ngModel)]="newOrder.deliveredDate"
+                                [disabled]="newOrder.orderStatus !== 'Delivered'" />
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="field-label">Order Status</label>
+                        <div class="input-wrapper">
+                            <select name="status" [(ngModel)]="newOrder.orderStatus">
+                                <option value="">Select Status</option>
+                                <option *ngFor="let s of statusList" [value]="s.key_name">
+                                    {{ s.key_name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Priority Field -->
+                    <div class="input-group center-checkbox-group">
+                        <label class="checkbox-container urgent-checkbox">
+                            <input type="checkbox" [(ngModel)]="newOrder.urgent" name="urgent" />
+                            <span class="checkmark red-check"></span>
+                            <span class="urgent-text font-semibold">Mark Order as Urgent</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🧾 ORDER ITEMS CARD -->
+            <div class="box-panel order-items-card">
+                <h3 class="panel-heading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                    Order Items & Work Categories
+                </h3>
+
+                <div class="items-list-wrapper">
+                    <!-- HEADER ROW -->
+                    <div class="item-row header-row">
+                        <span class="text-center">Select</span>
+                        <span>Item Name</span>
+                        <span>Qty</span>
+                        <span>Unit Price</span>
+                        <span>Total Price</span>
+                    </div>
 
                     <!-- CATEGORY BASED ITEMS -->
-                    <div class="item-row" *ngFor="let category of workCategories">
-
-                        <!-- Select -->
-                        <input type="checkbox" [(ngModel)]="category.selected" name="cat{{category.itemName}}"
-                            (ngModelChange)="toggleCategory(category)" />
+                    <div class="item-row" [class.selected-row]="category.selected"
+                        *ngFor="let category of workCategories">
+                        <!-- Custom Select Checkbox -->
+                        <div class="checkbox-col">
+                            <label class="checkbox-container">
+                                <input type="checkbox" [(ngModel)]="category.selected" name="cat{{category.itemName}}"
+                                    (ngModelChange)="toggleCategory(category)" />
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
 
                         <!-- Item Name -->
-                        <input type="text" [value]="category.displayName" readonly />
+                        <div class="input-wrapper-cell">
+                            <input type="text" [value]="category.displayName" class="input-cell readonly-input"
+                                readonly />
+                        </div>
 
                         <!-- Quantity -->
-                        <input type="number" [(ngModel)]="category.quantity" name="qty{{category.itemName}}"
-                            (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
+                        <div class="input-wrapper-cell">
+                            <input type="number" [(ngModel)]="category.quantity" name="qty{{category.itemName}}"
+                                (ngModelChange)="updateQuantity(category); updateItemTotal(null)"
+                                class="input-cell text-center" />
+                        </div>
 
                         <!-- Price -->
-                        <input type="number" [(ngModel)]="category.price" name="price{{category.itemName}}"
-                            (ngModelChange)="updateQuantity(category); updateItemTotal(null)" />
+                        <div class="input-wrapper-cell">
+                            <input type="number" [(ngModel)]="category.price" name="price{{category.itemName}}"
+                                (ngModelChange)="updateQuantity(category); updateItemTotal(null)"
+                                class="input-cell text-right" />
+                        </div>
 
                         <!-- Total -->
-                        <input type="number" [value]="(category.price || 0) * (category.quantity || 1)" readonly />
-
+                        <div class="input-wrapper-cell">
+                            <div class="cell-display-total">
+                                ₹{{ (category.price || 0) * (category.quantity || 1) }}
+                            </div>
+                        </div>
                     </div>
-
                 </div>
-
             </div>
 
-            <!-- 💰 PAYMENT -->
-            <div class="box-panel">
-
-                <h3>Payment</h3>
+            <!-- 💰 PAYMENT DETAILS CARD -->
+            <div class="box-panel payment-details-card">
+                <h3 class="panel-heading">
+                    <!-- <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg> -->
+                    Payment & Billing Metrics
+                </h3>
 
                 <div class="payment-metrics">
-
-                    <div>
-                        <strong>Total:</strong> {{ calculateTotal() }}
+                    <!-- Total Card -->
+                    <div class="payment-card total-card">
+                        <span class="payment-card-label">Total Bill</span>
+                        <span class="payment-card-value">₹{{ calculateTotal() }}</span>
                     </div>
 
-                    <div>
-                        <strong>Advance:</strong>
-                        <input type="number" name="advance" [(ngModel)]="newOrder.advanceAmount"
-                            (ngModelChange)="updateItemTotal(null)" />
+                    <!-- Advance Input Card -->
+                    <div class="payment-card advance-card">
+                        <span class="payment-card-label">Advance Paid</span>
+                        <div class="advance-input-container">
+                            <span class="payment-currency-symbol">₹</span>
+                            <input type="number" name="advance" [(ngModel)]="newOrder.advanceAmount"
+                                (ngModelChange)="updateItemTotal(null)" class="advance-input" />
+                        </div>
                     </div>
 
-                    <div>
-                        <strong>Due:</strong>
-                        {{ calculateTotal() - (newOrder.advanceAmount || 0) }}
+                    <!-- Balance Due Card -->
+                    <div class="payment-card balance-card"
+                        [class.due-alert]="(calculateTotal() - (newOrder.advanceAmount || 0)) > 0">
+                        <span class="payment-card-label">Balance Due</span>
+                        <span class="payment-card-value">₹{{ calculateTotal() - (newOrder.advanceAmount || 0) }}</span>
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
-
+        <!-- 🔷 RIGHT COLUMN -->
         <div class="right-panel">
 
-            <!-- 📊 SUMMARY -->
-            <!-- <div class="box-panel">
+            <!-- 📎 ATTACHMENTS CARD -->
+            <div class="box-panel attachments-card">
+                <h3 class="panel-heading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                        </path>
+                    </svg>
+                    Order Attachments
+                </h3>
 
-                <h3>Summary</h3>
+                <!-- Measurements Section -->
+                <div class="attachment-section">
+                    <label class="attachment-label">Measurements File Upload</label>
+                    <div class="file-upload-box">
+                        <input type="file" multiple (change)="onFileSelected($event, 'measurements')"
+                            id="upload-measurements" class="file-input-hide" />
+                        <label for="upload-measurements" class="file-upload-label-styled">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                                <line x1="12" y1="12" x2="12" y2="21"></line>
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                            </svg>
+                            <span>Upload Measurements</span>
+                        </label>
+                    </div>
 
-                <p><strong>Items:</strong> {{ getOrderSummary() }}</p>
-                <p><strong>Total:</strong> {{ calculateTotal() }}</p>
-                <p><strong>Advance:</strong> {{ newOrder.advanceAmount || 0 }}</p>
-                <p><strong>Due:</strong> {{ calculateTotal() - (newOrder.advanceAmount || 0) }}</p>
-
-            </div> -->
-
-
-            <!-- 📎 ATTACHMENTS -->
-            <div class="box-panel">
-
-                <h3>Attachments</h3>
-
-                <!-- Upload -->
-                <label>Measurements</label>
-                <input type="file" multiple (change)="onFileSelected($event, 'measurements')" />
-
-                <!-- Thumbnails -->
-                <div class="thumb-grid">
-                    <div class="thumb" *ngFor="let img of measurementImages; let i = index"
-                        (click)="openPreview(img.blobUrl)">
-
-                        <img [src]="img.blobUrl" />
-
-                        <span class="remove" (click)="removeImage('measurements', i); $event.stopPropagation()">
-                            ✕
-                        </span>
+                    <!-- Thumbnails -->
+                    <div class="thumb-grid" *ngIf="measurementImages.length > 0">
+                        <div class="thumb-item" *ngFor="let img of measurementImages; let i = index"
+                            (click)="openPreview(img.blobUrl)">
+                            <img [src]="img.blobUrl" alt="Measurement" />
+                            <button type="button" class="remove-btn"
+                                (click)="removeImage('measurements', i); $event.stopPropagation()" title="Remove file">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Patterns Section -->
+                <div class="attachment-section border-top-divider">
+                    <label class="attachment-label">Patterns File Upload</label>
+                    <div class="file-upload-box">
+                        <input type="file" multiple (change)="onFileSelected($event, 'patterns')" id="upload-patterns"
+                            class="file-input-hide" />
+                        <label for="upload-patterns" class="file-upload-label-styled">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                                <line x1="12" y1="12" x2="12" y2="21"></line>
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                            </svg>
+                            <span>Upload Patterns</span>
+                        </label>
+                    </div>
 
-                <label>Patterns</label>
-                <input type="file" multiple (change)="onFileSelected($event, 'patterns')" />
-
-                <div class="thumb-grid">
-                    <div class="thumb" *ngFor="let img of patternImages; let i = index"
-                        (click)="openPreview(img.blobUrl)">
-
-                        <img [src]="img.blobUrl" />
-
-                        <span class="remove" (click)="removeImage('patterns', i); $event.stopPropagation()">
-                            ✕
-                        </span>
+                    <div class="thumb-grid" *ngIf="patternImages.length > 0">
+                        <div class="thumb-item" *ngFor="let img of patternImages; let i = index"
+                            (click)="openPreview(img.blobUrl)">
+                            <img [src]="img.blobUrl" alt="Pattern" />
+                            <button type="button" class="remove-btn"
+                                (click)="removeImage('patterns', i); $event.stopPropagation()" title="Remove file">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Materials Section -->
+                <div class="attachment-section border-top-divider">
+                    <label class="attachment-label">Materials File Upload</label>
+                    <div class="file-upload-box">
+                        <input type="file" multiple (change)="onFileSelected($event, 'materials')" id="upload-materials"
+                            class="file-input-hide" />
+                        <label for="upload-materials" class="file-upload-label-styled">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                                <line x1="12" y1="12" x2="12" y2="21"></line>
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                            </svg>
+                            <span>Upload Materials</span>
+                        </label>
+                    </div>
 
-                <label>Materials</label>
-                <input type="file" multiple (change)="onFileSelected($event, 'materials')" />
-
-                <div class="thumb-grid">
-                    <div class="thumb" *ngFor="let img of materialImages; let i = index"
-                        (click)="openPreview(img.blobUrl)">
-
-                        <img [src]="img.blobUrl" />
-
-                        <span class="remove" (click)="removeImage('materials', i); $event.stopPropagation()">
-                            ✕
-                        </span>
+                    <div class="thumb-grid" *ngIf="materialImages.length > 0">
+                        <div class="thumb-item" *ngFor="let img of materialImages; let i = index"
+                            (click)="openPreview(img.blobUrl)">
+                            <img [src]="img.blobUrl" alt="Material" />
+                            <button type="button" class="remove-btn"
+                                (click)="removeImage('materials', i); $event.stopPropagation()" title="Remove file">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-
             </div>
 
+            <!-- ➕ JOB OPERATIONAL ACTIONS CARD -->
+            <div class="box-panel job-panel-card">
+                <h3 class="panel-heading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Actions & Workflows
+                </h3>
 
-            <!-- ➕ ADD JOB -->
-            <!-- <div class="box-panel"> -->
+                <div class="job-actions-container">
+                    <button type="button" class="btn-job-action add-job" (click)="goToNextPage()"
+                        [disabled]="!isAddJobEnabled">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Job Task
+                    </button>
 
-            <h3>Job</h3>
-
-            <button type="button" class="btn-secondary" (click)="goToNextPage()" [disabled]="!isAddJobEnabled">
-                ➕ Add Job
-            </button>
-
-            <button type="button" class="btn-secondary" [disabled]="!isAddJobEnabled">
-                Bill
-            </button>
-
-            <!-- </div> -->
+                    <button type="button" class="btn-job-action generate-bill" [disabled]="!isAddJobEnabled">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Print Invoices / Bill
+                    </button>
+                </div>
+            </div>
 
         </div>
 
@@ -195,13 +352,11 @@
 
 </form>
 
+<!-- PREVIEW MODAL -->
 <div class="image-modal" *ngIf="previewImage">
-
     <div class="overlay" (click)="closePreview()"></div>
-
     <div class="modal-content">
-        <img [src]="previewImage" />
+        <img [src]="previewImage" alt="Preview Image" />
         <button class="close-btn" (click)="closePreview()">✕</button>
     </div>
-
 </div>

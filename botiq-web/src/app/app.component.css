@@ -18,3 +18,15 @@
 .main-content.public-layout {
   padding: 0;
 }
+
+@media (max-width: 1024px) {
+  .main-content:not(.public-layout) {
+    padding: 24px 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content:not(.public-layout) {
+    padding: 16px 16px;
+  }
+}

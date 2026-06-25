@@ -14,7 +14,7 @@
     <div class="card accordion-card">
         <div class="accordion-header" (click)="isOrgSectionOpen = !isOrgSectionOpen">
             <div style="display: flex; flex-direction: column; gap: 2px;">
-                <h3 class="section-title" style="margin: 0;">Organization</h3>
+                <h3 class="section-title" style="margin: 0;">🏢 Organization</h3>
                 <span *ngIf="user.businessName || user.ownerName" style="font-size: 13px; color: #64748b;">
                     {{ user.businessName }} 💠 {{ user.ownerName}} 💠 {{ user.phoneNumber }}
                 </span>
@@ -23,41 +23,45 @@
         </div>
 
         <div class="accordion-content" [class.open]="isOrgSectionOpen">
-            <div class="profile-grid">
-
-                <div class="field">
-                    <label>Business Name</label>
-                    <p>{{user.businessName}}</p>
+            <div class="org-settings-layout">
+                <div class="org-details">
+                    <div class="info-row">
+                        <span class="info-label">Business Name</span>
+                        <span class="info-value">{{user.businessName}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Owner Name</span>
+                        <span class="info-value">{{user.ownerName}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{user.phoneNumber}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{user.email}}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Address</span>
+                        <span class="info-value">{{user.address}}</span>
+                    </div>
                 </div>
 
-                <div class="field">
-                    <label>Owner Name</label>
-                    <p>{{user.ownerName}}</p>
+                <!-- LOGO -->
+                <div class="logo-section">
+                    <span class="logo-title">Business Logo</span>
+                    <div class="logo-upload-container">
+                        <div class="logo-preview-box">
+                            <img [src]="user.businessLogo || 'assets/placeholder.png'" alt="logo">
+                        </div>
+                        <div class="logo-actions">
+                            <button type="button" class="upload-btn" (click)="logoInput.click()">
+                                📁 Upload Logo
+                            </button>
+                            <input #logoInput type="file" style="display: none;" (change)="onFileSelected($event, 'logo')" accept="image/*" />
+                        </div>
+                    </div>
                 </div>
-
-                <div class="field">
-                    <label>Address</label>
-                    <p>{{user.address}}</p>
-                </div>
-
-                <div class="field">
-                    <label>Phone Number</label>
-                    <p>{{user.phoneNumber}}</p>
-                </div>
-
-                <div class="field">
-                    <label>Email</label>
-                    <p>{{user.email}}</p>
-                </div>
-
-            </div>
-
-            <!-- LOGO -->
-            <div class="logo-section">
-                <p>Business Logo</p>
-                <img [src]="user.businessLogo || 'assets/placeholder.png'" alt="logo">
-                <input type="file" multiple (change)="onFileSelected($event, 'logo')" />
-                <!-- <button class="update-logo-btn" (click)="onUpdateLogo()">Update Logo</button> -->
             </div>
         </div>
     </div>
@@ -67,10 +71,13 @@
     <!-- FEATURES SECTION -->
     <!-- ===================== -->
     <div class="card">
-        <h3 class="section-title">Features</h3>
+        <h3 class="section-title">⚙️ Features</h3>
 
         <div class="toggle-row">
-            <span>Enable Stylus</span>
+            <div class="feature-info">
+                <span class="feature-name">Enable Stylus</span>
+                <span class="feature-desc">Use stylus for measurements and annotations.</span>
+            </div>
 
             <label class="switch">
                 <input type="checkbox" [(ngModel)]="isStylusEnabled" (change)="onStylusToggle()" />
@@ -85,7 +92,7 @@
     <!-- ===================== -->
     <div class="card">
 
-        <h3 class="section-title">Categories</h3>
+        <h3 class="section-title">🏷️ Categories</h3>
 
         <!-- INPUT ROW -->
         <div class="category-input-row">

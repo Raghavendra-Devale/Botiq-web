@@ -314,6 +314,9 @@ export class UserProfileComponent {
 
 
   hasChanges(): boolean {
+    if (!this.initialData || !this.initialData.user) {
+      return false;
+    }
     return (
       JSON.stringify(this.user) !== JSON.stringify(this.initialData.user) ||
       JSON.stringify(this.workCategories) !== JSON.stringify(this.initialData.workCategories) ||

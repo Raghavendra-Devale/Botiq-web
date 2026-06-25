@@ -56,6 +56,13 @@
     font-weight: 700;
 }
 
+.today-date {
+    font-size: 0.85rem;
+    opacity: 0.95;
+    margin-top: 3px;
+    font-weight: 500;
+}
+
 .light-text {
     margin: 4px 0 0;
     font-size: 0.9rem;
@@ -200,6 +207,18 @@
 }
 
 /* Card variants */
+.card.alert {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #ef4444;
+}
+
+.card.alert:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    border-left-color: #ef4444;
+}
+
 .card.alert p {
     color: #ef4444;
 }

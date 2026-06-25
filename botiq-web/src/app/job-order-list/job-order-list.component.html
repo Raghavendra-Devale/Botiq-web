@@ -1,26 +1,210 @@
-<header class="header">
-    <h2>Job Orders</h2>
-</header>
+<div class="page-container">
+    <!-- Header -->
+    <header class="app-header">
+        <h2 class="page-title">Job Orders</h2>
+    </header>
 
-<div *ngFor="let order of orders" (click)="editOrder(order)" class="order-card">
+    <div class="scroll-content">
+        <!-- Main Card Component holding Table & Header Controls -->
+        <div class="table-card">
+            <!-- Table Action Header (Title + Tabs + Filter) -->
+            <div class="table-card-header">
+                <div class="title-area">
+                    <h3 class="table-title">Job Order Activities</h3>
+                    <p class="table-subtitle">Track and assign job orders</p>
+                </div>
+                
+                <div class="header-actions-row">
+                    <!-- Segment Tabs -->
+                    <div class="segments-wrapper">
+                        <div class="segments">
+                            <button *ngIf="showCustomTab"
+                                [class.active]="selectedSegment === 'Custom'" 
+                                (click)="onSegmentChange('Custom')" 
+                                class="segment-btn custom-tab">
+                                {{ tabLabel }} ({{ getCustomTabCount() }})
+                            </button>
 
-    <!-- <img [src]="order.image || 'assets/default.png'" class="order-img" /> -->
+                            <button *ngFor="let tab of ['All','Pending','Started','Completed']"
+                                [class.active]="selectedSegment === tab" 
+                                (click)="onSegmentChange(tab)" 
+                                class="segment-btn">
+                                {{ tab }} ({{ getTabCount(tab) }})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    <div class="order-content">
-        <h3>{{ order.customer_name || 'Unknown' }}</h3>
+            <!-- Search Bar inside Card -->
+            <div class="table-search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input class="search-input-card" [(ngModel)]="searchQuery" (input)="onSearchInput($event)"
+                    placeholder="Search by customer, partner, mobile or contact details..." />
+                <button class="clear-search-btn" *ngIf="searchQuery" (click)="onCancelSearch()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
 
+            <!-- Responsive Table View -->
+            <div class="table-responsive">
+                <table class="logistics-table">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" (change)="toggleSelectAll($event)" [checked]="isAllSelected()" />
+                                    <span class="checkmark"></span>
+                                </label>
+                            </th>
+                            <th class="col-order-id" (click)="sort('order_id')">
+                                <div class="th-inner">
+                                    Order ID
+                                    <span class="sort-indicator" [class.active]="sortColumn === 'order_id'">
+                                        <svg class="sort-arrow" [class.desc]="sortColumn === 'order_id' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="col-customer" (click)="sort('customer_name')">
+                                <div class="th-inner">
+                                    Customer
+                                    <span class="sort-indicator" [class.active]="sortColumn === 'customer_name'">
+                                        <svg class="sort-arrow" [class.desc]="sortColumn === 'customer_name' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="col-partner" (click)="sort('partner_name')">
+                                <div class="th-inner">
+                                    Partner
+                                    <span class="sort-indicator" [class.active]="sortColumn === 'partner_name'">
+                                        <svg class="sort-arrow" [class.desc]="sortColumn === 'partner_name' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="col-due-date" (click)="sort('job_due_date')">
+                                <div class="th-inner">
+                                    Due Date
+                                    <span class="sort-indicator" [class.active]="sortColumn === 'job_due_date'">
+                                        <svg class="sort-arrow" [class.desc]="sortColumn === 'job_due_date' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+                            <th class="col-status" (click)="sort('job_order_status')">
+                                <div class="th-inner">
+                                    Status
+                                    <span class="sort-indicator" [class.active]="sortColumn === 'job_order_status'">
+                                        <svg class="sort-arrow" [class.desc]="sortColumn === 'job_order_status' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="18 15 12 9 6 15"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let order of paginatedOrders" (click)="editOrder(order)" class="table-row">
+                            <td class="col-checkbox" (click)="$event.stopPropagation()">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" (change)="toggleSelectOrder(order.order_id, $event)" [checked]="isOrderSelected(order.order_id)" />
+                                    <span class="checkmark"></span>
+                                </label>
+                            </td>
+                            <td class="col-order-id font-medium text-slate-800">
+                                #{{ order.order_id }}
+                            </td>
+                            <td class="col-customer">
+                                <div class="customer-info">
+                                    <span class="customer-name-text">{{ order.customer_name || 'Unknown' }}</span>
+                                    <span class="customer-phone" *ngIf="order.contact_number">{{ order.contact_number }}</span>
+                                </div>
+                            </td>
+                            <td class="col-partner">
+                                <div class="customer-info">
+                                    <span class="customer-name-text">{{ order.partner_name || 'Unassigned' }}</span>
+                                    <span class="customer-phone" *ngIf="order.partner_contact">{{ order.partner_contact }}</span>
+                                </div>
+                            </td>
+                            <td class="col-due-date font-medium" [class.overdue-text]="isOverdue(order)">
+                                {{ order.job_due_date | date:'mediumDate' }}
+                            </td>
+                            <td class="col-status">
+                                <span class="status-badge" [ngClass]="getStatusClass(order)">
+                                    <span class="status-dot"></span>
+                                    {{ getStatusLabel(order) }}
+                                </span>
+                            </td>
+                        </tr>
+                        <!-- Empty State -->
+                        <tr *ngIf="paginatedOrders.length === 0">
+                            <td colspan="6" class="empty-state-row">
+                                <div class="empty-state-container">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M8 15h8"></path>
+                                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                    </svg>
+                                    <p>No job orders found matching the filter criteria.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <p class="due-date">
-            Due: {{ order.job_due_date | date:'mediumDate' }}
-        </p>
+            <!-- Table Card Footer (Showing X of Y & Pagination Controls) -->
+            <div class="table-card-footer" *ngIf="filteredOrders.length > 0">
+                <div class="showing-records">
+                    Showing <strong>{{ getShowingStart() }}</strong> to <strong>{{ getShowingEnd() }}</strong> of <strong>{{ filteredOrders.length }}</strong>
+                </div>
 
-        <p class="status">
-            {{ order.job_order_status }}
-        </p>
+                <div class="pagination-navigation">
+                    <!-- Prev Button -->
+                    <button class="btn-pagination-nav" 
+                        [disabled]="currentPage === 1" 
+                        (click)="onPageChange(currentPage - 1)"
+                        title="Previous Page">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
 
-        <p class="partner">
-            {{ order.partner_name }} ({{ order.partner_contact }})
-        </p>
+                    <!-- Page Numbers -->
+                    <div class="page-numbers-container">
+                        <button *ngFor="let page of getPageNumbers()"
+                            [class.active]="currentPage === page"
+                            (click)="onPageChange(page)"
+                            class="btn-page-num">
+                            {{ page }}
+                        </button>
+                    </div>
+
+                    <!-- Next Button -->
+                    <button class="btn-pagination-nav" 
+                        [disabled]="currentPage === totalPages()" 
+                        (click)="onPageChange(currentPage + 1)"
+                        title="Next Page">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-
-</div>
+</div>

@@ -368,3 +368,51 @@
     color: var(--danger-accent, #ef4444);
     background: rgba(239, 68, 68, 0.08);
 }
+
+@media (max-width: 1024px) {
+    .header {
+        margin: -24px -24px 24px -24px;
+        padding: 0 24px;
+    }
+    
+    .header-right {
+        gap: 12px;
+    }
+    
+    .user-dropdown {
+        gap: 8px;
+        padding: 4px 10px;
+    }
+    
+    .greeting {
+        display: none;
+    }
+    
+    .notification-container {
+        position: static;
+    }
+    
+    .notification-dropdown {
+        top: 100%;
+        right: 24px;
+        width: calc(100% - 48px);
+        max-width: 360px;
+        border-radius: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        margin: -16px -16px 16px -16px;
+        padding: 0 16px;
+    }
+    
+    .user-name {
+        display: none;
+    }
+    
+    .notification-dropdown {
+        right: 16px;
+        width: calc(100% - 32px);
+    }
+}

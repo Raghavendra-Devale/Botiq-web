@@ -3,6 +3,7 @@
     <div class="main-header">
         <div class="header-title">
             <h2>Dashboard</h2>
+            <div class="today-date">{{ todayDate }}</div>
             <p class="light-text">Total Orders Due: {{ monthlyDueSummary?.total || 0 }}</p>
         </div>
         
@@ -96,14 +97,14 @@
                         <div class="summary-title">Due This Week</div>
                         <div class="summary-row">
                             <span class="items">{{ dueOrderSummary.due_this_week?.count || 0 }} items</span>
-                            <span class="amount">₹{{ dueOrderSummary?.due_this_week?.amount || 0 }}</span>
+                            <span class="amount">₹{{ formatAmount(dueOrderSummary?.due_this_week?.amount) }}</span>
                         </div>
                     </div>
                     <div class="summary-card overdue">
                         <div class="summary-title">Overdue Amount</div>
                         <div class="summary-row">
                             <span class="items">{{ dueOrderSummary?.overdue?.count || 0 }} items</span>
-                            <span class="amount">₹{{ dueOrderSummary?.overdue?.amount || 0 }}</span>
+                            <span class="amount">₹{{ formatAmount(dueOrderSummary?.overdue?.amount) }}</span>
                         </div>
                     </div>
                 </div>

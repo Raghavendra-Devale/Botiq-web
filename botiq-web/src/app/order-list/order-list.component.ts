@@ -15,7 +15,6 @@ import { retry } from 'rxjs';
 export class OrderListComponent {
   exportOrders() {
     console.log("export orders as csv or pdf");
-
   }
 
   orders: any[] = [];
@@ -42,6 +41,14 @@ export class OrderListComponent {
   nextPlan: any = null;
   mobileNumber: any;
 
+  // Pagination & Sorting properties
+  currentPage: number = 1;
+  pageSize: number = 5;
+  sortColumn: string = 'order_id';
+  sortDirection: 'asc' | 'desc' = 'desc';
+  selectedOrderIds = new Set<number>();
+  paginatedOrders: any[] = [];
+
   readonly tabLabelMap: Record<number, string> = {
     1: 'Orders Due this Week',
     2: 'Orders Overdue',
@@ -64,15 +71,12 @@ export class OrderListComponent {
       this.showCustomTab = comingFromDashboard;
       this.setTabLabel();
       this.fetchOrders(true);
-
     });
   }
-
 
   constructor(private orderService: OrderService,
     private router: Router,
     private route: ActivatedRoute) {
-
   }
 
   goBack() {
@@ -88,7 +92,9 @@ export class OrderListComponent {
       this.orders = [];
       this.filteredOrders = [];
       this.selectedItems = [];
+      this.selectedOrderIds.clear();
       this.offset = 0;
+      this.currentPage = 1;
     }
 
     this.orderService.getAllOrders().subscribe({
@@ -96,18 +102,16 @@ export class OrderListComponent {
         this.orders = res || [];
         this.selectedItems = (this.orders.length > 0) ? this.orders[0].order_details : [];
         console.log(this.selectedItems);
-        // this.filterOrders(); // filtering based on status
-        this.applyFilters(); // filtering based on status and search
-
+        this.applyFilters();
       },
       error: (err: any) => {
         console.log(err);
       }
     });
   }
+
   editOrder(order: any) {
     this.router.navigate(['/add-new-order'], { queryParams: { id: order.order_id } });
-
     console.log('Edit order:', order);
   }
 
@@ -120,7 +124,11 @@ export class OrderListComponent {
     console.log('Delete order:', order, index);
     this.orderService.deleteOrder({ id: order.order_id }).subscribe({
       next: () => {
-        this.orders.splice(index, 1); // remove from UI
+        const mainIndex = this.orders.findIndex(o => o.order_id === order.order_id);
+        if (mainIndex !== -1) {
+          this.orders.splice(mainIndex, 1);
+        }
+        this.selectedOrderIds.delete(order.order_id);
         this.applyFilters();
       },
       error: (err: any) => {
@@ -132,22 +140,23 @@ export class OrderListComponent {
   onSearchInput(event: any) {
     this.searchQuery = event.target.value;
     console.log('Search:', this.searchQuery);
-    // this.fetchOrders(true); should not fetch data everytime use local data
-    // this.filterOrders(); // filtering based on status
-    this.applyFilters(); // filtering based on status and search
+    this.currentPage = 1; // Reset to page 1 on new search
+    this.applyFilters();
   }
 
   onSegmentChange(segment: string) {
     this.selectedSegment = segment;
-    // this.filterOrders(); // filtering based on status
-    this.applyFilters(); // filtering based on status and search
+    this.currentPage = 1; // Reset to page 1 on segment change
+    this.applyFilters();
   }
 
   onCancelSearch() {
     this.searchQuery = '';
     console.log('Search cleared');
+    this.currentPage = 1;
     this.applyFilters();
   }
+
   dismissNote(id: number) {
     console.log('Dismiss note:', id);
   }
@@ -155,7 +164,6 @@ export class OrderListComponent {
   getNoteClass(note: any) {
     return 'note-default';
   }
-
 
   makeCall(phone: string, event: Event) {
     event.stopPropagation();
@@ -166,7 +174,6 @@ export class OrderListComponent {
     event.stopPropagation();
     console.log('WhatsApp:', name, number);
   }
-
 
   getImages(order: any) {
     return 'assets/images/noimge.jpg';
@@ -184,7 +191,107 @@ export class OrderListComponent {
     this.isPopoverOpen = !this.isPopoverOpen;
   }
 
+  // Checkbox selection methods
+  toggleSelectAll(event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) {
+      this.paginatedOrders.forEach(order => this.selectedOrderIds.add(order.order_id));
+    } else {
+      this.paginatedOrders.forEach(order => this.selectedOrderIds.delete(order.order_id));
+    }
+  }
 
+  toggleSelectOrder(orderId: number, event: Event) {
+    event.stopPropagation();
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) {
+      this.selectedOrderIds.add(orderId);
+    } else {
+      this.selectedOrderIds.delete(orderId);
+    }
+  }
+
+  isAllSelected(): boolean {
+    if (this.paginatedOrders.length === 0) return false;
+    return this.paginatedOrders.every(order => this.selectedOrderIds.has(order.order_id));
+  }
+
+  isOrderSelected(orderId: number): boolean {
+    return this.selectedOrderIds.has(orderId);
+  }
+
+  // Sorting methods
+  sort(column: string) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applyFilters();
+  }
+
+  getSortValue(order: any, column: string): any {
+    switch (column) {
+      case 'order_id':
+        return order.order_id || 0;
+      case 'customer_name':
+        return (order.customer_name || '').toLowerCase();
+      case 'order_details':
+        return (this.formatOrderDetails(order.order_details) || '').toLowerCase();
+      case 'order_amount':
+        return Number(order.order_amount) || 0;
+      case 'order_status':
+        return (order.order_status || '').toLowerCase();
+      case 'due_date':
+        return order.due_date ? new Date(order.due_date).getTime() : 0;
+      default:
+        return '';
+    }
+  }
+
+  // Pagination methods
+  updatePaginatedOrders() {
+    const total = this.filteredOrders.length;
+    const maxPage = Math.ceil(total / this.pageSize) || 1;
+    if (this.currentPage > maxPage) {
+      this.currentPage = maxPage;
+    }
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    this.paginatedOrders = this.filteredOrders.slice(startIndex, endIndex);
+  }
+
+  onPageChange(page: number) {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage = page;
+      this.updatePaginatedOrders();
+    }
+  }
+
+  totalPages(): number {
+    return Math.ceil(this.filteredOrders.length / this.pageSize) || 1;
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const pages = [];
+    for (let i = 1; i <= total; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  getShowingStart(): number {
+    if (this.filteredOrders.length === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  getShowingEnd(): number {
+    const end = this.currentPage * this.pageSize;
+    const total = this.filteredOrders.length;
+    return end > total ? total : end;
+  }
 
   applyFilters() {
     let temp = [...this.orders];
@@ -198,11 +305,7 @@ export class OrderListComponent {
           temp = temp.filter(order => {
             if (!order.due_date) return false;
             const due = new Date(order.due_date);
-            due.setHours(0, 0, 0, 0); 
-            // logic: due < today ?? Wait, the old logic checked due < today for tabId=1
-            // Let's implement logic: "Due this week" (diff >= 0 and diff <= 7) or just "due < today" like the previous code
-            // Actually original code for due this week did:
-            // "due < today && order.order_status !== 'Delivered'". Let's fix it accurately.
+            due.setHours(0, 0, 0, 0);
             const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
             return diff >= 0 && diff <= 7 && order.order_status !== 'Delivered';
           });
@@ -244,16 +347,13 @@ export class OrderListComponent {
           break;
       }
     } else if (this.selectedSegment && this.selectedSegment !== 'All') {
-      // 🔹 Filter by segment (status)
       temp = temp.filter(order =>
         order.order_status?.toLowerCase() === this.selectedSegment.toLowerCase()
       );
     }
 
-    // 🔹 Filter by search
     if (this.searchQuery && this.searchQuery.trim() !== '') {
       const query = this.searchQuery.toLowerCase();
-
       temp = temp.filter(order =>
         order.customer_name?.toLowerCase().includes(query) ||
         (typeof order.order_details === 'string' ? order.order_details.toLowerCase().includes(query) : false) ||
@@ -261,12 +361,23 @@ export class OrderListComponent {
       );
     }
 
+    // Sort
+    if (this.sortColumn) {
+      temp.sort((a, b) => {
+        const valA = this.getSortValue(a, this.sortColumn);
+        const valB = this.getSortValue(b, this.sortColumn);
+        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     // Transform and assign
     this.filteredOrders = temp.map(order => this.transformOrder(order));
+
+    // Update pagination
+    this.updatePaginatedOrders();
   }
-
-
-
 
   transformOrder(order: any) {
     console.log('BEFORE:', order);
@@ -288,7 +399,6 @@ export class OrderListComponent {
     };
 
     console.log('AFTER:', transformed);
-
     return transformed;
   }
 
@@ -301,4 +411,59 @@ export class OrderListComponent {
     }
   }
 
+  getTabCount(tab: string): number {
+    if (tab === 'All') {
+      return this.orders.length;
+    }
+    return this.orders.filter(order => order.order_status?.toLowerCase() === tab.toLowerCase()).length;
+  }
+
+  getCustomTabCount(): number {
+    if (!this.tabId) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let temp = [...this.orders];
+    switch (this.tabId) {
+      case 1:
+        temp = temp.filter(order => {
+          if (!order.due_date) return false;
+          const due = new Date(order.due_date);
+          due.setHours(0, 0, 0, 0);
+          const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+          return diff >= 0 && diff <= 7 && order.order_status !== 'Delivered';
+        });
+        break;
+      case 2:
+        temp = temp.filter(order => {
+          if (!order.due_date) return false;
+          const due = new Date(order.due_date);
+          due.setHours(0, 0, 0, 0);
+          return due < today && order.order_status !== 'Delivered';
+        });
+        break;
+      case 3:
+        temp = temp.filter(order => order.order_priority === 1);
+        break;
+      case 4:
+        temp = temp.filter(order => order.order_status === 'Ready');
+        break;
+      case 5:
+        temp = temp.filter(order => {
+          if (!order.delivered_date) return false;
+          const delivered = new Date(order.delivered_date);
+          const diff = (today.getTime() - delivered.getTime()) / (1000 * 60 * 60 * 24);
+          return diff >= 0 && diff <= 7;
+        });
+        break;
+      case 6:
+        temp = temp.filter(order => {
+          if (!order.order_date) return false;
+          const created = new Date(order.order_date);
+          const diff = (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+          return diff >= 0 && diff <= 7;
+        });
+        break;
+    }
+    return temp.length;
+  }
 }
