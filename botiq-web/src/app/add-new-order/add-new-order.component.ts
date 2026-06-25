@@ -92,6 +92,125 @@ export class AddNewOrderComponent {
   isEditMode = false;
   isAddJobEnabled = false;
 
+  // POS Custom Properties
+  searchTerm: string = '';
+  customItemName: string = '';
+  customItemPrice: number | null = null;
+
+  get filteredCategories() {
+    if (!this.searchTerm.trim()) {
+      return this.workCategories;
+    }
+    const term = this.searchTerm.toLowerCase();
+    return this.workCategories.filter(cat => 
+      (cat.displayName || '').toLowerCase().includes(term) || 
+      (cat.itemName || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectCategoryFromPos(category: any) {
+    category.selected = true;
+    const exists = this.orderDetails.find(
+      item => item.itemName.trim().toLowerCase() === category.itemName.trim().toLowerCase()
+    );
+    if (!exists) {
+      this.orderDetails.push({
+        itemName: category.itemName,
+        quantity: category.quantity || 1,
+        price: category.price || 0
+      });
+    } else {
+      exists.quantity++;
+      category.quantity = exists.quantity;
+    }
+    this.newOrder.orderAmount = this.calculateTotal();
+    this.updateAddJobState();
+  }
+
+  incrementCartItem(item: any) {
+    item.quantity++;
+    const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase());
+    if (cat) {
+      cat.quantity = item.quantity;
+    }
+    this.newOrder.orderAmount = this.calculateTotal();
+  }
+
+  decrementCartItem(item: any) {
+    if (item.quantity > 1) {
+      item.quantity--;
+      const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase());
+      if (cat) {
+        cat.quantity = item.quantity;
+      }
+    } else {
+      this.removeCartItem(item);
+    }
+    this.newOrder.orderAmount = this.calculateTotal();
+  }
+
+  removeCartItem(item: any) {
+    this.orderDetails = this.orderDetails.filter(i => i !== item);
+    const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase());
+    if (cat) {
+      cat.selected = false;
+      cat.quantity = 1;
+    }
+    this.newOrder.orderAmount = this.calculateTotal();
+    this.updateAddJobState();
+  }
+
+  addCustomItem() {
+    if (!this.customItemName.trim()) return;
+    const name = this.customItemName.trim();
+    const price = this.customItemPrice || 0;
+    
+    const nameLower = name.toLowerCase();
+    const exists = this.orderDetails.find(
+      item => item.itemName.trim().toLowerCase() === nameLower
+    );
+    if (exists) {
+      exists.quantity++;
+    } else {
+      this.orderDetails.push({
+        itemName: nameLower,
+        quantity: 1,
+        price: price
+      });
+    }
+    
+    const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === nameLower);
+    if (cat) {
+      cat.selected = true;
+      cat.price = price;
+      cat.quantity = exists ? exists.quantity : 1;
+    }
+    
+    this.customItemName = '';
+    this.customItemPrice = null;
+    this.newOrder.orderAmount = this.calculateTotal();
+    this.updateAddJobState();
+  }
+
+  getCartQuantity(itemName: string): number {
+    if (!this.orderDetails) return 0;
+    const found = this.orderDetails.find(
+      item => item.itemName.trim().toLowerCase() === itemName.trim().toLowerCase()
+    );
+    return found ? found.quantity : 0;
+  }
+
+  getCategoryIcon(name: string): string {
+    const lower = (name || '').toLowerCase();
+    if (lower.includes('shirt')) return 'fa-shirt';
+    if (lower.includes('pant') || lower.includes('trouser') || lower.includes('salwar')) return 'fa-scissors';
+    if (lower.includes('suit') || lower.includes('coat') || lower.includes('blazer')) return 'fa-user-tie';
+    if (lower.includes('blouse') || lower.includes('top')) return 'fa-venus';
+    if (lower.includes('dress') || lower.includes('lehenga') || lower.includes('saree') || lower.includes('frock') || lower.includes('kurta')) return 'fa-person-dress';
+    if (lower.includes('alter') || lower.includes('repair') || lower.includes('stitch') || lower.includes('fitting')) return 'fa-crop-simple';
+    return 'fa-needle';
+  }
+
 
   newOrder: OrderModel = {
     customerId: null,
@@ -557,6 +676,7 @@ export class AddNewOrderComponent {
 
 
   previewImage: string | null = null;
+  showAttachmentsModal: boolean = false;
 
   openPreview(url: string) {
     this.previewImage = url;
@@ -564,5 +684,25 @@ export class AddNewOrderComponent {
 
   closePreview() {
     this.previewImage = null;
+  }
+
+  hasAttachments(): boolean {
+    return (this.measurementImages && this.measurementImages.length > 0) ||
+           (this.patternImages && this.patternImages.length > 0) ||
+           (this.materialImages && this.materialImages.length > 0);
+  }
+
+  getAttachmentsCount(): number {
+    return (this.measurementImages?.length || 0) +
+           (this.patternImages?.length || 0) +
+           (this.materialImages?.length || 0);
+  }
+
+  openAttachmentsModal() {
+    this.showAttachmentsModal = true;
+  }
+
+  closeAttachmentsModal() {
+    this.showAttachmentsModal = false;
   }
 }
