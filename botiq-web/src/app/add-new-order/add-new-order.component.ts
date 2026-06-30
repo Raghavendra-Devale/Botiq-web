@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { OrderService } from '../order.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrderestateService } from '../orderestate.service';
 import { NotificationService } from '../notification.service';
 
@@ -34,7 +34,7 @@ interface OrderModel {
 @Component({
   selector: 'app-add-new-order',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, RouterModule],
   templateUrl: './add-new-order.component.html',
   styleUrl: './add-new-order.component.css'
 })
@@ -649,7 +649,7 @@ export class AddNewOrderComponent {
             messageText: `Order #${this.orderId} updated successfully.`,
             priority: 'LOW'
           }).subscribe();
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/order-list']);
         },
         error: (err: any) => {
           console.error("Update failed:", err);
@@ -665,7 +665,7 @@ export class AddNewOrderComponent {
             messageText: `New Order #${newId} created successfully!`,
             priority: 'LOW'
           }).subscribe();
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/order-list']);
         },
         error: (err: any) => {
           console.error("Save failed:", err);

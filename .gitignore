@@ -21,6 +21,7 @@ yarn-error.log*
 # Java / Spring Boot
 # =========================
 target/
+bin/
 *.class
 *.jar
 *.war
@@ -42,6 +43,8 @@ build/
 .vscode/
 .idea/
 *.iml
+*.ipr
+*.iws
 
 # Eclipse
 .project
@@ -55,11 +58,24 @@ build/
 Thumbs.db
 
 # =========================
-# Misc
+# Misc / Backups
 # =========================
 *.swp
 *.swo
-
-*.serviceAccountKey.json
 *.txt
-Botiq-Backend/src/main/resources/serviceAccountKey.json
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.bak
+*.tmp
+dead_code_report.md
+
+# =========================
+# Secrets / Credentials
+# =========================
+*serviceAccountKey.json
+serviceAccountKey.json
+API_KEY/
+firebase/
+**/*firebase-adminsdk*.json

@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.InputStream;
 
-@Configuration
+//@Configuration
 public class NotificationFirebaseConfig {
 
     @Value("classpath:firebase/botiq-notifications-firebase-adminsdk-fbsvc-6bef9f4efc.json")
