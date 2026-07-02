@@ -15,12 +15,15 @@ export class SidebarComponent {
   initial = '';
   businessName = '';
   orgLogo = '';
+  role = '';
+  isCollapsed = false;
 
   ngOnInit() {
     this.userName = localStorage.getItem("owner_name") || '';
     this.businessName = localStorage.getItem("businessName") || '';
     // this.orgLogo = localStorage.getItem("org_logo") || '';
     this.initial = this.businessName.charAt(0);
+    this.role = localStorage.getItem("role") || '';
     // console.log("orgLogo :", this.orgLogo);
   }
 }

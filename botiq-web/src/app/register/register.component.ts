@@ -34,7 +34,7 @@ export class RegisterComponent implements AfterViewInit {
   ngAfterViewInit() {
   }
 
-  onSubmit(form: any) {
+  async onSubmit(form: any) {
     this.registerData.phone = this.normalizeIndianPhone(this.registerData.phone);
     this.trimInputs();
 
@@ -47,6 +47,15 @@ export class RegisterComponent implements AfterViewInit {
 
     if (!phoneRegex.test(this.registerData.phone)) {
       alert('Enter a valid Indian mobile number');
+      return;
+    }
+
+    try {
+      this.authService.setupRecaptcha('recaptcha-container');
+      await this.authService.verifyRecaptcha();
+    } catch (err) {
+      console.error('Failed to verify Recaptcha:', err);
+      alert('Recaptcha verification failed. Please try again.');
       return;
     }
 
@@ -97,7 +106,6 @@ export class RegisterComponent implements AfterViewInit {
 
   private async sendOtpAndNavigate() {
     try {
-      this.authService.setupRecaptcha('recaptcha-container');
       await this.authService.sendOTP('+91' + this.registerData.phone);
 
       this.router.navigate(['/verify-otp'], {

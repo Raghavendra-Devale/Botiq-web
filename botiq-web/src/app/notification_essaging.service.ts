@@ -14,48 +14,16 @@ export class NotificationMessagingService {
   constructor(private apiService: NotificationService) {}
 
   async initialize() {
-    try {
-      const token = await this.requestPermission();
-      if (token) {
-        this.apiService.registerPushToken(token).subscribe({
-          next: () => console.log('FCM Token registered successfully on backend'),
-          error: (err) => console.log('Error registering FCM token on backend:', err)
-        });
-      }
-      this.listen();
-    } catch (error) {
-      console.error('Failed to initialize push notifications:', error);
-    }
+    console.log('Push notifications are disabled');
+    return;
   }
 
   async requestPermission(): Promise<string | null> {
-
-    const permission = await Notification.requestPermission();
-
-    if (permission !== 'granted') {
-      return null;
-    }
-
-    const token = await getToken(this.messaging,{vapidKey: notificationVapidKey,serviceWorkerRegistration:await navigator.serviceWorker.register('/firebase-messaging-sw.js')});
-    return token;
+    return null;
   }
 
   listen() {
-    onMessage(
-      this.messaging,
-      payload => {
-        console.log('Foreground Notification', payload);
-        if (payload.notification?.title && payload.notification?.body) {
-          this.showToast(payload.notification.title, payload.notification.body);
-        } else {
-          alert(
-            (payload.notification?.title || 'Notification') +
-            '\n' +
-            (payload.notification?.body || '')
-          );
-        }
-      }
-    );
+    // Disabled
   }
 
   private showToast(title: string, body: string) {

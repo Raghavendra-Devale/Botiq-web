@@ -20,104 +20,96 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private final FirebaseAuthenticationFilter firebaseAuthenticationFilter;
-    private final SessionAuthenticationFilter sessionAuthenticationFilter;
+        private final FirebaseAuthenticationFilter firebaseAuthenticationFilter;
+        private final SessionAuthenticationFilter sessionAuthenticationFilter;
 
-    public SecurityConfig(
-            FirebaseAuthenticationFilter firebaseAuthenticationFilter,
-            SessionAuthenticationFilter sessionAuthenticationFilter) {
+        public SecurityConfig(
+                        FirebaseAuthenticationFilter firebaseAuthenticationFilter,
+                        SessionAuthenticationFilter sessionAuthenticationFilter) {
 
-        this.firebaseAuthenticationFilter = firebaseAuthenticationFilter;
-        this.sessionAuthenticationFilter = sessionAuthenticationFilter;
-    }
+                this.firebaseAuthenticationFilter = firebaseAuthenticationFilter;
+                this.sessionAuthenticationFilter = sessionAuthenticationFilter;
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http)
+                        throws Exception {
 
-        http
-                .cors(cors ->
-                        cors.configurationSource(corsConfigurationSource()))
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                .csrf(csrf -> csrf.disable())
+                                .csrf(csrf -> csrf.disable())
 
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .sessionFixation(fixation ->
-                                fixation.migrateSession()))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                                                .sessionFixation(fixation -> fixation.migrateSession()))
 
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**")
+                                                .permitAll()
 
-                        .requestMatchers(
-                                "/public/**",
-                                "/organization/**",
-                                "/payment/**",
-                                "/web/auth/session",
-                                "/web/auth/device-status",
-                                "/web/auth/mpin-login",
-                                "/web/notifications/**",
-                                "/web/push/**"
-                        )
-                        .permitAll()
+                                                .requestMatchers(
+                                                                "/public/**",
+                                                                "/organization/**",
+                                                                "/payment/**",
+                                                                "/web/auth/session",
+                                                                "/web/auth/device-status",
+                                                                "/web/auth/mpin-login",
+                                                                "/web/notifications/**",
+                                                                "/web/push/**",
+                                                                "/web/checkUserExists")
+                                                .permitAll()
 
-                        .requestMatchers("/api/**")
-                        .authenticated()
+                                                .requestMatchers("/api/**")
+                                                .authenticated()
 
-                        .anyRequest()
-                        .authenticated()
-                )
+                                                .anyRequest()
+                                                .authenticated())
 
-                .addFilterBefore(
-                        sessionAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                )
+                                .addFilterBefore(
+                                                sessionAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
 
-                .addFilterAfter(
-                        firebaseAuthenticationFilter,
-                        SessionAuthenticationFilter.class
-                );
+                                .addFilterAfter(
+                                                firebaseAuthenticationFilter,
+                                                SessionAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration =
-                new CorsConfiguration();
+                CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowCredentials(true);
+                configuration.setAllowCredentials(true);
 
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:8100",
-                "http://localhost:4200",
-                "http://127.0.0.1:8100",
-                "https://localhost",
-                "https://localhost:8080",
-                "https://botiqcloud.com",
-                "https://botiq.dfivetechnologies.com",
-                "capacitor://localhost",
-                "http://192.168.94.246:8080"
-        ));
+                configuration.setAllowedOrigins(List.of(
+                                "http://localhost:8100",
+                                "http://localhost:4200",
+                                "http://127.0.0.1:8100",
+                                "http://127.0.0.1:4200",
+                                "https://localhost",
+                                "https://localhost:8080",
+                                "https://botiqcloud.com",
+                                "https://botiq.dfivetechnologies.com",
+                                "capacitor://localhost",
+                                "http://192.168.94.246:8080"));
 
-        configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        );
+                configuration.setAllowedMethods(
+                                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        configuration.setAllowedHeaders(List.of("*"));
+                configuration.setAllowedHeaders(List.of("*"));
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", configuration);
+                source.registerCorsConfiguration("/**", configuration);
 
-        return source;
-    }
+                return source;
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }

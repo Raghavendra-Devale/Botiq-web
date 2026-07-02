@@ -1,46 +1,58 @@
-<div class="sidebar">
-    <div class="logo">
-        <!-- <img src="{{orgLogo}}" alt="Logo"
-            onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'"> -->
+<div class="sidebar" [class.collapsed]="isCollapsed">
+    <div class="logo-section">
+        <div class="logo" *ngIf="!isCollapsed">
+            <!-- <img src="{{orgLogo}}" alt="Logo"
+                onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'"> -->
+            <span class="logo-text">Botiq</span>
+        </div>
+        <button class="toggle-btn" (click)="isCollapsed = !isCollapsed" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+        </button>
     </div>
 
     <ul class="menu">
         <li class="menu-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            <a routerLink="/dashboard">Dashboard</a>
+            <a routerLink="/dashboard">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
         </li>
 
         <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/order-list">Customer Orders</a>
+            <a routerLink="/order-list">
+                <i class="fa-solid fa-box"></i>
+                <span>Customer Orders</span>
+            </a>
         </li>
 
         <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/job-order-list">Job Order</a>
+            <a routerLink="/job-order-list">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Job Order</span>
+            </a>
         </li>
 
         <!-- Settings and Security -->
         <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/user-profile">Settings</a>
-        </li>
-
-        <!-- <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/devices">My Devices</a>
-        </li> -->
-
-        <li class="menu-item disabled">
-            <a routerLink="/partners-list">Partners</a>
-        </li>
-
-        <li class="menu-item disabled">
-            <a routerLink="/plan-page">Support-Plan</a>
-        </li>
-
-        <!-- <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/settings">
-                <i class="fas fa-cog"></i>
-                <span>Botiq Guide</span>
+            <a routerLink="/user-profile">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
             </a>
-        </li> -->
+        </li>
 
+        <li class="menu-item disabled">
+            <a routerLink="/partners-list">
+                <i class="fa-solid fa-handshake"></i>
+                <span>Partners</span>
+            </a>
+        </li>
+
+        <li class="menu-item disabled">
+            <a routerLink="/plan-page">
+                <i class="fa-solid fa-circle-question"></i>
+                <span>Support-Plan</span>
+            </a>
+        </li>
     </ul>
 
 
@@ -49,11 +61,8 @@
             <div class="user-avatar">{{initial}}</div>
             <div class="user-details">
                 <div class="user-name">{{businessName}}</div>
-                <div class="user-role">Owner</div>
+                <div class="user-role">{{role}}</div>
             </div>
         </div>
-        <!-- <button class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i>
-        </button> -->
     </div>
 </div>

@@ -4,8 +4,8 @@
 .pos-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    max-height: 100vh;
+    height: calc(100vh - 154px);
+    max-height: calc(100vh - 154px);
     overflow: hidden;
     padding: 4px 14px 8px;
     background: var(--bg-primary);
@@ -1403,6 +1403,13 @@
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
+@media (max-width: 1024px) and (min-width: 961px) {
+    .pos-container {
+        height: calc(100vh - 138px);
+        max-height: calc(100vh - 138px);
+    }
+}
+
 @media (max-width: 960px) {
     .pos-container {
         height: auto;

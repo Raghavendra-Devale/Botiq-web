@@ -1323,10 +1323,6 @@ public class WebController {
     public ResponseEntity<?> checkUserExists(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            UserPrincipal principal = getUserPrincipal();
-            String uid = principal.getFirebaseUid();
-            Integer orgId = principal.getOrgId();
-
             String mobile = (String) payload.get("mobile");
 
             Optional<OrgUser> orgUser = orgUserRepository.findByMobileNumber(mobile);
@@ -2224,13 +2220,16 @@ public class WebController {
             }
 
             // Sync work categories to master_table
-            jdbcTemplate.update("DELETE FROM master_table WHERE org_id = ? AND (master_type = 'WORK_CATEGORY' OR master_type = 'workCategories')", orgId);
+            jdbcTemplate.update(
+                    "DELETE FROM master_table WHERE org_id = ? AND (master_type = 'WORK_CATEGORY' OR master_type = 'workCategories')",
+                    orgId);
             if (workCategories != null && !workCategories.trim().isEmpty()) {
                 String[] wcs = workCategories.split(",");
                 for (int i = 0; i < wcs.length; i++) {
                     String cat = wcs[i].trim();
                     if (!cat.isEmpty()) {
-                        String insertSql = "INSERT INTO master_table (key_id, key_name, master_type, org_id, created_date, updated_date) " +
+                        String insertSql = "INSERT INTO master_table (key_id, key_name, master_type, org_id, created_date, updated_date) "
+                                +
                                 "VALUES (?, ?, 'WORK_CATEGORY', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
                         jdbcTemplate.update(insertSql, i + 1, cat, orgId);
                     }
@@ -2238,13 +2237,16 @@ public class WebController {
             }
 
             // Sync partner categories to master_table
-            jdbcTemplate.update("DELETE FROM master_table WHERE org_id = ? AND (master_type = 'PARTNER_CATEGORY' OR master_type = 'partnerCategories')", orgId);
+            jdbcTemplate.update(
+                    "DELETE FROM master_table WHERE org_id = ? AND (master_type = 'PARTNER_CATEGORY' OR master_type = 'partnerCategories')",
+                    orgId);
             if (partnerCategories != null && !partnerCategories.trim().isEmpty()) {
                 String[] pcs = partnerCategories.split(",");
                 for (int i = 0; i < pcs.length; i++) {
                     String cat = pcs[i].trim();
                     if (!cat.isEmpty()) {
-                        String insertSql = "INSERT INTO master_table (key_id, key_name, master_type, org_id, created_date, updated_date) " +
+                        String insertSql = "INSERT INTO master_table (key_id, key_name, master_type, org_id, created_date, updated_date) "
+                                +
                                 "VALUES (?, ?, 'PARTNER_CATEGORY', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
                         jdbcTemplate.update(insertSql, i + 1, cat, orgId);
                     }
@@ -2269,7 +2271,7 @@ public class WebController {
             String authorizationHeader = httpRequest.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
 
-            String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
+            String userSql = "SELECT org_id, org_name, user_role FROM org_user WHERE firebase_id = ?";
             Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
 
             Integer orgId = (Integer) userInfo.get("org_id");
@@ -2282,6 +2284,7 @@ public class WebController {
                             o.org_address,
                             o.mobile_number,
                             u.email_id,
+                            u.user_role,
                             o.referral_code AS referralCode,
                             s.org_logo AS orgLogo,
                             s.optional_settings AS optionalSettings,
@@ -2310,10 +2313,10 @@ public class WebController {
 
             // Query work categories from master_table
             String workCategoriesSql = """
-                SELECT DISTINCT key_name FROM master_table 
-                WHERE org_id = ? AND (UPPER(master_type) = 'WORK_CATEGORY' OR UPPER(master_type) = 'WORKCATEGORIES')
-                ORDER BY key_name
-            """;
+                        SELECT DISTINCT key_name FROM master_table
+                        WHERE org_id = ? AND (UPPER(master_type) = 'WORK_CATEGORY' OR UPPER(master_type) = 'WORKCATEGORIES')
+                        ORDER BY key_name
+                    """;
             List<String> wCats = jdbcTemplate.queryForList(workCategoriesSql, String.class, orgId);
             if (wCats.isEmpty()) {
                 wCats = jdbcTemplate.queryForList(workCategoriesSql, String.class, 0);
@@ -2323,10 +2326,10 @@ public class WebController {
 
             // Query partner categories from master_table
             String partnerCategoriesSql = """
-                SELECT DISTINCT key_name FROM master_table 
-                WHERE org_id = ? AND (UPPER(master_type) = 'PARTNER_CATEGORY' OR UPPER(master_type) = 'PARTNERCATEGORIES')
-                ORDER BY key_name
-            """;
+                        SELECT DISTINCT key_name FROM master_table
+                        WHERE org_id = ? AND (UPPER(master_type) = 'PARTNER_CATEGORY' OR UPPER(master_type) = 'PARTNERCATEGORIES')
+                        ORDER BY key_name
+                    """;
             List<String> pCats = jdbcTemplate.queryForList(partnerCategoriesSql, String.class, orgId);
             if (pCats.isEmpty()) {
                 pCats = jdbcTemplate.queryForList(partnerCategoriesSql, String.class, 0);
@@ -2346,6 +2349,7 @@ public class WebController {
             response.put("optional_settings", profile.get("optionalSettings"));
             response.put("work_categories", workCategoriesStr);
             response.put("partner_categories", partnerCategoriesStr);
+            response.put("role", userInfo.get("user_role"));
             System.out.println("Fetched work categories: " + workCategoriesStr);
             return ResponseEntity.ok(response);
 
@@ -2911,7 +2915,7 @@ public class WebController {
                     orgId,
                     orgName);
 
-             if (orderId != null && orderId > 0) {
+            if (orderId != null && orderId > 0) {
                 notifyOrderStatusUpdate(orgId, orderId, null, "CREATED", null);
 
                 try {
@@ -2919,14 +2923,16 @@ public class WebController {
                     boolean isUpdate = false;
                     String orderStatus = null;
                     if (orderMap != null) {
-                        Object orderIdObj = orderMap.get("orderId") != null ? orderMap.get("orderId") : orderMap.get("order_id");
+                        Object orderIdObj = orderMap.get("orderId") != null ? orderMap.get("orderId")
+                                : orderMap.get("order_id");
                         if (orderIdObj != null) {
                             long idVal = ((Number) orderIdObj).longValue();
                             if (idVal > 0) {
                                 isUpdate = true;
                             }
                         }
-                        Object orderStatusObj = orderMap.get("orderStatus") != null ? orderMap.get("orderStatus") : orderMap.get("order_status");
+                        Object orderStatusObj = orderMap.get("orderStatus") != null ? orderMap.get("orderStatus")
+                                : orderMap.get("order_status");
                         if (orderStatusObj != null) {
                             orderStatus = orderStatusObj.toString();
                         }

@@ -65,8 +65,8 @@
                             <rect width="20" height="16" x="2" y="4" rx="2" />
                             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                         </svg>
-                        <input type="email" class="custom-input" id="email" name="email" [(ngModel)]="registerData.email"
-                            placeholder="jane@example.com" required>
+                        <input type="email" class="custom-input" id="email" name="email"
+                            [(ngModel)]="registerData.email" placeholder="jane@example.com" required>
                     </div>
                 </div>
 
@@ -104,18 +104,24 @@
                         <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                         <circle cx="12" cy="10" r="3" />
                     </svg>
-                    <input type="text" class="custom-input" id="address" name="address" [(ngModel)]="registerData.address"
-                        placeholder="Building, Street, City" required>
+                    <input type="text" class="custom-input" id="address" name="address"
+                        [(ngModel)]="registerData.address" placeholder="Building, Street, City" required>
                 </div>
             </div>
 
             <div class="form-group checkbox-group full-width">
-                <label class="checkbox-container">
-                    <input type="checkbox" id="terms" name="terms" required>
-                    <span class="checkmark"></span>
-                    <span class="terms-text">I agree to the <a href="#" class="link">Terms and Conditions</a> and <a
-                            href="#" class="link">Privacy Policy</a></span>
-                </label>
+                <div class="checkbox-wrapper">
+                    <label class="checkbox-container" for="terms">
+                        <input type="checkbox" id="terms" name="terms" [(ngModel)]="registerData.terms" #terms="ngModel"
+                            required>
+                        <span class="checkmark"></span>
+                        <span class="terms-text">I agree to the</span>
+                    </label>
+                    <span class="terms-links">
+                        <a href="/terms" class="link">Terms and Conditions</a> and <a
+                            href="/privacy" class="link">Privacy Policy</a>
+                    </span>
+                </div>
             </div>
 
             <div id="recaptcha-container"></div>

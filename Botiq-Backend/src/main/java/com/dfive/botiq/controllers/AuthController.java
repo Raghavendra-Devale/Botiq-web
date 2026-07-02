@@ -56,7 +56,7 @@ public class AuthController {
                         UserDeviceRepository userDeviceRepository,
                         PasswordEncoder passwordEncoder,
                         DeviceService deviceService,
-                              AuthService authService) {
+                        AuthService authService) {
 
                 this.orgUserRepository = orgUserRepository;
                 this.deviceTokenService = deviceTokenService;
@@ -70,15 +70,14 @@ public class AuthController {
         public ResponseEntity<DeviceStatusResponse> deviceStatus(
                         HttpServletRequest request) {
 
-            System.out.println("===== DEVICE STATUS =====");
+                System.out.println("===== DEVICE STATUS =====");
 
-            Cookie[] cookies = request.getCookies();
+                Cookie[] cookies = request.getCookies();
 
-            for (Cookie cookie : cookies) {
-                System.out.println(
-                        cookie.getName() + " = " + cookie.getValue()
-                );
-            }
+                for (Cookie cookie : cookies) {
+                        System.out.println(
+                                        cookie.getName() + " = " + cookie.getValue());
+                }
 
                 if (cookies == null) {
                         return ResponseEntity.ok(DeviceStatusResponse.builder().knownDevice(false).build());
@@ -89,27 +88,26 @@ public class AuthController {
                 for (Cookie cookie : cookies) {
 
                         if (DeviceConstants.DEVICE_COOKIE_NAME.equals(cookie.getName())) {
-                            rawToken = cookie.getValue();
-                            System.out.println("Raw Token = " + rawToken);
+                                rawToken = cookie.getValue();
+                                System.out.println("Raw Token = " + rawToken);
 
-                            break;
+                                break;
                         }
                 }
 
                 if (rawToken == null) {
                         return ResponseEntity.ok(
-                                DeviceStatusResponse.builder().knownDevice(false).build());
+                                        DeviceStatusResponse.builder().knownDevice(false).build());
                 }
 
                 String tokenHash = deviceTokenService.hashToken(rawToken);
-            System.out.println("Token Hash = " + tokenHash);
+                System.out.println("Token Hash = " + tokenHash);
 
+                Optional<UserDevice> deviceOpt = userDeviceRepository.findByDeviceTokenHash(tokenHash);
+                System.out.println("Device Found = " + deviceOpt.isPresent());
+                deviceOpt.ifPresent(System.out::println);
 
-            Optional<UserDevice> deviceOpt = userDeviceRepository.findByDeviceTokenHash(tokenHash);
-            System.out.println("Device Found = " + deviceOpt.isPresent());
-            deviceOpt.ifPresent(System.out::println);
-
-            if (deviceOpt.isEmpty()) {
+                if (deviceOpt.isEmpty()) {
                         return ResponseEntity.ok(
                                         DeviceStatusResponse.builder()
                                                         .knownDevice(false)
@@ -118,11 +116,12 @@ public class AuthController {
 
                 UserDevice device = deviceOpt.get();
 
-                if (device.getStatus() != DeviceStatus.ACTIVE || device.getMpinHash() == null || device.getMpinHash().isEmpty()) {
+                if (device.getStatus() != DeviceStatus.ACTIVE || device.getMpinHash() == null
+                                || device.getMpinHash().isEmpty()) {
                         return ResponseEntity.ok(
                                         DeviceStatusResponse.builder()
-                                                         .knownDevice(false)
-                                                         .build());
+                                                        .knownDevice(false)
+                                                        .build());
                 }
 
                 if (device.getExpiresAt() != null
@@ -149,256 +148,213 @@ public class AuthController {
                                                 .build());
         }
 
-    @PostMapping("/setup-mpin")
-    public ResponseEntity<?> setupMpin(
-            HttpServletRequest request,
-            Authentication authentication,
-            @Valid @RequestBody SetupMpinRequest payload
-    ) {
+        @PostMapping("/setup-mpin")
+        public ResponseEntity<?> setupMpin(
+                        HttpServletRequest request,
+                        Authentication authentication,
+                        @Valid @RequestBody SetupMpinRequest payload) {
 
-        UserPrincipal principal =
-                (UserPrincipal) authentication.getPrincipal();
+                UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-        UserDevice device = deviceService.findCurrentDevice(request);
+                UserDevice device = deviceService.findCurrentDevice(request);
 
-        device.setMpinHash(
-                passwordEncoder.encode(
-                        payload.getMpin()
-                )
-        );
+                device.setMpinHash(
+                                passwordEncoder.encode(
+                                                payload.getMpin()));
 
-        device.setUpdatedAt(LocalDateTime.now());
+                device.setUpdatedAt(LocalDateTime.now());
 
-        userDeviceRepository.save(device);
+                userDeviceRepository.save(device);
 
-        return ResponseEntity.ok(
-                Map.of(
-                        "message",
-                        "MPIN configured successfully"
-                )
-        );
-    }
-
-    @PostMapping("/verify-mpin")
-    public ResponseEntity<?> verifyMpin(
-            HttpServletRequest request,
-            Authentication authentication,
-            @Valid @RequestBody VerifyMpinRequest payload
-    ) {
-
-        UserPrincipal principal =
-                (UserPrincipal) authentication.getPrincipal();
-
-        UserDevice device = deviceService.findCurrentDevice(request);
-
-        boolean valid =
-                passwordEncoder.matches(
-                        payload.getMpin(),
-                        device.getMpinHash()
-                );
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "valid",
-                        valid
-                )
-        );
-    }
-
-    @PostMapping("/mpin-login")
-    public ResponseEntity<?> mpinLogin(
-            HttpServletRequest request,
-            @Valid @RequestBody MpinLoginRequest payload
-    ) {
-
-        System.out.println("MPIN LOGIN HIT");
-
-        UserDevice device;
-
-        try {
-
-            device = deviceService.findCurrentDevice(
-                    request
-            );
-
-        } catch (Exception e) {
-
-            return ResponseEntity.status(401)
-                    .body(
-                            Map.of(
-                                    "message",
-                                    "Device not recognized"
-                            )
-                    );
+                return ResponseEntity.ok(
+                                Map.of(
+                                                "message",
+                                                "MPIN configured successfully"));
         }
 
-        if (device.getStatus() == DeviceStatus.LOCKED) {
+        @PostMapping("/verify-mpin")
+        public ResponseEntity<?> verifyMpin(
+                        HttpServletRequest request,
+                        Authentication authentication,
+                        @Valid @RequestBody VerifyMpinRequest payload) {
 
-            return ResponseEntity.badRequest()
-                    .body(
-                            Map.of(
-                                    "message",
-                                    "Device locked. Login with OTP.",
-                                    "remainingAttempts",
-                                    0
-                            )
-                    );
+                UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+                UserDevice device = deviceService.findCurrentDevice(request);
+
+                boolean valid = passwordEncoder.matches(
+                                payload.getMpin(),
+                                device.getMpinHash());
+
+                return ResponseEntity.ok(
+                                Map.of(
+                                                "valid",
+                                                valid));
         }
 
-        boolean valid =
-                passwordEncoder.matches(
-                        payload.getMpin(),
-                        device.getMpinHash()
-                );
+        @PostMapping("/mpin-login")
+        public ResponseEntity<?> mpinLogin(
+                        HttpServletRequest request,
+                        @Valid @RequestBody MpinLoginRequest payload) {
 
-        if (!valid) {
+                System.out.println("MPIN LOGIN HIT");
 
-            int attempts =
-                    device.getFailedAttempts() + 1;
+                UserDevice device;
 
-            device.setFailedAttempts(
-                    attempts
-            );
+                try {
 
-            device.setUpdatedAt(
-                    LocalDateTime.now()
-            );
+                        device = deviceService.findCurrentDevice(
+                                        request);
 
-            if (attempts >= 3) {
+                } catch (Exception e) {
 
-                device.setStatus(
-                        DeviceStatus.LOCKED
-                );
-            }
+                        return ResponseEntity.status(401)
+                                        .body(
+                                                        Map.of(
+                                                                        "message",
+                                                                        "Device not recognized"));
+                }
 
-            userDeviceRepository.save(
-                    device
-            );
+                if (device.getStatus() == DeviceStatus.LOCKED) {
 
-            return ResponseEntity.badRequest()
-                    .body(
-                            Map.of(
-                                    "message",
-                                    attempts >= 3
-                                            ? "Device locked. Login with OTP."
-                                            : "Invalid MPIN",
-                                    "remainingAttempts",
-                                    Math.max(
-                                            0,
-                                            3 - attempts
-                                    )
-                            )
-                    );
+                        return ResponseEntity.badRequest()
+                                        .body(
+                                                        Map.of(
+                                                                        "message",
+                                                                        "Device locked. Login with OTP.",
+                                                                        "remainingAttempts",
+                                                                        0));
+                }
+
+                boolean valid = passwordEncoder.matches(
+                                payload.getMpin(),
+                                device.getMpinHash());
+
+                if (!valid) {
+
+                        int attempts = device.getFailedAttempts() + 1;
+
+                        device.setFailedAttempts(
+                                        attempts);
+
+                        device.setUpdatedAt(
+                                        LocalDateTime.now());
+
+                        if (attempts >= 3) {
+
+                                device.setStatus(
+                                                DeviceStatus.LOCKED);
+                        }
+
+                        userDeviceRepository.save(
+                                        device);
+
+                        return ResponseEntity.badRequest()
+                                        .body(
+                                                        Map.of(
+                                                                        "message",
+                                                                        attempts >= 3
+                                                                                        ? "Device locked. Login with OTP."
+                                                                                        : "Invalid MPIN",
+                                                                        "remainingAttempts",
+                                                                        Math.max(
+                                                                                        0,
+                                                                                        3 - attempts)));
+                }
+
+                device.setFailedAttempts(0);
+                device.setLastActiveAt(LocalDateTime.now());
+                device.setUpdatedAt(LocalDateTime.now());
+
+                userDeviceRepository.save(device);
+
+                OrgUser orgUser = orgUserRepository
+                                .findByUserId(
+                                                device.getUserId().intValue())
+                                .orElseThrow(() -> new RuntimeException(
+                                                "User not found"));
+
+                UserPrincipal principal = authService.buildPrincipal(
+                                orgUser);
+
+                authService.createUserSession(
+                                request,
+                                principal);
+
+                return ResponseEntity.ok(
+                                Map.of(
+                                                "message",
+                                                "MPIN login successful"));
+
         }
 
-        device.setFailedAttempts(0);
-        device.setLastActiveAt(LocalDateTime.now());
-        device.setUpdatedAt(LocalDateTime.now());
-
-        userDeviceRepository.save(device);
-
-        OrgUser orgUser =
-                orgUserRepository
-                        .findByUserId(
-                                device.getUserId().intValue()
-                        )
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "User not found"
-                                ));
-
-        UserPrincipal principal =
-                authService.buildPrincipal(
-                        orgUser
-                );
-
-        authService.createUserSession(
-                request,
-                principal
-        );
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "message",
-                        "MPIN login successful"
-                )
-        );
-
-
-    }
-
-
-
-
-
-    @PostMapping("/register-device")
+        @PostMapping("/register-device")
         public ResponseEntity<?> registerDevice(Authentication authentication, HttpServletResponse response,
                         HttpServletRequest request) {
                 UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
+                System.out.println("===== REGISTER DEVICE =====");
 
+                Cookie[] cookies = request.getCookies();
 
-            Cookie[] cookies = request.getCookies();
-
-            if (cookies != null) {
-
-                for (Cookie cookie : cookies) {
-
-                    if (DeviceConstants.DEVICE_COOKIE_NAME.equals(
-                            cookie.getName()
-                    )) {
-
-                        String existingTokenHash =
-                                deviceTokenService.hashToken(
-                                        cookie.getValue()
-                                );
-
-                        Optional<UserDevice> existingDevice =
-                                userDeviceRepository
-                                        .findByDeviceTokenHash(
-                                                existingTokenHash
-                                        );
-
-                        if (existingDevice.isPresent()) {
-
-                            return ResponseEntity.ok(
-                                    Map.of(
-                                            "message",
-                                            "device already registered"
-                                    )
-                            );
+                if (cookies == null) {
+                        System.out.println("No cookies received");
+                } else {
+                        for (Cookie cookie : cookies) {
+                                System.out.println(cookie.getName() + " = " + cookie.getValue());
                         }
-                    }
                 }
-            }
 
-            String rawToken = deviceTokenService.generateToken();
+                if (cookies != null) {
 
-            String tokenHash = deviceTokenService.hashToken(rawToken);
+                        for (Cookie cookie : cookies) {
 
-            long deviceCount =
-                    userDeviceRepository.countByUserIdAndStatus(
-                            principal.getUserId(),
-                            DeviceStatus.ACTIVE
-                    );
+                                if (DeviceConstants.DEVICE_COOKIE_NAME.equals(
+                                                cookie.getName())) {
 
-            if (deviceCount >= 3) {
-                return ResponseEntity.badRequest()
-                        .body(
-                                Map.of(
-                                        "message",
-                                        "Maximum 3 devices allowed"
-                                )
-                        );
-            }
+                                        String existingTokenHash = deviceTokenService.hashToken(
+                                                        cookie.getValue());
 
-            String userAgent = request.getHeader("User-Agent");
-            String browser = parseBrowser(userAgent);
-            String os = parseOs(userAgent);
-            String deviceName = parseDeviceName(userAgent);
-            String ipAddress = request.getRemoteAddr();
+                                        Optional<UserDevice> existingDevice = userDeviceRepository
+                                                        .findByDeviceTokenHash(
+                                                                        existingTokenHash);
 
-            UserDevice userDevice = UserDevice.builder()
+                                        if (existingDevice.isPresent()) {
+
+                                                return ResponseEntity.ok(
+                                                                Map.of(
+                                                                                "message",
+                                                                                "device already registered"));
+                                        }
+                                }
+                        }
+                }
+
+                String rawToken = deviceTokenService.generateToken();
+
+                String tokenHash = deviceTokenService.hashToken(rawToken);
+
+                long deviceCount = userDeviceRepository.countByUserIdAndStatus(
+                                principal.getUserId(),
+                                DeviceStatus.ACTIVE);
+                System.out.println("Generated Raw Token = " + rawToken);
+                System.out.println("Generated Hash      = " + tokenHash);
+
+                if (deviceCount >= 3) {
+                        return ResponseEntity.badRequest()
+                                        .body(
+                                                        Map.of(
+                                                                        "message",
+                                                                        "Maximum 3 devices allowed"));
+                }
+
+                String userAgent = request.getHeader("User-Agent");
+                String browser = parseBrowser(userAgent);
+                String os = parseOs(userAgent);
+                String deviceName = parseDeviceName(userAgent);
+                String ipAddress = request.getRemoteAddr();
+
+                UserDevice userDevice = UserDevice.builder()
                                 .orgId(Long.valueOf(principal.getOrgId()))
                                 .userId(principal.getUserId())
                                 .deviceTokenHash(tokenHash)
@@ -434,84 +390,65 @@ public class AuthController {
                                                 "device registered"));
         }
 
-    @PostMapping("/session")
-    public ResponseEntity<?> createSession(
-            HttpServletRequest request,
-            @RequestHeader("Authorization") String authHeader
-    ) throws FirebaseAuthException {
+        @PostMapping("/session")
+        public ResponseEntity<?> createSession(
+                        HttpServletRequest request,
+                        @RequestHeader("Authorization") String authHeader) throws FirebaseAuthException {
 
-        String token =
-                authHeader.replace(
-                        "Bearer ",
-                        ""
-                );
+                String token = authHeader.replace(
+                                "Bearer ",
+                                "");
 
-        FirebaseToken decodedToken =
-                FirebaseAuth.getInstance()
-                        .verifyIdToken(token);
+                FirebaseToken decodedToken = FirebaseAuth.getInstance()
+                                .verifyIdToken(token);
 
-        String firebaseUid =
-                decodedToken.getUid();
+                String firebaseUid = decodedToken.getUid();
 
-        OrgUser orgUser =
-                orgUserRepository
-                        .findByfirebaseId(firebaseUid)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "User not found for uid: "
-                                                + firebaseUid
-                                ));
+                OrgUser orgUser = orgUserRepository
+                                .findByfirebaseId(firebaseUid)
+                                .orElseThrow(() -> new RuntimeException(
+                                                "User not found for uid: "
+                                                                + firebaseUid));
 
-        UserPrincipal principal =
-                authService.buildPrincipal(
-                        orgUser
-                );
+                UserPrincipal principal = authService.buildPrincipal(
+                                orgUser);
 
-        authService.createUserSession(
-                request,
-                principal
-        );
+                authService.createUserSession(
+                                request,
+                                principal);
 
-        List<UserDevice> devices =
-                userDeviceRepository.findByUserId(
-                        principal.getUserId()
-                );
+                List<UserDevice> devices = userDeviceRepository.findByUserId(
+                                principal.getUserId());
 
-        devices.forEach(device -> {
+                devices.forEach(device -> {
 
-            if (device.getStatus() == DeviceStatus.LOCKED) {
+                        if (device.getStatus() == DeviceStatus.LOCKED) {
 
-                device.setStatus(
-                        DeviceStatus.ACTIVE
-                );
+                                device.setStatus(
+                                                DeviceStatus.ACTIVE);
 
-                device.setFailedAttempts(0);
+                                device.setFailedAttempts(0);
 
-                device.setMpinHash(null);
+                                device.setMpinHash(null);
 
-                device.setUpdatedAt(
-                        LocalDateTime.now()
-                );
+                                device.setUpdatedAt(
+                                                LocalDateTime.now());
 
-                userDeviceRepository.save(
-                        device
-                );
-            }
-        });
+                                userDeviceRepository.save(
+                                                device);
+                        }
+                });
 
-        return ResponseEntity.ok(
-                Map.of(
-                        "status",
-                        "ok",
-                        "message",
-                        "session created"
-                )
-        );
+                return ResponseEntity.ok(
+                                Map.of(
+                                                "status",
+                                                "ok",
+                                                "message",
+                                                "session created"));
 
-    }
+        }
 
-
-    @GetMapping("/me")
+        @GetMapping("/me")
         public ResponseEntity<?> me(Authentication authentication) {
 
                 System.out.println("ME ENDPOINT");
@@ -521,128 +458,140 @@ public class AuthController {
                 return ResponseEntity.ok(authentication.getPrincipal());
         }
 
-    @GetMapping("/devices")
-    public ResponseEntity<?> getDevices(Authentication authentication) {
+        @GetMapping("/devices")
+        public ResponseEntity<?> getDevices(Authentication authentication) {
 
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+                UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-        List<UserDevice> devices = userDeviceRepository.findByUserIdAndOrgId(
-                principal.getUserId(),
-                Long.valueOf(principal.getOrgId())
-        );
+                List<UserDevice> devices = userDeviceRepository.findByUserIdAndOrgId(
+                                principal.getUserId(),
+                                Long.valueOf(principal.getOrgId()));
 
-        List<Map<String, Object>> response = new ArrayList<>();
-        for (UserDevice d : devices) {
-            if (d.getStatus() == DeviceStatus.ACTIVE || d.getStatus() == DeviceStatus.LOCKED) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("id", d.getId());
-                map.put("deviceName", d.getDeviceName());
-                map.put("browserName", d.getBrowserName());
-                map.put("osName", d.getOsName());
-                map.put("ipAddress", d.getIpAddress());
-                map.put("status", d.getStatus());
-                map.put("lastActiveAt", d.getLastActiveAt());
-                map.put("createdAt", d.getCreatedAt());
-                response.add(map);
-            }
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/devices/{id}")
-    public ResponseEntity<?> deleteDevice(
-            @PathVariable Long id,
-            Authentication authentication,
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) {
-
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-
-        Optional<UserDevice> deviceOpt = userDeviceRepository.findById(id);
-        if (deviceOpt.isEmpty() || !deviceOpt.get().getUserId().equals(principal.getUserId())) {
-            return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to remove this device"));
-        }
-
-        UserDevice device = deviceOpt.get();
-        device.setStatus(DeviceStatus.REVOKED);
-        device.setUpdatedAt(LocalDateTime.now());
-        userDeviceRepository.save(device);
-
-        // If deleting current device, log out and clear cookies
-        try {
-            UserDevice currentDevice = deviceService.findCurrentDevice(request);
-            if (currentDevice.getId().equals(device.getId())) {
-                HttpSession session = request.getSession(false);
-                if (session != null) {
-                    session.invalidate();
+                List<Map<String, Object>> response = new ArrayList<>();
+                for (UserDevice d : devices) {
+                        if (d.getStatus() == DeviceStatus.ACTIVE || d.getStatus() == DeviceStatus.LOCKED) {
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("id", d.getId());
+                                map.put("deviceName", d.getDeviceName());
+                                map.put("browserName", d.getBrowserName());
+                                map.put("osName", d.getOsName());
+                                map.put("ipAddress", d.getIpAddress());
+                                map.put("status", d.getStatus());
+                                map.put("lastActiveAt", d.getLastActiveAt());
+                                map.put("createdAt", d.getCreatedAt());
+                                response.add(map);
+                        }
                 }
-                ResponseCookie cookie = ResponseCookie.from(DeviceConstants.DEVICE_COOKIE_NAME, "")
-                        .httpOnly(true)
-                        .secure(false)
-                        .path("/")
-                        .maxAge(0)
-                        .sameSite("Strict")
-                        .build();
-                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            }
-        } catch (Exception e) {
-            // Ignore if current device not found
+
+                return ResponseEntity.ok(response);
         }
 
-        return ResponseEntity.ok(
-                Map.of(
-                        "message",
-                        "Device removed successfully"
-                )
-        );
-    }
+        @DeleteMapping("/devices/{id}")
+        public ResponseEntity<?> deleteDevice(
+                        @PathVariable Long id,
+                        Authentication authentication,
+                        HttpServletRequest request,
+                        HttpServletResponse response) {
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(
-                    HttpServletRequest request) {
+                UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-            HttpSession session = request.getSession(false);
+                Optional<UserDevice> deviceOpt = userDeviceRepository.findById(id);
+                if (deviceOpt.isEmpty() || !deviceOpt.get().getUserId().equals(principal.getUserId())) {
+                        return ResponseEntity.status(403).body(Map.of("message", "Unauthorized to remove this device"));
+                }
 
-            if (session != null) {
-                    session.invalidate();
-            }
+                UserDevice device = deviceOpt.get();
+                device.setStatus(DeviceStatus.REVOKED);
+                device.setUpdatedAt(LocalDateTime.now());
+                userDeviceRepository.save(device);
 
-            return ResponseEntity.ok().build();
-    }
+                // If deleting current device, log out and clear cookies
+                try {
+                        UserDevice currentDevice = deviceService.findCurrentDevice(request);
+                        if (currentDevice.getId().equals(device.getId())) {
+                                HttpSession session = request.getSession(false);
+                                if (session != null) {
+                                        session.invalidate();
+                                }
+                                ResponseCookie cookie = ResponseCookie.from(DeviceConstants.DEVICE_COOKIE_NAME, "")
+                                                .httpOnly(true)
+                                                .secure(false)
+                                                .path("/")
+                                                .maxAge(0)
+                                                .sameSite("Strict")
+                                                .build();
+                                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                        }
+                } catch (Exception e) {
+                        // Ignore if current device not found
+                }
 
-    private String parseBrowser(String userAgent) {
-        if (userAgent == null) return "Unknown Browser";
-        String ua = userAgent.toLowerCase();
-        if (ua.contains("edg")) return "Edge";
-        if (ua.contains("chrome") && ua.contains("safari") && !ua.contains("chromium")) return "Chrome";
-        if (ua.contains("firefox")) return "Firefox";
-        if (ua.contains("safari") && !ua.contains("chrome")) return "Safari";
-        if (ua.contains("opr") || ua.contains("opera")) return "Opera";
-        return "Unknown Browser";
-    }
-
-    private String parseOs(String userAgent) {
-        if (userAgent == null) return "Unknown OS";
-        String ua = userAgent.toLowerCase();
-        if (ua.contains("windows")) return "Windows";
-        if (ua.contains("macintosh") || ua.contains("mac os x")) return "macOS";
-        if (ua.contains("iphone")) return "iOS (iPhone)";
-        if (ua.contains("ipad")) return "iOS (iPad)";
-        if (ua.contains("android")) return "Android";
-        if (ua.contains("linux")) return "Linux";
-        return "Unknown OS";
-    }
-
-    private String parseDeviceName(String userAgent) {
-        if (userAgent == null) return "Desktop";
-        String ua = userAgent.toLowerCase();
-        if (ua.contains("iphone")) return "iPhone";
-        if (ua.contains("ipad")) return "iPad";
-        if (ua.contains("android")) {
-            return ua.contains("mobile") ? "Android Phone" : "Android Tablet";
+                return ResponseEntity.ok(
+                                Map.of(
+                                                "message",
+                                                "Device removed successfully"));
         }
-        return "Desktop";
-    }
+
+        @PostMapping("/logout")
+        public ResponseEntity<?> logout(
+                        HttpServletRequest request) {
+
+                HttpSession session = request.getSession(false);
+
+                if (session != null) {
+                        session.invalidate();
+                }
+
+                return ResponseEntity.ok().build();
+        }
+
+        private String parseBrowser(String userAgent) {
+                if (userAgent == null)
+                        return "Unknown Browser";
+                String ua = userAgent.toLowerCase();
+                if (ua.contains("edg"))
+                        return "Edge";
+                if (ua.contains("chrome") && ua.contains("safari") && !ua.contains("chromium"))
+                        return "Chrome";
+                if (ua.contains("firefox"))
+                        return "Firefox";
+                if (ua.contains("safari") && !ua.contains("chrome"))
+                        return "Safari";
+                if (ua.contains("opr") || ua.contains("opera"))
+                        return "Opera";
+                return "Unknown Browser";
+        }
+
+        private String parseOs(String userAgent) {
+                if (userAgent == null)
+                        return "Unknown OS";
+                String ua = userAgent.toLowerCase();
+                if (ua.contains("windows"))
+                        return "Windows";
+                if (ua.contains("macintosh") || ua.contains("mac os x"))
+                        return "macOS";
+                if (ua.contains("iphone"))
+                        return "iOS (iPhone)";
+                if (ua.contains("ipad"))
+                        return "iOS (iPad)";
+                if (ua.contains("android"))
+                        return "Android";
+                if (ua.contains("linux"))
+                        return "Linux";
+                return "Unknown OS";
+        }
+
+        private String parseDeviceName(String userAgent) {
+                if (userAgent == null)
+                        return "Desktop";
+                String ua = userAgent.toLowerCase();
+                if (ua.contains("iphone"))
+                        return "iPhone";
+                if (ua.contains("ipad"))
+                        return "iPad";
+                if (ua.contains("android")) {
+                        return ua.contains("mobile") ? "Android Phone" : "Android Tablet";
+                }
+                return "Desktop";
+        }
 }

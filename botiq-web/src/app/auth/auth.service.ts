@@ -37,6 +37,11 @@ export class AuthService {
   ) {}
 
   setupRecaptcha(containerId: string) {
+    console.log('--- Firebase Auth Debug ---');
+    console.log('Firebase App Name:', this.auth.app?.name);
+    console.log('Firebase Project ID:', this.auth.app?.options?.projectId);
+    console.log('Firebase API Key:', this.auth.app?.options?.apiKey);
+    console.log('---------------------------');
 
     if (this.recaptchaVerifier) {
       try {
@@ -53,6 +58,13 @@ export class AuthService {
         size: 'invisible'
       }
     );
+  }
+
+  async verifyRecaptcha(): Promise<string> {
+    if (!this.recaptchaVerifier) {
+      throw new Error('Recaptcha not initialized');
+    }
+    return await this.recaptchaVerifier.verify();
   }
 
   async sendOTP(phoneNumber: string) {

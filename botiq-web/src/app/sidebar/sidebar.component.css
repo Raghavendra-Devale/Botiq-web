@@ -1,11 +1,16 @@
 :host {
   display: block;
   height: 100vh;
-  width: 260px;
+  width: 240px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: width var(--transition-md, 0.3s ease);
+}
+
+:host:has(.sidebar.collapsed) {
+  width: 70px;
 }
 
 .sidebar {
@@ -19,18 +24,53 @@
   padding: 24px 16px;
 }
 
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  padding: 0 12px;
+  width: 100%;
+}
+
 .logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 40px;
-  padding: 0 12px;
 }
 
 .logo img {
   height: 48px;
   max-width: 100%;
   object-fit: contain;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: var(--primary-gradient, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: var(--font-heading, sans-serif);
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #64748b);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--border-radius-sm, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.toggle-btn:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+  color: var(--primary-accent, #3b82f6);
 }
 
 .menu {
@@ -156,4 +196,34 @@
 .logout-btn:hover {
   color: var(--danger-accent, #ef4444);
   background-color: rgba(239, 68, 68, 0.08);
+}
+
+/* Collapsed Sidebar Styles */
+.sidebar.collapsed {
+  padding: 24px 8px;
+  transition: padding var(--transition-md, 0.3s ease);
+}
+
+.sidebar.collapsed .logo-section {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar.collapsed .menu-item a {
+  justify-content: center;
+  padding: 14px 0;
+  gap: 0;
+}
+
+.sidebar.collapsed .menu-item a span {
+  display: none;
+}
+
+.sidebar.collapsed .user-info {
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar.collapsed .user-details {
+  display: none;
 }
