@@ -16,12 +16,23 @@ import { map, catchError } from 'rxjs/operators';
 })
 export class AuthService {
 
+  
+
   private recaptchaVerifier!: RecaptchaVerifier;
   private confirmationResult!: ConfirmationResult;
 
   private currentUser: any = null;
   private sessionChecked = false;
   private firebaseToken: string | null = null;
+  private firstTimeUser = false;
+
+  setFirstTimeUser(val: boolean) {
+    this.firstTimeUser = val;
+  }
+
+  isFirstTimeUser(): boolean {
+    return this.firstTimeUser;
+  }
 
   setFirebaseToken(token: string | null) {
     this.firebaseToken = token;
@@ -101,6 +112,19 @@ export class AuthService {
 
     return this.http.post(
       `${environment.apiUrl}/auth/session`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${firebaseToken}`
+        },
+        withCredentials: true
+      }
+    );
+  }
+
+  linkFirebase(firebaseToken: string) {
+    return this.http.post(
+      `${environment.apiUrl.replace('/web', '')}/organization/link-firebase`,
       {},
       {
         headers: {
@@ -245,5 +269,13 @@ export class AuthService {
         withCredentials: true
       }
     ).toPromise();
+  }
+
+  getRole() {
+    return localStorage.getItem("role") || '';
+  }
+
+  setRole(role: string) {
+    localStorage.setItem("role", role);
   }
 }

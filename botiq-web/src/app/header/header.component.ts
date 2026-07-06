@@ -48,11 +48,9 @@ export class HeaderComponent implements OnInit {
   fetchData() {
     this.dataService.getBasicData().subscribe((res: any) => {
       this.data = res;
-      console.log("data from header :", res);
       localStorage.setItem("owner_name", res.owner_name);
       localStorage.setItem("businessName", res.org_name);
-      localStorage.setItem("role", res.role);
-      console.log(res.role," role");
+      localStorage.setItem("role", res.user_role || '');
       this.userName = localStorage.getItem("owner_name") || '';
       this.businessName = localStorage.getItem("businessName") || '';
       console.log("data from header :", res);

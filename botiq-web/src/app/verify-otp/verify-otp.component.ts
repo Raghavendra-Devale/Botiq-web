@@ -76,8 +76,19 @@ export class VerifyOtpComponent implements OnInit {
     const result =
       await this.authService.verifyOTP(code);
 
-    const token =
-      await result.user.getIdToken();
+    const token = await result.user.getIdToken();
+    console.log("first time user ", this.authService.isFirstTimeUser());
+    if (this.authService.isFirstTimeUser()) {
+      try {
+        await this.authService.linkFirebase(token).toPromise();
+        this.authService.setFirstTimeUser(false);
+        console.log("first time user ", this.authService.isFirstTimeUser());
+      } catch (linkErr) {
+        console.error('Failed to link Firebase account:', linkErr);
+        alert('Failed to link Firebase account. Please contact administrator.');
+        return;
+      }
+    }
 
     await this.authService
       .createSession(token)

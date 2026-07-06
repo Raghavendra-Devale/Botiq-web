@@ -17,7 +17,7 @@ export class DataService {
 
   checkUserExists(payload: { phoneNumber: string, deviceId: any }): Observable<any> {
     console.log(payload)
-    return this.http.post<any>(`${this.baseUrl}/organization/check-user`, payload);
+    return this.http.post<any>(`${this.baseUrl.replace('/web', '')}/organization/check-user`, payload);
   }
 
   getBasicData() {
@@ -67,6 +67,18 @@ export class DataService {
       },
       withCredentials: true
     });
+  }
+
+  addUser(payload: any): Observable<any> {
+    return this.http.post<any>(this.baseUrl + "/addUser", payload);
+  }
+
+  editUser(payload: any): Observable<any> {
+    return this.http.post<any>(this.baseUrl + "/editUser", payload);
+  }
+
+  getUsers(): Observable<any> {
+    return this.http.get<any>(this.baseUrl + "/getUsers");
   }
 
 }

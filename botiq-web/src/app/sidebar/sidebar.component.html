@@ -33,17 +33,24 @@
         </li>
 
         <!-- Settings and Security -->
-        <li class="menu-item" routerLinkActive="active">
+        <li class="menu-item" routerLinkActive="active" *ngIf="role == 'OWNER'">
             <a routerLink="/user-profile">
                 <i class="fa-solid fa-gear"></i>
                 <span>Settings</span>
             </a>
         </li>
 
-        <li class="menu-item disabled">
+        <li class="menu-item disabled" *ngIf="role == 'OWNER'">
             <a routerLink="/partners-list">
                 <i class="fa-solid fa-handshake"></i>
                 <span>Partners</span>
+            </a>
+        </li>
+
+        <li class="menu-item disabled" routerLinkActive="active" *ngIf="role == 'OWNER' ">
+            <a routerLink="/add-new-user">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Add New User</span>
             </a>
         </li>
 

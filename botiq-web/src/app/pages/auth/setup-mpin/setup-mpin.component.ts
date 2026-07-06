@@ -39,6 +39,7 @@ export class SetupMpinComponent {
     }
 
     this.loading = true;
+    
 
     this.authService.registerDevice()
       .subscribe({

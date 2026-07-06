@@ -30,3 +30,17 @@ export const publicGuard: CanActivateFn = () => {
     })
   );
 };
+
+export const ownerGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const role = authService.getRole();
+
+  if (role === 'OWNER') {
+    return true;
+  }
+
+  router.navigate(['/dashboard']);
+  return false;
+};

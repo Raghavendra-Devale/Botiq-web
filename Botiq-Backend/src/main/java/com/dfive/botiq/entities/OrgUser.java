@@ -7,9 +7,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @Table(name = "org_user")
+//@DynamicUpdate
 public class OrgUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

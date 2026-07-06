@@ -57,7 +57,8 @@ public class SecurityConfig {
                                                                 "/web/auth/mpin-login",
                                                                 "/web/notifications/**",
                                                                 "/web/push/**",
-                                                                "/web/checkUserExists")
+                                                                "/web/checkUserExists",
+                                                                "/oragnization/check-user")
                                                 .permitAll()
 
                                                 .requestMatchers("/api/**")

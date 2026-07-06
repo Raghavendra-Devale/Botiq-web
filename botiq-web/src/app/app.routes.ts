@@ -6,7 +6,7 @@ import { JobOrderComponent } from './job-order/job-order.component';
 import { TabsContainerComponent } from './tabs-container/tabs-container.component';
 import { CustomerOrderListComponent } from './customer-order-list/customer-order-list.component';
 import { OrderListComponent } from './order-list/order-list.component';
-import { authGuard, publicGuard } from './auth/auth.guard';
+import { authGuard, ownerGuard, publicGuard } from './auth/auth.guard';
 import { JobOrderListComponent } from './job-order-list/job-order-list.component';
 import { PartnersListComponent } from './partners-list/partners-list.component';
 import { UserProfileComponent } from './user-profile/user-profile.component';
@@ -17,6 +17,7 @@ import { RegisterComponent } from './register/register.component';
 import { SetupMpinComponent } from './pages/auth/setup-mpin/setup-mpin.component';
 import { MpinLoginComponent } from './pages/auth/mpin-login/mpin-login.component';
 import { DevicesComponent } from './pages/security/devices/devices.component';
+import { AddNewUserComponent } from './add-new-user/add-new-user.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent, canActivate: [publicGuard] },
@@ -32,15 +33,16 @@ export const routes: Routes = [
     { path: 'order-list', component: OrderListComponent, canActivate: [authGuard] },
     { path: 'job-order-list', component: JobOrderListComponent, canActivate: [authGuard] },
     { path: 'partners-list', component: PartnersListComponent, canActivate: [authGuard] },
-    { path: 'user-profile', component: UserProfileComponent, canActivate: [authGuard] },
+    { path: 'user-profile', component: UserProfileComponent, canActivate: [authGuard, ownerGuard] },
     { path: 'add-partner', component: AddPartnerComponent, canActivate: [authGuard] },
     { path: 'dashboard-v2', component: DashboardV2Component, canActivate: [authGuard] },
     { path: 'partner/:id', component: AddPartnerComponent, canActivate: [authGuard] },
     { path: 'plan-page', component: PlanPageComponent, canActivate: [authGuard] },
     { path: 'register', component: RegisterComponent },
-    {path: 'setup-mpin',component: SetupMpinComponent},
-    {path: 'mpin-login',component: MpinLoginComponent},
-    {path: 'devices', component: DevicesComponent, canActivate: [authGuard]},
+    { path: 'setup-mpin', component: SetupMpinComponent },
+    { path: 'mpin-login', component: MpinLoginComponent },
+    { path: 'add-new-user', component: AddNewUserComponent, canActivate: [authGuard] },
+    { path: 'devices', component: DevicesComponent, canActivate: [authGuard, ownerGuard] },
     {
         path: 'add-new-order',
         component: TabsContainerComponent,

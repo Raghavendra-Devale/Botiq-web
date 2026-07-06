@@ -2271,7 +2271,7 @@ public class WebController {
             String authorizationHeader = httpRequest.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
 
-            String userSql = "SELECT org_id, org_name, user_role FROM org_user WHERE firebase_id = ?";
+            String userSql = "SELECT org_id, org_name FROM org_user WHERE firebase_id = ?";
             Map<String, Object> userInfo = jdbcTemplate.queryForMap(userSql, uid);
 
             Integer orgId = (Integer) userInfo.get("org_id");
@@ -2284,14 +2284,14 @@ public class WebController {
                             o.org_address,
                             o.mobile_number,
                             u.email_id,
-                            u.user_role,
+                            u.user_role AS userRole,
                             o.referral_code AS referralCode,
                             s.org_logo AS orgLogo,
                             s.optional_settings AS optionalSettings,
                             s.work_categories,
                             s.partner_categories
                         FROM organization o
-                        INNER JOIN org_user u ON o.org_id = u.org_id
+                        INNER JOIN org_user u ON o.org_id = u.org_id AND u.firebase_id = ?
                         LEFT JOIN (
                             SELECT DISTINCT ON (org_id) *
                             FROM org_settings
@@ -2303,7 +2303,7 @@ public class WebController {
                             AND o.org_id = ?
                     """;
 
-            List<Map<String, Object>> profileInfo = jdbcTemplate.queryForList(profileSql, orgId);
+            List<Map<String, Object>> profileInfo = jdbcTemplate.queryForList(profileSql, uid, orgId);
 
             if (profileInfo.isEmpty()) {
                 return ResponseEntity.status(404).body("Profile not found");
@@ -2346,16 +2346,194 @@ public class WebController {
             response.put("org_logo", profile.get("orgLogo"));
             response.put("email_id", profile.get("email_id"));
             response.put("mobile_number", profile.get("mobile_number"));
+            response.put("user_role", profile.get("userRole"));
             response.put("optional_settings", profile.get("optionalSettings"));
             response.put("work_categories", workCategoriesStr);
             response.put("partner_categories", partnerCategoriesStr);
-            response.put("role", userInfo.get("user_role"));
             System.out.println("Fetched work categories: " + workCategoriesStr);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error fetching basic details");
+        }
+    }
+
+    @PostMapping("/addUser")
+    public ResponseEntity<?> addUser(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
+        try {
+            String authorizationHeader = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+
+            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
+            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
+            if (users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "Logged in user not found"));
+            }
+
+            String username = (String) payload.get("username");
+            String phoneNumber = (String) payload.get("phone_number");
+            String email = (String) payload.get("email");
+            String orgName = (String) payload.get("org_name");
+            Number orgIdNum = (Number) payload.get("org_id");
+            String userRole = (String) payload.get("user_role");
+
+            if (username == null || username.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Username is required"));
+            }
+            if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Phone number is required"));
+            }
+
+            Optional<OrgUser> existingUser = orgUserRepository.findByMobileNumber(phoneNumber.trim());
+            if (existingUser.isPresent()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "User with this phone number already exists"));
+            }
+
+            OrgUser newUser = new OrgUser();
+            newUser.setOrgId(orgIdNum != null ? orgIdNum.intValue() : null);
+            newUser.setFirstName(username);
+            newUser.setEnabled(true);
+            newUser.setDeleted(false);
+            newUser.setOrgName(orgName);
+            newUser.setUserRole(userRole != null ? userRole : "APP_USER");
+            newUser.setEmailId(email);
+            newUser.setMobileNumber(phoneNumber);
+            newUser.setCreatedDate(new Timestamp(System.currentTimeMillis()));
+            newUser.setEmailVerified(false);
+
+            newUser = orgUserRepository.save(newUser);
+
+            String insertSql = """
+                    INSERT INTO botiq_user_status (
+                        org_id, user_id, minimum_version, version_to_update, logout, clearlocaldata,
+                        disable_user, reload_master, created_at, updated_at, user_ipaddress
+                    ) VALUES (?, ?, NULL, NULL, false, false, false, false, NOW(), NOW(), NULL)
+                    """;
+            jdbcTemplate.update(insertSql, newUser.getOrgId(), newUser.getUserId());
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "User added successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error adding user: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/editUser")
+    public ResponseEntity<?> editUser(@RequestBody Map<String, Object> payload, HttpServletRequest request) {
+        try {
+            String authorizationHeader = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+
+            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
+            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
+            if (users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "Logged in user not found"));
+            }
+
+            Integer loggedInOrgId = ((Number) users.get(0).get("org_id")).intValue();
+
+            Number targetUserIdNum = (Number) payload.get("userId");
+            if (targetUserIdNum == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "User ID is required"));
+            }
+            long targetUserId = targetUserIdNum.longValue();
+
+            Optional<OrgUser> userToEditOpt = orgUserRepository.findById(targetUserId);
+            if (userToEditOpt.isEmpty() || userToEditOpt.get().getDeleted()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "User not found"));
+            }
+
+            OrgUser userToEdit = userToEditOpt.get();
+
+            // Security check: ensure target user belongs to same org
+            if (userToEdit.getOrgId() == null || userToEdit.getOrgId().intValue() != loggedInOrgId) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "You do not have permission to edit this user"));
+            }
+
+            String username = (String) payload.get("username");
+            String phoneNumber = (String) payload.get("phone_number");
+            String email = (String) payload.get("email");
+            String userRole = (String) payload.get("user_role");
+
+            if (username == null || username.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Username is required"));
+            }
+            if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Phone number is required"));
+            }
+
+            // Check if mobile number is used by someone else
+            Optional<OrgUser> existingUser = orgUserRepository.findByMobileNumber(phoneNumber.trim());
+            if (existingUser.isPresent() && existingUser.get().getUserId() != targetUserId) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message",
+                                "Another user with this phone number already exists"));
+            }
+
+            // If phone number has changed, clear firebase_id and device_id to allow
+            // re-verification/re-linking
+            if (userToEdit.getMobileNumber() != null
+                    && !phoneNumber.trim().equals(userToEdit.getMobileNumber().trim())) {
+                userToEdit.setFirebaseId(null);
+                userToEdit.setDeviceId(null);
+            }
+
+            userToEdit.setFirstName(username);
+            userToEdit.setEmailId(email);
+            userToEdit.setMobileNumber(phoneNumber);
+            if (userRole != null && !userRole.trim().isEmpty()) {
+                userToEdit.setUserRole(userRole);
+            }
+
+            orgUserRepository.save(userToEdit);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "User updated successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error updating user: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/getUsers")
+    public ResponseEntity<?> getUsers(HttpServletRequest request) {
+        try {
+            String authorizationHeader = request.getHeader("Authorization");
+            String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+
+            String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
+            List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
+            if (users.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+
+            Integer orgId = ((Number) users.get(0).get("org_id")).intValue();
+
+            String query = """
+                    SELECT user_id AS userId, org_id AS orgId, first_name AS firstName,
+                           mobile_number AS mobileNumber, email_id AS email, user_role AS userRole, enabled
+                    FROM org_user
+                    WHERE org_id = ? AND deleted = FALSE
+                    ORDER BY user_id DESC
+                    """;
+            List<Map<String, Object>> orgUsers = jdbcTemplate.queryForList(query, orgId);
+
+            return ResponseEntity.ok(orgUsers);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching users");
         }
     }
 

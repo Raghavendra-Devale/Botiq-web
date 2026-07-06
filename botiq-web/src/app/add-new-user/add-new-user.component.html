@@ -1,0 +1,122 @@
+<div class="page-wrapper">
+    <!-- List View -->
+    <ng-container *ngIf="!showForm">
+        <div class="page-header">
+            <div class="page-title-group">
+                <h2> Members</h2>
+                <span class="user-count" *ngIf="usersList && usersList.length > 0">{{ usersList.length }} users</span>
+            </div>
+            <button class="btn-primary" (click)="addNewUser()">
+                <i class="fa-solid fa-plus"></i> Add User
+            </button>
+        </div>
+
+        <div *ngIf="usersList && usersList.length > 0; else noUsers" class="list-container">
+            <div *ngFor="let u of usersList" class="user-card">
+                <div class="user-avatar">
+                    {{ (u.firstname || 'U').charAt(0).toUpperCase() }}
+                </div>
+                <div class="user-info">
+                    <h3 class="user-name">{{ u.firstname || 'Unnamed User' }}</h3>
+                    <div class="user-details">
+                        <span class="detail-item">
+                            <i class="fa-solid fa-phone"></i> {{ u.mobilenumber }}
+                        </span>
+                        <span class="detail-item">
+                            <i class="fa-solid fa-envelope"></i> {{ u.email }}
+                        </span>
+                    </div>
+                </div>
+                <div class="user-meta">
+                    <span class="status-pill" [ngClass]="u.enabled ? 'active' : 'inactive'">
+                        <span class="status-dot"></span> {{ u.enabled ? 'Active' : 'Inactive' }}
+                    </span>
+                    <span class="role-chip">{{ u.userrole }}</span>
+                    <button class="btn-edit" (click)="editUser(u)">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <ng-template #noUsers>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3>No users yet</h3>
+                <p>Add your first team member to get started.</p>
+                <button class="btn-primary" (click)="addNewUser()">
+                    <i class="fa-solid fa-plus"></i> Add User
+                </button>
+            </div>
+        </ng-template>
+    </ng-container>
+
+    <!-- Form View -->
+    <ng-container *ngIf="showForm">
+        <div class="form-header">
+            <button class="btn-back" (click)="onCancel()">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2>{{ isEditMode ? 'Edit User' : 'Add New User' }}</h2>
+                <p class="form-subtitle">
+                    {{ isEditMode ? 'Update user details for your organization.' : 'Fill in the details to add a new
+                    team member.' }}
+                </p>
+            </div>
+        </div>
+
+        <form class="form-card" (ngSubmit)="onSubmit()">
+            <div class="form-group">
+                <label for="firstName">Full Name</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="firstName" [(ngModel)]="user.firstName" name="firstName" required
+                        placeholder="Enter full name">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="mobileNumber">Mobile Number</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-phone"></i>
+                    <input type="text" id="mobileNumber" [(ngModel)]="user.mobileNumber" name="mobileNumber" required
+                        maxlength="10" pattern="[0-9]{10}" (input)="onMobileInput($event)"
+                        placeholder="Enter 10-digit number">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="email" [(ngModel)]="user.email" name="email" required
+                        placeholder="Enter email address">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="userType">User Role</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <select id="userType" [(ngModel)]="user.userType" name="userType" required>
+                        <option value="">Select role</option>
+                        <option value="1">User</option>
+                        <option value="2">Admin</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
+                <button type="submit" class="btn-primary" [disabled]="loading">
+                    <i class="fa-solid" [ngClass]="isEditMode ? 'fa-check' : 'fa-plus'"></i>
+                    {{ loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update User' : 'Add User')
+                    }}
+                </button>
+            </div>
+        </form>
+    </ng-container>
+</div>

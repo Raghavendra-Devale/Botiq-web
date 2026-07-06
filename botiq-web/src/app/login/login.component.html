@@ -35,8 +35,26 @@
                     <span routerLink="/register">Create an account</span>
                 </p>
 
-                <div id="recaptcha-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Conflict Confirmation Modal -->
+    <div class="modal-overlay" *ngIf="showConfirmModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <i class="fa-solid fa-circle-exclamation warning-icon"></i>
+                <h3>{{ modalTitle }}</h3>
+            </div>
+            <div class="modal-body">
+                <p>{{ modalMessage }}</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel-modal" (click)="cancelAction()">Cancel</button>
+                <button class="btn-confirm-modal" (click)="confirmAction()">Confirm</button>
             </div>
         </div>
     </div>
 </div>
+
+<div id="recaptcha-container"></div>
