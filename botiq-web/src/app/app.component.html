@@ -2,10 +2,10 @@
 
 <div class="main-content" [ngClass]="{'public-layout': isPublicRoute}">
 
-    <app-header *ngIf="!isPublicRoute"></app-header>
+    <!-- <app-header *ngIf="!isPublicRoute"></app-header> -->
 
     <!-- 🔥 ADD THIS WRAPPER -->
-    <div class="content">
+    <div class="content" [class.pos-layout]="isPosRoute">
         <router-outlet></router-outlet>
     </div>
 

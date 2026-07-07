@@ -96,9 +96,7 @@ export class VerifyOtpComponent implements OnInit {
 
     this.notificationService.initialize();
 
-    this.authService
-      .getDeviceStatus()
-      .subscribe({
+    this.authService.getDeviceStatus().subscribe({
 
         next: (response: any) => {
 
@@ -106,32 +104,21 @@ export class VerifyOtpComponent implements OnInit {
 
           if (response.knownDevice) {
 
-            console.log(
-              'Known Device -> Dashboard'
-            );
+            console.log('Known Device -> Dashboard');
 
-            this.router.navigate([
-              '/setup-mpin'
-            ]);
+            this.router.navigate(['/setup-mpin']);
 
           } else {
 
-            console.log(
-              'New Device -> Setup MPIN'
-            );
+            console.log('New Device -> Setup MPIN');
 
-            this.router.navigate([
-              '/setup-mpin'
-            ]);
+            this.router.navigate(['/setup-mpin']);
           }
         },
 
         error: (err) => {
 
-          console.error(
-            'Device status failed',
-            err
-          );
+          console.error('Device status failed', err);
 
           this.router.navigate([
             '/setup-mpin'

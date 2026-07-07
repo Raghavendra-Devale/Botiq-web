@@ -8,7 +8,7 @@ import {
   signOut
 } from '@angular/fire/auth';
 import { environment } from '../../environments/environment';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError, BehaviorSubject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 @Injectable({
@@ -25,6 +25,17 @@ export class AuthService {
   private sessionChecked = false;
   private firebaseToken: string | null = null;
   private firstTimeUser = false;
+
+  private basicDetailsSubject = new BehaviorSubject<any>(null);
+  public basicDetails$ = this.basicDetailsSubject.asObservable();
+
+  setBasicDetails(details: any) {
+    this.basicDetailsSubject.next(details);
+  }
+
+  getBasicDetails() {
+    return this.basicDetailsSubject.value;
+  }
 
   setFirstTimeUser(val: boolean) {
     this.firstTimeUser = val;
@@ -255,6 +266,7 @@ export class AuthService {
   async logout() {
 
     this.clearSession();
+    this.setBasicDetails(null);
 
     try {
       await signOut(this.auth);

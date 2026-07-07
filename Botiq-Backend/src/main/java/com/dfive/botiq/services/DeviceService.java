@@ -40,11 +40,9 @@ public class DeviceService {
             throw new RuntimeException("Device cookie not found");
         }
 
-        String tokenHash =
-                deviceTokenService.hashToken(rawToken);
+        String tokenHash = deviceTokenService.hashToken(rawToken);
 
-        return userDeviceRepository
-                .findByDeviceTokenHash(tokenHash)
+        return userDeviceRepository.findByDeviceTokenHash(tokenHash)
                 .orElseThrow(() ->
                         new RuntimeException("Device not found"));
     }

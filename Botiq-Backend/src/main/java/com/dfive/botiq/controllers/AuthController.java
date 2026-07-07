@@ -158,9 +158,7 @@ public class AuthController {
 
                 UserDevice device = deviceService.findCurrentDevice(request);
 
-                device.setMpinHash(
-                                passwordEncoder.encode(
-                                                payload.getMpin()));
+                device.setMpinHash(passwordEncoder.encode(payload.getMpin()));
 
                 device.setUpdatedAt(LocalDateTime.now());
 
@@ -334,19 +332,16 @@ public class AuthController {
 
                 String tokenHash = deviceTokenService.hashToken(rawToken);
 
-                long deviceCount = userDeviceRepository.countByUserIdAndStatus(
-                                principal.getUserId(),
-                                DeviceStatus.ACTIVE);
+                // long deviceCount = userDeviceRepository.countByUserIdAndStatus(
+                // principal.getUserId(),
+                // DeviceStatus.ACTIVE);
                 System.out.println("Generated Raw Token = " + rawToken);
                 System.out.println("Generated Hash      = " + tokenHash);
 
-                if (deviceCount >= 3) {
-                        return ResponseEntity.badRequest()
-                                        .body(
-                                                        Map.of(
-                                                                        "message",
-                                                                        "Maximum 3 devices allowed"));
-                }
+                // if (deviceCount >= 3) {
+                // return ResponseEntity.badRequest().body(Map.of("message", "Maximum 3 devices
+                // allowed"));
+                // }
 
                 String userAgent = request.getHeader("User-Agent");
                 String browser = parseBrowser(userAgent);

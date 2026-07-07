@@ -7,6 +7,7 @@ import { HeaderComponent } from "./header/header.component";
 import { getAuth, onIdTokenChanged } from 'firebase/auth';
 import { AuthService } from './auth/auth.service';
 import { NotificationMessagingService } from './notification_essaging.service';
+import { DataService } from './data.service';
 
 @Component({
   selector: 'app-root',
@@ -24,11 +25,13 @@ export class AppComponent implements OnInit {
     window.location.pathname.includes('/setup-mpin') ||
     window.location.pathname.includes('/mpin-login')
   );
+  isPosRoute = typeof window !== 'undefined' && window.location.pathname.includes('/add-new-order');
 
   constructor(
     private router: Router, 
     private authService: AuthService,
-    private notificationService: NotificationMessagingService
+    private notificationService: NotificationMessagingService,
+    private dataService: DataService
   ) { }
 
   async ngOnInit() {
@@ -36,12 +39,19 @@ export class AppComponent implements OnInit {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       const url = event.urlAfterRedirects || event.url;
+      const wasPublic = this.isPublicRoute;
       this.isPublicRoute =
-    url.includes('/login') ||
-    url.includes('/verify-otp') ||
-    url.includes('/register') ||
-    url.includes('/setup-mpin') ||
-    url.includes('/mpin-login');
+        url.includes('/login') ||
+        url.includes('/verify-otp') ||
+        url.includes('/register') ||
+        url.includes('/setup-mpin') ||
+        url.includes('/mpin-login');
+
+      this.isPosRoute = url.includes('/add-new-order');
+
+      if (wasPublic && !this.isPublicRoute) {
+        this.fetchBasicDetails();
+      }
     });
 
     const auth = getAuth();
@@ -53,9 +63,21 @@ export class AppComponent implements OnInit {
         this.authService.setFirebaseToken(token);
         if (!this.isPublicRoute) {
           this.notificationService.initialize();
+          this.fetchBasicDetails();
         }
       } else {
         this.authService.setFirebaseToken(null);
+      }
+    });
+  }
+
+  fetchBasicDetails() {
+    this.dataService.getBasicData().subscribe({
+      next: (res: any) => {
+        this.authService.setBasicDetails(res);
+      },
+      error: (err) => {
+        console.error('Error fetching basic details:', err);
       }
     });
   }
