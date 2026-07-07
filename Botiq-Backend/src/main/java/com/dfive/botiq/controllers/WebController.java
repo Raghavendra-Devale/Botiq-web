@@ -3117,9 +3117,9 @@ public class WebController {
                     }
 
                     Map<String, Object> ssePayload = new HashMap<>();
-                    ssePayload.put("event", isUpdate ? "UPDATE_ORDER" : "CREATE_ORDER");
-                    ssePayload.put("orgId", orgId);
-                    ssePayload.put("orderId", orderId);
+//                    ssePayload.put("event", isUpdate ? "UPDATE_ORDER" : "CREATE_ORDER");
+//                    ssePayload.put("orgId", orgId);
+//                    ssePayload.put("orderId", orderId);
                     if (orderStatus != null) {
                         ssePayload.put("status", orderStatus);
                     }
@@ -3419,6 +3419,75 @@ public class WebController {
                     status,
                     orderId,
                     orgId);
+
+            // ================= UPDATE/SAVE DETAILS (DOCUMENTS) =================
+            try {
+                jdbcTemplate.update("DELETE FROM botiq_order_docs_w WHERE order_id = ? AND org_id = ?", orderId, orgId);
+
+                Map<String, Object> details = (Map<String, Object>) payload.get("details");
+                if (details != null) {
+                    String insertDocSql = "INSERT INTO botiq_order_docs_w (order_id, org_id, details_type, details_data, updated_date) VALUES (?, ?, ?, ?, NOW())";
+
+                    // Measurements (Type 1)
+                    List<Map<String, Object>> measurements = (List<Map<String, Object>>) details.get("measurements");
+                    if (measurements != null) {
+                        for (Map<String, Object> doc : measurements) {
+                            String data = (String) doc.get("base64");
+                            if (data != null && !data.isEmpty()) {
+                                jdbcTemplate.update(insertDocSql, orderId, orgId, 1, data);
+                            }
+                        }
+                    }
+
+                    // Materials (Type 2)
+                    List<Map<String, Object>> materials = (List<Map<String, Object>>) details.get("materials");
+                    if (materials != null) {
+                        for (Map<String, Object> doc : materials) {
+                            String data = (String) doc.get("base64");
+                            if (data != null && !data.isEmpty()) {
+                                jdbcTemplate.update(insertDocSql, orderId, orgId, 2, data);
+                            }
+                        }
+                    }
+
+                    // Patterns (Type 3)
+                    List<Map<String, Object>> patterns = (List<Map<String, Object>>) details.get("patterns");
+                    if (patterns != null) {
+                        for (Map<String, Object> doc : patterns) {
+                            String data = (String) doc.get("base64");
+                            if (data != null && !data.isEmpty()) {
+                                jdbcTemplate.update(insertDocSql, orderId, orgId, 3, data);
+                            }
+                        }
+                    }
+
+                    // Audio (Type 4)
+                    List<Map<String, Object>> audioList = (List<Map<String, Object>>) details.get("audio");
+                    if (audioList != null) {
+                        for (Map<String, Object> doc : audioList) {
+                            String data = (String) doc.get("base64");
+                            if (data != null && !data.isEmpty()) {
+                                jdbcTemplate.update(insertDocSql, orderId, orgId, 4, data);
+                            }
+                        }
+                    }
+
+                    // Handwritten Notes (Type 5)
+                    List<Map<String, Object>> handwritten = (List<Map<String, Object>>) details.get("handwrittenNotes");
+                    if (handwritten != null) {
+                        for (Map<String, Object> doc : handwritten) {
+                            String data = (String) doc.get("base64");
+                            if (data != null && !data.isEmpty()) {
+                                jdbcTemplate.update(insertDocSql, orderId, orgId, 5, data);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                System.err.println("Failed to update order documents: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+
             String action = ("Delivered".equalsIgnoreCase(status) || "Completed".equalsIgnoreCase(status)) ? "COMPLETED"
                     : "UPDATED";
             notifyOrderStatusUpdate(orgId, orderId, status, action, null);

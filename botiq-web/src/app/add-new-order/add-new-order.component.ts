@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrderestateService } from '../orderestate.service';
 import { NotificationService } from '../notification.service';
+import { MatDialog } from '@angular/material/dialog';
+import { DrawingBoardDialogComponent } from '../shared/components/drawing-board-dialog/drawing-board-dialog.component';
 
 interface ImageData {
   base64: string,
@@ -38,7 +40,7 @@ interface OrderModel {
   templateUrl: './add-new-order.component.html',
   styleUrl: './add-new-order.component.css'
 })
-export class AddNewOrderComponent {
+export class AddNewOrderComponent implements OnInit, OnDestroy {
 
 
   showDeliveredDate = false;
@@ -46,6 +48,16 @@ export class AddNewOrderComponent {
   isCategoryLoaded = false;
   pending: any;
   jobOrders: any[] = [];
+  audioDetailsId: any;
+  hasAudio = false;
+
+  handwrittenNotes: ImageData[] = [];
+
+  audio: HTMLAudioElement | null = null;
+  isPlaying = false;
+  currentTime = 0;
+  duration = 0;
+  audioProgress = 0;
 
   calculateRowTotal(item: any): number {
     return (Number(item.price) || 0) * (Number(item.quantity) || 1);
@@ -81,6 +93,19 @@ export class AddNewOrderComponent {
   measurementImages: ImageData[] = [];
   patternImages: ImageData[] = [];
   materialImages: ImageData[] = [];
+
+  mediaRecorder!: MediaRecorder;
+  audioChunks: Blob[] = [];
+
+  isRecording = false;
+
+  audioBlob: Blob | null = null;
+  audioUrl: string | null = null;
+  audioBase64 = '';
+
+  recordingSeconds = 0;
+  private timer: any;
+
 
 
   workCategories: any[] = [];
@@ -239,7 +264,9 @@ export class AddNewOrderComponent {
     private router: Router,
     private orderState: OrderestateService,
     private route: ActivatedRoute,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private dialog: MatDialog
+
   ) { }
 
   ngOnInit() {
@@ -278,14 +305,69 @@ export class AddNewOrderComponent {
     });
   }
 
+  addHandwrittenNote() {
+
+    const dialogRef = this.dialog.open(DrawingBoardDialogComponent, {
+        width: '900px',
+        maxWidth: '95vw',
+        height: '700px',
+        disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(async result => {
+
+        if (!result) {
+            return;
+        }
+
+        let base64 = result;
+        if (base64.startsWith('data:image')) {
+          try {
+            console.log(`Original note size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
+            base64 = await this.compressImage(base64, 0.4, 600);
+            console.log(`Compressed note size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
+          } catch (err) {
+            console.error('Failed to compress handwritten note, using original', err);
+          }
+        }
+
+        const imageData: ImageData = {
+          base64,
+          blobUrl: this.convertBase64ToBlobUrl(base64),
+          temp_id: Date.now()
+        };
+        this.handwrittenNotes.push(imageData);
+
+        console.log(this.handwrittenNotes);
+
+    });
+
+}
+
 
   loadOrder(orderId: number) {
     this.orderService.getOrderById(orderId).subscribe({
       next: (order: any) => {
-        console.log("load order ", order);
-        this.fillForm(order);
-      },
-      error: (err: any) => console.log("error loading order ", err)
+  console.log("load order", order);
+
+  this.fillForm(order);
+
+  if (order.details?.audio?.length) {
+    const audioObj = order.details.audio[0];
+    this.audioDetailsId = audioObj.details_id || audioObj.detailsId;
+    this.audioBase64 = audioObj.details_data || audioObj.detailsData;
+    this.hasAudio = true;
+    if (this.audioBase64) {
+      this.audioUrl = this.convertBase64ToBlobUrl(this.audioBase64);
+      this.initAudio();
+    }
+  } else {
+    this.hasAudio = false;
+    this.audioUrl = null;
+    this.initAudio();
+  }
+},
+ error: (err: any) => console.log("error loading order ", err)
     });
   }
 
@@ -332,6 +414,14 @@ export class AddNewOrderComponent {
     }).filter((img: any) => img.base64);
 
     this.materialImages = (res.details?.materials || []).map((item: any) => {
+      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
+      return {
+        base64,
+        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
+      };
+    }).filter((img: any) => img.base64);
+
+    this.handwrittenNotes = (res.details?.handwrittenNotes || []).map((item: any) => {
       const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
       return {
         base64,
@@ -410,8 +500,18 @@ export class AddNewOrderComponent {
     for (let file of files) {
       const reader = new FileReader();
 
-      reader.onload = () => {
-        const base64 = reader.result as string;
+      reader.onload = async () => {
+        let base64 = reader.result as string;
+
+        if (base64.startsWith('data:image')) {
+          try {
+            console.log(`Original image size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
+            base64 = await this.compressImage(base64, 0.4, 600);
+            console.log(`Compressed image size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
+          } catch (err) {
+            console.error('Failed to compress image, using original', err);
+          }
+        }
 
         const imageData: ImageData = {
           base64,
@@ -471,22 +571,37 @@ export class AddNewOrderComponent {
       this.patternImages.splice(index, 1);
     } else if (type === 'materials') {
       this.materialImages.splice(index, 1);
+    } else if (type === 'handwritten') {
+      this.handwrittenNotes.splice(index, 1);
     }
   }
 
   convertBase64ToBlobUrl(base64: string): string {
-    const byteString = atob(base64.split(',')[1]);
-    const mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+    if (!base64) return '';
+    try {
+      let byteString: string;
+      let mimeString = 'image/png'; // default fallback
 
-    const arrayBuffer = new ArrayBuffer(byteString.length);
-    const uintArray = new Uint8Array(arrayBuffer);
+      if (base64.includes(',')) {
+        byteString = atob(base64.split(',')[1]);
+        mimeString = base64.split(',')[0].split(':')[1].split(';')[0];
+      } else {
+        byteString = atob(base64);
+      }
 
-    for (let i = 0; i < byteString.length; i++) {
-      uintArray[i] = byteString.charCodeAt(i);
+      const arrayBuffer = new ArrayBuffer(byteString.length);
+      const uintArray = new Uint8Array(arrayBuffer);
+
+      for (let i = 0; i < byteString.length; i++) {
+        uintArray[i] = byteString.charCodeAt(i);
+      }
+
+      const blob = new Blob([uintArray], { type: mimeString });
+      return URL.createObjectURL(blob);
+    } catch (e) {
+      console.error('Error converting base64 to blob url:', e);
+      return '';
     }
-
-    const blob = new Blob([uintArray], { type: mimeString });
-    return URL.createObjectURL(blob);
   }
 
   toggleCategory(category: any) {
@@ -557,7 +672,12 @@ export class AddNewOrderComponent {
       details: {
         measurements: this.measurementImages,
         patterns: this.patternImages,
-        materials: this.materialImages
+        materials: this.materialImages,
+        handwrittenNotes: this.handwrittenNotes,
+        audio: this.audioBase64 ? [{
+        base64: this.audioBase64
+          }
+        ] : []
       },
 
       jobOrders: this.jobOrders
@@ -633,7 +753,9 @@ export class AddNewOrderComponent {
       details: {
         measurements: this.measurementImages,
         patterns: this.patternImages,
-        materials: this.materialImages
+        materials: this.materialImages,
+        handwrittenNotes: this.handwrittenNotes,
+        audio: this.audioBase64? [{base64: this.audioBase64 }]: []
       }
     };
 
@@ -689,13 +811,15 @@ export class AddNewOrderComponent {
   hasAttachments(): boolean {
     return (this.measurementImages && this.measurementImages.length > 0) ||
            (this.patternImages && this.patternImages.length > 0) ||
-           (this.materialImages && this.materialImages.length > 0);
+           (this.materialImages && this.materialImages.length > 0) ||
+           (this.handwrittenNotes && this.handwrittenNotes.length > 0);
   }
 
   getAttachmentsCount(): number {
     return (this.measurementImages?.length || 0) +
            (this.patternImages?.length || 0) +
-           (this.materialImages?.length || 0);
+           (this.materialImages?.length || 0) +
+           (this.handwrittenNotes?.length || 0);
   }
 
   openAttachmentsModal() {
@@ -705,4 +829,223 @@ export class AddNewOrderComponent {
   closeAttachmentsModal() {
     this.showAttachmentsModal = false;
   }
+
+
+  async startRecording() {
+
+  try {
+
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+
+    this.audioChunks = [];
+
+    this.mediaRecorder = new MediaRecorder(stream);
+
+    this.mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        this.audioChunks.push(event.data);
+      }
+    };
+
+    this.mediaRecorder.onstop = () => {
+
+      this.audioBlob = new Blob(this.audioChunks, {
+        type: 'audio/webm'
+      });
+
+      this.audioUrl = URL.createObjectURL(this.audioBlob);
+
+      this.initAudio();
+
+      this.convertBlobToBase64(this.audioBlob);
+
+      stream.getTracks().forEach(track => track.stop());
+    };
+
+    this.mediaRecorder.start();
+
+    this.isRecording = true;
+
+    this.recordingSeconds = 0;
+
+    this.timer = setInterval(() => {
+      this.recordingSeconds++;
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+    alert("Unable to access microphone.");
+  }
+
+}
+
+stopRecording() {
+
+  if (!this.mediaRecorder) {
+    return;
+  }
+
+  this.mediaRecorder.stop();
+
+  clearInterval(this.timer);
+
+  this.isRecording = false;
+
+}
+
+convertBlobToBase64(blob: Blob) {
+
+  const reader = new FileReader();
+
+  reader.onloadend = () => {
+
+    this.audioBase64 = reader.result as string;
+
+    console.log(this.audioBase64);
+
+  };
+
+  reader.readAsDataURL(blob);
+
+}
+
+deleteRecording() {
+
+  this.audioBlob = null;
+
+  this.audioUrl = null;
+
+  this.audioBase64 = '';
+
+  this.audioChunks = [];
+
+  this.recordingSeconds = 0;
+
+  this.audioDetailsId = null;
+
+  this.hasAudio = false;
+
+  this.initAudio();
+
+}
+
+ngOnDestroy() {
+  if (this.audio) {
+    this.audio.pause();
+    this.audio = null;
+  }
+}
+
+initAudio() {
+  if (this.audio) {
+    this.audio.pause();
+    this.audio = null;
+  }
+  this.isPlaying = false;
+  this.currentTime = 0;
+  this.audioProgress = 0;
+
+  if (this.audioUrl) {
+    this.audio = new Audio(this.audioUrl);
+    this.audio.addEventListener('timeupdate', () => {
+      this.currentTime = this.audio ? this.audio.currentTime : 0;
+      this.audioProgress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
+    });
+    this.audio.addEventListener('loadedmetadata', () => {
+      this.duration = this.audio ? this.audio.duration : 0;
+    });
+    this.audio.addEventListener('ended', () => {
+      this.isPlaying = false;
+      this.currentTime = 0;
+      this.audioProgress = 0;
+    });
+  }
+}
+
+togglePlay() {
+  if (!this.audio) {
+    this.initAudio();
+  }
+  if (this.audio) {
+    if (this.isPlaying) {
+      this.audio.pause();
+      this.isPlaying = false;
+    } else {
+      this.audio.play().then(() => {
+        this.isPlaying = true;
+      }).catch(err => {
+        console.error("Audio playback failed", err);
+      });
+    }
+  }
+}
+
+seekAudio(event: MouseEvent) {
+  if (!this.audio || !this.duration) return;
+  const container = event.currentTarget as HTMLElement;
+  const rect = container.getBoundingClientRect();
+  const clickX = event.clientX - rect.left;
+  const width = rect.width;
+  const percentage = clickX / width;
+  this.audio.currentTime = percentage * this.duration;
+}
+
+formatTime(seconds: number): string {
+  if (isNaN(seconds) || seconds === Infinity) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+calculateBase64SizeInKB(base64String: string): number {
+  const stringLength = base64String.length - (base64String.indexOf(',') + 1);
+  const sizeInBytes = (stringLength * 3) / 4;
+  return sizeInBytes / 1024; // Convert bytes to kilobytes (KB)
+}
+
+calculateBase64SizeInMB(base64String: string): number {
+  const sizeInKB = this.calculateBase64SizeInKB(base64String);
+  return sizeInKB / 1024; // Convert kilobytes to megabytes (MB)
+}
+
+async compressImage(base64Image: string, quality: number = 0.4,targetWidth: number = 600): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const imgElement = new Image();
+    imgElement.src = base64Image;
+
+    imgElement.onload = () => {
+      try {
+        const originalWidth = imgElement.width;
+        const originalHeight = imgElement.height;
+        const width = originalWidth > targetWidth ? targetWidth : originalWidth;
+        const height = (originalHeight / originalWidth) * width;
+
+        // Create a canvas for resizing and compression
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get 2D context'));
+          return;
+        }
+
+        ctx.drawImage(imgElement, 0, 0, width, height);
+
+        // Convert the canvas to a compressed base64 string
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      } catch (error) {
+        console.error('Error during image compression:', error);
+        reject(error);
+      }
+    };
+
+    imgElement.onerror = () => {
+      reject(new Error('Error loading image for compression'));
+    };
+  });
+}
+
 }

@@ -69,6 +69,10 @@ export class OrderService {
     return this.http.post<any>(this.baseUrl + "/getAllOrders", {});
   }
 
+  getPaginatedOrders(payload: any) {
+    return this.http.post<any>(this.baseUrl + "/getPaginatedOrders", payload);
+  }
+
   addOrUpdatePartner(partner: any) {
     return this.http.post<any>(this.baseUrl + "/savePartner", partner);
   }

@@ -193,7 +193,10 @@ export class JobOrderComponent implements OnInit {
     });
   }
 
-
+  backToOrderList() {
+    console.log("navigating back");
+    this.router.navigate(['/add-new-order/tab2'], { state: { orderData: this.orderData } });
+}
 
 
 }

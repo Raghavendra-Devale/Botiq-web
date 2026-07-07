@@ -158,6 +158,50 @@
                                 }}</span>
                         </label>
                     </div>
+                    <!-- Handwritten Notes -->
+                    <div class="asset-upload-box">
+                        <button type="button" class="asset-upload-label" (click)="addHandwrittenNote()">
+                            <i class="fa-solid fa-signature"></i>
+                            <span>Draw Note</span>
+                            <span class="asset-count-badge" *ngIf="handwrittenNotes.length > 0">{{
+                                handwrittenNotes.length }}</span>
+                        </button>
+                    </div>
+                    <div class="asset-upload-box audio-box">
+
+                        <!-- Show Record button only if no audio exists and not recording -->
+                        <button type="button" class="asset-upload-label" *ngIf="!isRecording && !audioUrl"
+                            (click)="startRecording()">
+                            <i class="fa-solid fa-microphone"></i>
+                            <span>Record Voice</span>
+                        </button>
+
+                        <!-- Show Stop while recording -->
+                        <button type="button" class="asset-upload-label recording-active" *ngIf="isRecording"
+                            (click)="stopRecording()">
+                            <span class="pulse-dot"></span>
+                            <span>Stop ({{ recordingSeconds }}s)</span>
+                        </button>
+
+                        <!-- Existing recording custom player -->
+                        <div class="audio-player-pill" *ngIf="audioUrl" [class.playing]="isPlaying">
+                            <button type="button" class="audio-play-btn" (click)="togglePlay()"
+                                [title]="isPlaying ? 'Pause' : 'Play'">
+                                <i class="fa-solid" [ngClass]="isPlaying ? 'fa-pause' : 'fa-play'"></i>
+                            </button>
+                            <div class="audio-progress-container" (click)="seekAudio($event)">
+                                <div class="audio-progress-track"></div>
+                                <div class="audio-progress-bar" [style.width.%]="audioProgress"></div>
+                            </div>
+                            <span class="audio-time">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
+                            <button type="button" class="audio-delete-btn" (click)="deleteRecording()"
+                                title="Delete Recording">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                    </div>
+
                 </div>
             </div>
 
@@ -338,6 +382,17 @@
                         <button type="button" class="remove-thumb-btn"
                             (click)="removeImage('materials', i); $event.stopPropagation()"
                             title="Remove Image">✕</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-preview-group" *ngIf="handwrittenNotes.length > 0">
+                <h4 class="group-title">Handwritten Notes</h4>
+                <div class="modal-thumb-list">
+                    <div class="modal-thumb-item" *ngFor="let note of handwrittenNotes; let i = index">
+                        <img [src]="note.blobUrl" alt="Handwritten Note" (click)="openPreview(note.blobUrl)" />
+                        <button type="button" class="remove-thumb-btn"
+                            (click)="removeImage('handwritten', i); $event.stopPropagation()"
+                            title="Remove Note">✕</button>
                     </div>
                 </div>
             </div>

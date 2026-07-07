@@ -878,39 +878,19 @@
     cursor: not-allowed;
 }
 
-.page-numbers-container {
-    display: flex;
-    gap: 4px;
-}
-
-.btn-page-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 34px;
-    height: 34px;
-    padding: 0 8px;
-    border: 1px solid transparent;
-    background: transparent;
-    border-radius: 6px;
+.current-page-indicator {
     font-size: 14px;
-    font-weight: 500;
-    color: #64748b;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-page-num:hover:not(.active) {
-    background: #f1f5f9;
-    color: #1c2434;
-}
-
-.btn-page-num.active {
-    background: #2563eb;
-    color: #ffffff;
     font-weight: 600;
-    border-color: #2563eb;
-    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+    color: #475569;
+    padding: 0 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
 }
 
 /* =========================

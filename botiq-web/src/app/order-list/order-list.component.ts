@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { retry } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-order-list',
@@ -12,7 +13,10 @@ import { retry } from 'rxjs';
   templateUrl: './order-list.component.html',
   styleUrl: './order-list.component.css'
 })
-export class OrderListComponent {
+export class OrderListComponent implements OnInit, OnDestroy {
+  private searchSubject = new Subject<string>();
+  private searchSubscription!: Subscription;
+
   exportOrders() {
     console.log("export orders as csv or pdf");
   }
@@ -63,6 +67,14 @@ export class OrderListComponent {
   }
 
   ngOnInit() {
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(query => {
+      this.searchQuery = query;
+      this.fetchOrders(true);
+    });
+
     this.route.queryParams.subscribe(params => {
       this.tabId = params['tabId'] ? +params['tabId'] : 0;
 
@@ -73,7 +85,11 @@ export class OrderListComponent {
       this.fetchOrders(true);
     });
   }
-
+  ngOnDestroy() {
+    if (this.searchSubscription) {
+      this.searchSubscription.unsubscribe();
+    }
+  }
   constructor(private orderService: OrderService,
     private router: Router,
     private route: ActivatedRoute) {
@@ -86,30 +102,77 @@ export class OrderListComponent {
   onBuyNowClick() {
     this.router.navigate(['/plan-page']);
   }
-
   fetchOrders(reset = false) {
     if (reset) {
       this.orders = [];
+      this.paginatedOrders = [];
       this.filteredOrders = [];
       this.selectedItems = [];
       this.selectedOrderIds.clear();
       this.offset = 0;
       this.currentPage = 1;
+      this.hasMore = true;
     }
 
-    this.orderService.getAllOrders().subscribe({
-      next: (res: any) => {
-        this.orders = res || [];
+    if (this.loading) {
+      return;
+    }
+
+    this.loading = true;
+
+    // Map filters for the backend
+    let status: string | null = null;
+    let tabId: number | null = null;
+
+    if (this.selectedSegment === 'Custom') {
+      status = 'Custom';
+      tabId = this.tabId > 0 ? this.tabId : null;
+    } else if (this.selectedSegment && this.selectedSegment !== 'All') {
+      status = this.selectedSegment;
+    }
+
+    const searchCriteria = this.searchQuery && this.searchQuery.trim() !== '' ? this.searchQuery : null;
+
+    const payload = {
+      limit: this.limit,
+      offset: this.offset,
+      status: status,
+      searchCriteria: searchCriteria,
+      tabId: tabId
+    };
+
+    this.orderService.getPaginatedOrders(payload).subscribe({
+      next: (res: any[]) => {
+        const fetchedOrders = res || [];
+        
+        // Transform the orders when fetched
+        const transformedOrders = fetchedOrders.map(order => this.transformOrder(order));
+        
+        // Always replace orders for the page instead of appending
+        this.orders = transformedOrders;
+
+        // If we fetched exactly the limit, there might be more
+        this.hasMore = fetchedOrders.length === this.limit;
+
         this.selectedItems = (this.orders.length > 0) ? this.orders[0].order_details : [];
         console.log(this.selectedItems);
+
         this.applyFilters();
+        this.loading = false;
       },
       error: (err: any) => {
         console.log(err);
+        this.loading = false;
       }
     });
   }
 
+  onPageChange(page: number) {
+    if (page < 1) return;
+    this.currentPage = page;
+    this.offset = (page - 1) * this.limit;
+    this.fetchOrders(false);
+  }
   editOrder(order: any) {
     this.router.navigate(['/add-new-order'], { queryParams: { id: order.order_id } });
     console.log('Edit order:', order);
@@ -136,27 +199,20 @@ export class OrderListComponent {
       }
     });
   }
-
   onSearchInput(event: any) {
-    this.searchQuery = event.target.value;
-    console.log('Search:', this.searchQuery);
-    this.currentPage = 1; // Reset to page 1 on new search
-    this.applyFilters();
+    this.searchSubject.next(event.target.value);
   }
 
   onSegmentChange(segment: string) {
     this.selectedSegment = segment;
-    this.currentPage = 1; // Reset to page 1 on segment change
-    this.applyFilters();
+    this.fetchOrders(true);
   }
 
   onCancelSearch() {
     this.searchQuery = '';
     console.log('Search cleared');
-    this.currentPage = 1;
-    this.applyFilters();
+    this.fetchOrders(true);
   }
-
   dismissNote(id: number) {
     console.log('Dismiss note:', id);
   }
@@ -250,116 +306,17 @@ export class OrderListComponent {
     }
   }
 
-  // Pagination methods
-  updatePaginatedOrders() {
-    const total = this.filteredOrders.length;
-    const maxPage = Math.ceil(total / this.pageSize) || 1;
-    if (this.currentPage > maxPage) {
-      this.currentPage = maxPage;
-    }
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    this.paginatedOrders = this.filteredOrders.slice(startIndex, endIndex);
-  }
-
-  onPageChange(page: number) {
-    if (page >= 1 && page <= this.totalPages()) {
-      this.currentPage = page;
-      this.updatePaginatedOrders();
-    }
-  }
-
-  totalPages(): number {
-    return Math.ceil(this.filteredOrders.length / this.pageSize) || 1;
-  }
-
-  getPageNumbers(): number[] {
-    const total = this.totalPages();
-    const pages = [];
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
 
   getShowingStart(): number {
-    if (this.filteredOrders.length === 0) return 0;
-    return (this.currentPage - 1) * this.pageSize + 1;
+    return this.filteredOrders.length > 0 ? 1 : 0;
   }
 
   getShowingEnd(): number {
-    const end = this.currentPage * this.pageSize;
-    const total = this.filteredOrders.length;
-    return end > total ? total : end;
+    return this.filteredOrders.length;
   }
 
   applyFilters() {
     let temp = [...this.orders];
-
-    if (this.selectedSegment === 'Custom' && this.tabId > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      switch (this.tabId) {
-        case 1: // Due this week
-          temp = temp.filter(order => {
-            if (!order.due_date) return false;
-            const due = new Date(order.due_date);
-            due.setHours(0, 0, 0, 0);
-            const diff = (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-            return diff >= 0 && diff <= 7 && order.order_status !== 'Delivered';
-          });
-          break;
-
-        case 2: // Overdue
-          temp = temp.filter(order => {
-            if (!order.due_date) return false;
-            const due = new Date(order.due_date);
-            due.setHours(0, 0, 0, 0);
-            return due < today && order.order_status !== 'Delivered';
-          });
-          break;
-
-        case 3: // Urgent
-          temp = temp.filter(order => order.order_priority === 1);
-          break;
-
-        case 4: // Ready
-          temp = temp.filter(order => order.order_status === 'Ready');
-          break;
-
-        case 5: // Delivered this week
-          temp = temp.filter(order => {
-            if (!order.delivered_date) return false;
-            const delivered = new Date(order.delivered_date);
-            const diff = (today.getTime() - delivered.getTime()) / (1000 * 60 * 60 * 24);
-            return diff >= 0 && diff <= 7;
-          });
-          break;
-
-        case 6: // New orders this week
-          temp = temp.filter(order => {
-            if (!order.order_date) return false;
-            const created = new Date(order.order_date);
-            const diff = (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-            return diff >= 0 && diff <= 7;
-          });
-          break;
-      }
-    } else if (this.selectedSegment && this.selectedSegment !== 'All') {
-      temp = temp.filter(order =>
-        order.order_status?.toLowerCase() === this.selectedSegment.toLowerCase()
-      );
-    }
-
-    if (this.searchQuery && this.searchQuery.trim() !== '') {
-      const query = this.searchQuery.toLowerCase();
-      temp = temp.filter(order =>
-        order.customer_name?.toLowerCase().includes(query) ||
-        (typeof order.order_details === 'string' ? order.order_details.toLowerCase().includes(query) : false) ||
-        order.contact_number?.includes(query)
-      );
-    }
 
     // Sort
     if (this.sortColumn) {
@@ -372,15 +329,11 @@ export class OrderListComponent {
       });
     }
 
-    // Transform and assign
-    this.filteredOrders = temp.map(order => this.transformOrder(order));
-
-    // Update pagination
-    this.updatePaginatedOrders();
+    this.filteredOrders = temp;
+    this.paginatedOrders = temp;
   }
-
   transformOrder(order: any) {
-    console.log('BEFORE:', order);
+    // console.log('BEFORE:', order);
     let details = order.order_details;
     if (typeof details === 'string' && details.trim() !== '') {
       try {
@@ -398,7 +351,7 @@ export class OrderListComponent {
       order_details: details
     };
 
-    console.log('AFTER:', transformed);
+    // console.log('AFTER:', transformed);
     return transformed;
   }
 

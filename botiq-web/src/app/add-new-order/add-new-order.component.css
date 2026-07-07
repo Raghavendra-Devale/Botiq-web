@@ -1475,3 +1475,152 @@
         grid-template-columns: 1fr;
     }
 }
+
+button.asset-upload-label {
+    width: 100%;
+    border: 1.5px dashed var(--border-strong);
+    padding: 0;
+}
+
+/* ==========================================================================
+   CUSTOM AUDIO PLAYER & RECORDING ANIMATION
+   ========================================================================== */
+.audio-player-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--border-radius-sm);
+    background: #f8fafc;
+    padding: 0 8px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-fast);
+    width: 100%;
+}
+
+.audio-player-pill:hover {
+    border-color: var(--primary-accent);
+    background: #ffffff;
+}
+
+.audio-play-btn {
+    background: none;
+    border: none;
+    color: var(--primary-accent);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    transition: background-color var(--transition-fast);
+}
+
+.audio-play-btn:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.audio-progress-container {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    min-width: 60px;
+}
+
+.audio-progress-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+.audio-progress-bar {
+    position: absolute;
+    left: 0;
+    height: 4px;
+    background: var(--primary-accent);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+}
+
+.audio-time {
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    user-select: none;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.audio-delete-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.audio-delete-btn:hover {
+    color: var(--danger-accent);
+    background: #fee2e2;
+}
+
+/* Recording Active state */
+.asset-upload-label.recording-active {
+    border-color: var(--danger-accent);
+    color: var(--danger-accent);
+    background: #fef2f2;
+    animation: pulse-border-red 1.5s infinite ease-in-out;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--danger-accent);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-dot 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-border-red {
+
+    0%,
+    100% {
+        border-color: #fecaca;
+    }
+
+    50% {
+        border-color: var(--danger-accent);
+    }
+}
+
+@keyframes pulse-dot {
+
+    0%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
