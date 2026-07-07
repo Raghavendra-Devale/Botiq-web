@@ -330,7 +330,10 @@
                 <div class="secondary-actions">
                     <button type="button" class="pos-btn-secondary" (click)="goToNextPage()"
                         [disabled]="!isAddJobEnabled">
-                        <i class="fa-solid fa-list-check"></i> Add Job Task
+                        <i class="fa-solid fa-list-check"></i>
+                        {{ isEditMode ? 'Edit Order #' + orderId : 'New Sales
+                        Order' }}
+
                     </button>
                     <button type="button" class="pos-btn-secondary" [disabled]="!isAddJobEnabled">
                         <i class="fa-solid fa-print"></i> Print Bill

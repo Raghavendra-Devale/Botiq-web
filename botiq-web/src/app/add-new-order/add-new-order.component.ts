@@ -272,17 +272,27 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadMasterData();
 
-    this.route.queryParams.subscribe(params => {
-      this.orderId = +params['id'];
-
+    // Check if we are restoring state from tab2 (JobOrderComponent) back-navigation
+    const stateData = history.state?.['orderData'];
+    if (stateData) {
+      console.log("Restoring saved order data from router state:", stateData);
+      this.orderId = stateData.order?.orderId || stateData.order?.order_id;
       if (this.orderId) {
         this.isEditMode = true;
-        this.loadOrder(this.orderId);        
-      } else {
-        console.log("create new");
       }
-    });
+      this.fillForm(stateData);
+    } else {
+      this.route.queryParams.subscribe(params => {
+        this.orderId = +params['id'];
 
+        if (this.orderId) {
+          this.isEditMode = true;
+          this.loadOrder(this.orderId);        
+        } else {
+          console.log("create new");
+        }
+      });
+    }
   }
 
   loadMasterData() {
@@ -348,31 +358,14 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   loadOrder(orderId: number) {
     this.orderService.getOrderById(orderId).subscribe({
       next: (order: any) => {
-  console.log("load order", order);
-
-  this.fillForm(order);
-
-  if (order.details?.audio?.length) {
-    const audioObj = order.details.audio[0];
-    this.audioDetailsId = audioObj.details_id || audioObj.detailsId;
-    this.audioBase64 = audioObj.details_data || audioObj.detailsData;
-    this.hasAudio = true;
-    if (this.audioBase64) {
-      this.audioUrl = this.convertBase64ToBlobUrl(this.audioBase64);
-      this.initAudio();
-    }
-  } else {
-    this.hasAudio = false;
-    this.audioUrl = null;
-    this.initAudio();
-  }
-},
- error: (err: any) => console.log("error loading order ", err)
+        console.log("load order", order);
+        this.fillForm(order);
+      },
+      error: (err: any) => console.log("error loading order ", err)
     });
   }
 
   fillForm(res: any) {
-
     this.newOrder.customerId = res.customer.customerId || res.customer.customer_id;
     this.newOrder.name = res.customer.name || res.customer.customerName;
     this.newOrder.mobile = res.customer.mobile || res.customer.contactNumber;
@@ -389,7 +382,9 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
 
     this.newOrder.hasJobOrder = !!(res.order.has_job_order !== undefined ? res.order.has_job_order : res.order.hasJobOrder);
 
-    this.orderDetails = (res.order.order_details || res.order.orderDetails || []).map((item: any) => ({
+    // Support both root-level orderDetails (state payload) and nested orderDetails (API response)
+    const rawDetails = res.orderDetails || res.order.order_details || res.order.orderDetails || [];
+    this.orderDetails = rawDetails.map((item: any) => ({
       itemName: (item.itemName || item.item_name || '')
         .trim()
         .toLowerCase(),
@@ -397,40 +392,45 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
       price: item.price || 0
     }));
 
-    this.measurementImages = (res.details?.measurements || []).map((item: any) => {
-      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
+    // Map attachments properly, preserving base64, temp_id, and reusing existing blob URLs
+    const mapImage = (item: any) => {
+      if (typeof item === 'string') {
+        return {
+          base64: item,
+          blobUrl: this.convertBase64ToBlobUrl(item)
+        };
+      }
+      const base64 = item.details_data || item.detailsData || item.base64 || '';
+      const blobUrl = item.blobUrl || (base64 ? this.convertBase64ToBlobUrl(base64) : '');
       return {
         base64,
-        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
+        blobUrl,
+        temp_id: item.temp_id
       };
-    }).filter((img: any) => img.base64);
+    };
 
-    this.patternImages = (res.details?.patterns || []).map((item: any) => {
-      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
-      return {
-        base64,
-        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
-      };
-    }).filter((img: any) => img.base64);
+    this.measurementImages = (res.details?.measurements || []).map(mapImage).filter((img: any) => img.base64);
+    this.patternImages = (res.details?.patterns || []).map(mapImage).filter((img: any) => img.base64);
+    this.materialImages = (res.details?.materials || []).map(mapImage).filter((img: any) => img.base64);
+    this.handwrittenNotes = (res.details?.handwrittenNotes || []).map(mapImage).filter((img: any) => img.base64);
 
-    this.materialImages = (res.details?.materials || []).map((item: any) => {
-      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
-      return {
-        base64,
-        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
-      };
-    }).filter((img: any) => img.base64);
-
-    this.handwrittenNotes = (res.details?.handwrittenNotes || []).map((item: any) => {
-      const base64 = typeof item === 'string' ? item : (item.details_data || item.detailsData || '');
-      return {
-        base64,
-        blobUrl: base64 ? this.convertBase64ToBlobUrl(base64) : ''
-      };
-    }).filter((img: any) => img.base64);
+    // Restore audio attachment details
+    if (res.details?.audio?.length) {
+      const audioObj = res.details.audio[0];
+      this.audioDetailsId = audioObj.details_id || audioObj.detailsId;
+      this.audioBase64 = audioObj.details_data || audioObj.detailsData || audioObj.base64 || '';
+      this.hasAudio = true;
+      if (this.audioBase64) {
+        this.audioUrl = audioObj.blobUrl || this.convertBase64ToBlobUrl(this.audioBase64);
+        this.initAudio();
+      }
+    } else {
+      this.hasAudio = false;
+      this.audioUrl = null;
+      this.initAudio();
+    }
 
     this.jobOrders = res.jobOrders || [];
-
 
     this.isOrderLoaded = true;
     this.trySync();
@@ -704,7 +704,7 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   trySync() {
-    if (this.isEditMode && this.isOrderLoaded && this.isCategoryLoaded) {
+    if (this.isOrderLoaded && this.isCategoryLoaded) {
       this.syncCategoriesWithOrder();
     }
   }
