@@ -38,8 +38,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                              currentUrl.includes('/register') ||
                              currentUrl === '/' ||
                              currentUrl === '';
+        
+        // Skip logging out the user if the error is a handled business logic error (e.g. plan/user limits exceeded)
+        const isHandledBusinessError = error.error && error.error.success === false;
 
-        if (!isAuthMe && !isPublicPage) {
+        if (!isAuthMe && !isPublicPage && !isHandledBusinessError) {
           authService.clearSession();
           signOut(auth).then(() => {
             // localStorage.removeItem('token'); // Uncomment if you use local storage key clearing

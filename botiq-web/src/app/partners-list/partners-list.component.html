@@ -1,31 +1,82 @@
-<div class="header">
-    <h2>Partners</h2>
-    <button class="add-btn" (click)="addPartner()">+ Add Partner</button>
-</div>
-
-<div *ngFor="let partner of partnersList" class="partner-card">
-
-    <div class="left">
-        <h3>{{ partner.partner_name }}</h3>
-
-        <p class="contact">
-            {{ partner.partner_contact || 'No contact' }}
-        </p>
-
-        <p class="category">
-            {{ partner.partner_category || 'No category' }}
-        </p>
+<div class="page-wrapper">
+    <div class="page-header">
+        <div class="page-title-group">
+            <h2>Partners</h2>
+            <span class="partner-count" *ngIf="partnersList && partnersList.length > 0">
+                {{ partnersList.length }} total
+            </span>
+        </div>
+        <button class="add-btn" (click)="addPartner()">
+            <i class="fa-solid fa-user-plus"></i> + Add Partner
+        </button>
     </div>
 
-    <div class="right">
-        <span class="status" [ngClass]="partner.enabled ? 'active' : 'inactive'">
-            {{ partner.enabled ? 'Active' : 'Inactive' }}
-        </span>
-
-        <div class="actions">
-            <button (click)="editPartner(partner)">Edit</button>
-            <button class="delete" (click)="deletePartner(partner)">Delete</button>
+    <!-- Search input -->
+    <div class="search-container" *ngIf="partnersList && partnersList.length > 0">
+        <div class="input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Search partners by name, phone, or category..." />
         </div>
     </div>
 
+    <div *ngIf="filteredPartners && filteredPartners.length > 0; else noPartners" class="list-container">
+        <div *ngFor="let partner of filteredPartners" class="partner-card">
+            
+            <div class="avatar-col">
+                <div class="partner-avatar">
+                    {{ (partner.partner_name || 'P').charAt(0).toUpperCase() }}
+                </div>
+            </div>
+
+            <div class="info-col">
+                <div class="partner-title-row">
+                    <h3 class="partner-name">{{ partner.partner_name }}</h3>
+                    <span class="category-badge" *ngIf="partner.partner_category">
+                        {{ partner.partner_category }}
+                    </span>
+                </div>
+                
+                <div class="partner-details">
+                    <span class="detail-item">
+                        <i class="fa-solid fa-phone"></i>
+                        {{ partner.partner_contact || 'No contact' }}
+                    </span>
+                    <span class="detail-item" *ngIf="partner.partner_address">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        {{ partner.partner_address }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="meta-col">
+                <span class="status-pill" [ngClass]="partner.enabled ? 'active' : 'inactive'">
+                    <span class="status-dot"></span>
+                    {{ partner.enabled ? 'Active' : 'Inactive' }}
+                </span>
+                
+                <div class="actions">
+                    <button class="btn-edit" (click)="editPartner(partner)">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                    </button>
+                    <button class="delete" (click)="deletePartner(partner)">
+                        <i class="fa-solid fa-trash-can"></i> Delete
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <ng-template #noPartners>
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fa-solid fa-handshake-angle"></i>
+            </div>
+            <h3>{{ searchQuery.trim() ? 'No matching partners' : 'No partners yet' }}</h3>
+            <p>{{ searchQuery.trim() ? 'Try adjusting your search query.' : 'Add your first service/production partner to get started.' }}</p>
+            <button *ngIf="!searchQuery.trim()" class="add-btn" (click)="addPartner()">
+                <i class="fa-solid fa-plus"></i> + Add Partner
+            </button>
+        </div>
+    </ng-template>
 </div>

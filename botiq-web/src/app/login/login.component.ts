@@ -111,6 +111,14 @@ ngOnInit() {
           return;
         }
 
+        if (res.status === 7) {
+          this.loading = false;
+          this.modalTitle = 'User Not Active'
+          this.modalMessage = 'User is not active. Please contact administrator.'
+          this.showConfirmModal = true;
+          return;
+        }
+
         // status 2, 5, 6 proceed directly
         this.sendOtpFlow();
       },

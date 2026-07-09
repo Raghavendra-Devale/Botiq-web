@@ -3,7 +3,7 @@
     <ng-container *ngIf="!showForm">
         <div class="page-header">
             <div class="page-title-group">
-                <h2> Members</h2>
+                <h2>Members</h2>
                 <span class="user-count" *ngIf="usersList && usersList.length > 0">{{ usersList.length }} users</span>
             </div>
             <button class="btn-primary" (click)="addNewUser()">
@@ -11,32 +11,58 @@
             </button>
         </div>
 
-        <div *ngIf="usersList && usersList.length > 0; else noUsers" class="list-container">
-            <div *ngFor="let u of usersList" class="user-card">
-                <div class="user-avatar">
-                    {{ (u.firstname || 'U').charAt(0).toUpperCase() }}
-                </div>
-                <div class="user-info">
-                    <h3 class="user-name">{{ u.firstname || 'Unnamed User' }}</h3>
-                    <div class="user-details">
-                        <span class="detail-item">
-                            <i class="fa-solid fa-phone"></i> {{ u.mobilenumber }}
-                        </span>
-                        <span class="detail-item">
-                            <i class="fa-solid fa-envelope"></i> {{ u.email }}
-                        </span>
-                    </div>
-                </div>
-                <div class="user-meta">
-                    <span class="status-pill" [ngClass]="u.enabled ? 'active' : 'inactive'">
-                        <span class="status-dot"></span> {{ u.enabled ? 'Active' : 'Inactive' }}
-                    </span>
-                    <span class="role-chip">{{ u.userrole }}</span>
-                    <button class="btn-edit" (click)="editUser(u)">
-                        <i class="fa-solid fa-pen-to-square"></i> Edit
-                    </button>
+        <div *ngIf="usersList && usersList.length > 0; else noUsers">
+            <!-- Search input -->
+            <div class="search-container">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" [(ngModel)]="searchQuery" placeholder="Search members by name, phone, email, or role..." />
                 </div>
             </div>
+
+            <div *ngIf="filteredUsers && filteredUsers.length > 0; else noResults" class="list-container">
+                <div *ngFor="let u of filteredUsers" class="user-card">
+                    <div class="user-avatar">
+                        {{ (u.firstname || 'U').charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="user-info">
+                        <h3 class="user-name">{{ u.firstname || 'Unnamed User' }}</h3>
+                        <div class="user-details">
+                            <span class="detail-item">
+                                <i class="fa-solid fa-phone"></i> {{ u.mobilenumber }}
+                            </span>
+                            <span class="detail-item">
+                                <i class="fa-solid fa-envelope"></i> {{ u.email }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="user-meta">
+                        <span class="status-pill" [ngClass]="u.enabled ? 'active' : 'inactive'">
+                            <span class="status-dot"></span> {{ u.enabled ? 'Active' : 'Inactive' }}
+                        </span>
+                        <span class="role-chip">{{ u.userrole }}</span>
+                        
+                        <div class="user-actions">
+                            <button class="btn-edit" (click)="editUser(u)">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button class="btn-delete" (click)="removeUser(u)">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ng-template #noResults>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-users-slash"></i>
+                    </div>
+                    <h3>No matching users</h3>
+                    <p>Try adjusting your search query.</p>
+                </div>
+            </ng-template>
         </div>
 
         <ng-template #noUsers>
@@ -62,8 +88,7 @@
             <div>
                 <h2>{{ isEditMode ? 'Edit User' : 'Add New User' }}</h2>
                 <p class="form-subtitle">
-                    {{ isEditMode ? 'Update user details for your organization.' : 'Fill in the details to add a new
-                    team member.' }}
+                    {{ isEditMode ? 'Update user details for your organization.' : 'Fill in the details to add a new team member.' }}
                 </p>
             </div>
         </div>
@@ -113,10 +138,32 @@
                 <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
                 <button type="submit" class="btn-primary" [disabled]="loading">
                     <i class="fa-solid" [ngClass]="isEditMode ? 'fa-check' : 'fa-plus'"></i>
-                    {{ loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update User' : 'Add User')
-                    }}
+                    {{ loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update User' : 'Add User') }}
                 </button>
             </div>
         </form>
     </ng-container>
+
+    <!-- Custom Modal -->
+    <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+        <div class="modal-container glass-panel" (click)="$event.stopPropagation()">
+            <div class="modal-header" [ngClass]="modalType">
+                <div class="modal-icon-wrapper">
+                    <i class="fa-solid" [ngClass]="modalIcon"></i>
+                </div>
+                <h3>{{ modalTitle }}</h3>
+            </div>
+            <div class="modal-body">
+                <p>{{ modalMessage }}</p>
+            </div>
+            <div class="modal-footer">
+                <button *ngIf="showModalCancel" class="btn-modal-secondary" (click)="closeModal()">
+                    {{ modalCancelText || 'Cancel' }}
+                </button>
+                <button class="btn-modal-primary" [ngClass]="modalType" (click)="onPrimaryClick()">
+                    {{ modalPrimaryText || 'OK' }}
+                </button>
+            </div>
+        </div>
+    </div>
 </div>

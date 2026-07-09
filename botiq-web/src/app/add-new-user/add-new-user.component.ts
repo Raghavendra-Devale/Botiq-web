@@ -25,9 +25,33 @@ export class AddNewUserComponent implements OnInit {
   loading = false;
   showForm = false;
   usersList: any[] = [];
+  searchQuery = '';
+
+  get filteredUsers() {
+    if (!this.usersList) return [];
+    if (!this.searchQuery.trim()) return this.usersList;
+    const query = this.searchQuery.toLowerCase().trim();
+    return this.usersList.filter((u: any) =>
+      (u.firstname && u.firstname.toLowerCase().includes(query)) ||
+      (u.mobilenumber && u.mobilenumber.includes(query)) ||
+      (u.email && u.email.toLowerCase().includes(query)) ||
+      (u.userrole && u.userrole.toLowerCase().includes(query))
+    );
+  }
 
   isEditMode = false;
   editingUserId: number | null = null;
+
+  // Custom Modal State
+  showModal = false;
+  modalType: 'success' | 'error' | 'warning' | 'info' = 'info';
+  modalTitle = '';
+  modalMessage = '';
+  modalIcon = '';
+  modalPrimaryText = '';
+  modalCancelText = '';
+  showModalCancel = false;
+  onPrimaryClick: () => void = () => {};
 
   constructor(
     public router: Router,
@@ -85,10 +109,104 @@ export class AddNewUserComponent implements OnInit {
     this.showForm = true;
   }
 
+  removeUser(u: any) {
+    this.showConfirm(
+      'Delete User',
+      `Are you sure you want to remove ${u.firstname || 'this user'}?`,
+      () => {
+        const payload: any = {
+          userId: u.userid,
+          org_id: this.orgId
+        };
+        console.log("deleting ", payload.userId);
+
+        this.loading = true;
+        this.dataService.removeUser(payload).subscribe({
+          next: (res: any) => {
+            this.loading = false;
+            if (res.success) {
+              this.showSuccess(`User "${u.firstname}" has been removed successfully!`, () => {
+                this.fetchUsers();
+              });
+            } else {
+              this.showPlanFailure(res.message || 'Failed to remove user.');
+            }
+          },
+          error: (err: any) => {
+            this.loading = false;
+            this.showPlanFailure(err.error?.message || 'An error occurred while removing the user.');
+            console.error('API Error removing user:', err);
+          }
+        });
+      }
+    );
+  }
+
   onMobileInput(event: any) {
     const input = event.target as HTMLInputElement;
     input.value = input.value.replace(/[^0-9]/g, '');
     this.user.mobileNumber = input.value;
+  }
+
+  showSuccess(message: string, callback?: () => void) {
+    this.showModal = true;
+    this.modalType = 'success';
+    this.modalTitle = 'Success';
+    this.modalMessage = message;
+    this.modalIcon = 'fa-circle-check';
+    this.modalPrimaryText = 'OK';
+    this.showModalCancel = false;
+    this.onPrimaryClick = () => {
+      this.closeModal();
+      if (callback) callback();
+    };
+  }
+
+  showWarning(message: string) {
+    this.showModal = true;
+    this.modalType = 'warning';
+    this.modalTitle = 'Validation Alert';
+    this.modalMessage = message;
+    this.modalIcon = 'fa-triangle-exclamation';
+    this.modalPrimaryText = 'OK';
+    this.showModalCancel = false;
+    this.onPrimaryClick = () => {
+      this.closeModal();
+    };
+  }
+
+  showPlanFailure(message: string) {
+    this.showModal = true;
+    this.modalType = 'error';
+    this.modalTitle = 'Action Required';
+    this.modalMessage = message;
+    this.modalIcon = 'fa-circle-xmark';
+    this.modalPrimaryText = 'Upgrade Plan';
+    this.modalCancelText = 'Cancel';
+    this.showModalCancel = true;
+    this.onPrimaryClick = () => {
+      this.closeModal();
+      this.router.navigate(['/plan-page']);
+    };
+  }
+
+  showConfirm(title: string, message: string, onConfirm: () => void) {
+    this.showModal = true;
+    this.modalType = 'warning';
+    this.modalTitle = title;
+    this.modalMessage = message;
+    this.modalIcon = 'fa-triangle-exclamation';
+    this.modalPrimaryText = 'Confirm';
+    this.modalCancelText = 'Cancel';
+    this.showModalCancel = true;
+    this.onPrimaryClick = () => {
+      this.closeModal();
+      onConfirm();
+    };
+  }
+
+  closeModal() {
+    this.showModal = false;
   }
 
   onSubmit() {
@@ -97,12 +215,12 @@ export class AddNewUserComponent implements OnInit {
     const email = this.user.email ? this.user.email.trim() : '';
 
     if (!firstName || !mobileNumber || !email || !this.user.userType) {
-      alert('Please fill out all required fields.');
+      this.showWarning('Please fill out all required fields.');
       return;
     }
 
     if (mobileNumber.length !== 10 || !/^\d+$/.test(mobileNumber)) {
-      alert('Please enter a valid 10-digit phone number.');
+      this.showWarning('Please enter a valid 10-digit phone number.');
       return;
     }
 
@@ -126,17 +244,18 @@ export class AddNewUserComponent implements OnInit {
         next: (res: any) => {
           this.loading = false;
           if (res.success) {
-            alert(`User "${firstName}" has been updated successfully!`);
-            this.user = { firstName: '', mobileNumber: '', email: '', userType: '' };
-            this.fetchUsers();
-            this.showForm = false;
+            this.showSuccess(`User "${firstName}" has been updated successfully!`, () => {
+              this.user = { firstName: '', mobileNumber: '', email: '', userType: '' };
+              this.fetchUsers();
+              this.showForm = false;
+            });
           } else {
-            alert(res.message || 'Failed to update user.');
+            this.showPlanFailure(res.message || 'Failed to update user.');
           }
         },
         error: (err: any) => {
           this.loading = false;
-          alert(err.error?.message || 'An error occurred while updating the user.');
+          this.showPlanFailure(err.error?.message || 'An error occurred while updating the user.');
           console.error('API Error updating user:', err);
         }
       });
@@ -147,17 +266,18 @@ export class AddNewUserComponent implements OnInit {
         next: (res: any) => {
           this.loading = false;
           if (res.success) {
-            alert(`User "${firstName}" has been added successfully!`);
-            this.user = { firstName: '', mobileNumber: '', email: '', userType: '' };
-            this.fetchUsers();
-            this.showForm = false;
+            this.showSuccess(`User "${firstName}" has been added successfully!`, () => {
+              this.user = { firstName: '', mobileNumber: '', email: '', userType: '' };
+              this.fetchUsers();
+              this.showForm = false;
+            });
           } else {
-            alert(res.message || 'Failed to add user.');
+            this.showPlanFailure(res.message || 'Failed to add user.');
           }
         },
         error: (err: any) => {
           this.loading = false;
-          alert(err.error?.message || 'An error occurred while adding the user.');
+          this.showPlanFailure(err.error?.message || 'An error occurred while adding the user.');
           console.error('API Error adding user:', err);
         }
       });

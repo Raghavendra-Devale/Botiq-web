@@ -56,7 +56,11 @@ export class AuthService {
   constructor(
     @Inject(Auth) private auth: Auth,
     private http: HttpClient
-  ) {}
+  ) {
+    if (!environment.production) {
+      (this.auth.settings as any).appVerificationDisabledForTesting = true;
+    }
+  }
 
   setupRecaptcha(containerId: string) {
     console.log('--- Firebase Auth Debug ---');

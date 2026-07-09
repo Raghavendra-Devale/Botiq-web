@@ -89,6 +89,12 @@ public class OrganizationController {
                 return ResponseEntity.ok(response);
             }
 
+            if (!user.getEnabled() && user.getDeleted()) {
+                response.put("status", 7);
+                response.put("message", "User has been deleted.");
+                return ResponseEntity.ok(response);
+            }
+
             String existingDeviceId = user.getDeviceId();
             if (deviceId != null && !deviceId.trim().isEmpty()) {
                 if (existingDeviceId != null && deviceId.equals(existingDeviceId)) {
@@ -115,11 +121,32 @@ public class OrganizationController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/removeUser")
+    public ResponseEntity<Map<String, Object>> removeUser(@RequestBody Map<String, String> payload) {
+
+        Integer userId = Integer.valueOf(payload.get("userId"));
+        Integer orgId = Integer.valueOf(payload.get("org_id"));
+
+        String deleteQuery = "UPDATE org_user SET deleted = ?, enabled = ? WHERE user_id = ? AND org_id = ?";
+        jdbcTemplate.update(deleteQuery, true, false, userId, orgId);
+
+//        String statusUpdateQuery = "UPDATE botiq_user_status SET logout = ?, disable_user = ?, clearlocaldata = ?, updated_at = NOW() WHERE user_id = ? AND org_id = ?";
+//        jdbcTemplate.update(statusUpdateQuery, true, true, true, userId, orgId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("status", "success");
+        response.put("message", "User has been deleted.");
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/link-firebase")
     public ResponseEntity<?> linkFirebaseAccount(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Missing or invalid authorization header"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Missing or invalid authorization header"));
         }
 
         try {
@@ -139,14 +166,16 @@ public class OrganizationController {
 
             Optional<OrgUser> userOpt = orgUserRepository.findByMobileNumber(cleanedPhone);
             if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found with phone number " + cleanedPhone));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found with phone number " + cleanedPhone));
             }
 
             OrgUser user = userOpt.get();
 
             // Check if user already has a firebase ID
             if (user.getFirebaseId() != null && !user.getFirebaseId().isBlank()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Firebase account already linked for this user"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Firebase account already linked for this user"));
             }
 
             user.setFirebaseId(firebaseUid);
@@ -158,9 +187,11 @@ public class OrganizationController {
             return ResponseEntity.ok(response);
 
         } catch (FirebaseAuthException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Firebase token: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid Firebase token: " + e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An error occurred: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An error occurred: " + e.getMessage()));
         }
     }
 

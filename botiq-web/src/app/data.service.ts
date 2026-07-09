@@ -20,6 +20,11 @@ export class DataService {
     return this.http.post<any>(`${this.baseUrl.replace('/web', '')}/organization/check-user`, payload);
   }
 
+  removeUser(payload: any): Observable<any> {
+    console.log("sending ", payload);
+    return this.http.post<any>(this.baseUrl.replace('/web', '') + "/organization/removeUser", payload);
+  }
+
   getBasicData() {
     return this.http.get<any>(this.baseUrl + "/getBasicDetails");
   }

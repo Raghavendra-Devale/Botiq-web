@@ -31,6 +31,7 @@ export class AddPartnerComponent {
 
   isEditMode = false;
   partnerId: number | null = null;
+  loading = false;
 
   constructor(public router: Router,
     private orderService: OrderService,
@@ -62,6 +63,7 @@ export class AddPartnerComponent {
       return;
     }
 
+    this.loading = true;
     this.partner.name = this.capitalize(this.partner.name.trim());
 
     const payload = {
@@ -76,8 +78,9 @@ export class AddPartnerComponent {
       enabled: this.partner.status
     };
 
-    await this.orderService.addOrUpdatePartner(payload).subscribe({
+    this.orderService.addOrUpdatePartner(payload).subscribe({
       next: (res) => {
+        this.loading = false;
         console.log('Saved:', res);
         const action = this.isEditMode ? 'updated' : 'added';
         this.notificationService.createNotification({
@@ -88,6 +91,7 @@ export class AddPartnerComponent {
         this.router.navigate(['/partners-list']);
       },
       error: (err) => {
+        this.loading = false;
         console.error('Error:', err);
       }
     });

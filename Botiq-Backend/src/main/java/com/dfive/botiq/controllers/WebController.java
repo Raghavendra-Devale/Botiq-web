@@ -2364,12 +2364,37 @@ public class WebController {
         try {
             String authorizationHeader = request.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
+            System.out.println("ip addres "+ request.getRemoteAddr());
 
             String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
             List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
             if (users.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "Logged in user not found"));
+            }
+
+            // check if already more than 3 users exists
+            Integer usersCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM org_user WHERE org_id = ?",
+                    Integer.class, users.get(0).get("org_id"));
+
+            String planType = jdbcTemplate.queryForObject("SELECT plan_type FROM organization where org_id = ?",String.class, users.get(0).get("org_id"));
+
+            System.out.println("users count : " + usersCount + " and user plane "+ planType);
+
+            if (usersCount >= 2 && planType.equalsIgnoreCase("FREE")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message",
+                                "cannot add more than 2 users upgrade plan to add more"));
+            }
+
+            if (usersCount >= 3 && planType.equalsIgnoreCase("STARTER")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "cannot add more that 3 users upgrade plan to add more"));
+            }
+
+            if (usersCount >= 10 && planType.equalsIgnoreCase("STANDARD")){
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "cannot add more than 10 users upgrade plan to add more"));
             }
 
             String username = (String) payload.get("username");
@@ -3117,9 +3142,9 @@ public class WebController {
                     }
 
                     Map<String, Object> ssePayload = new HashMap<>();
-//                    ssePayload.put("event", isUpdate ? "UPDATE_ORDER" : "CREATE_ORDER");
-//                    ssePayload.put("orgId", orgId);
-//                    ssePayload.put("orderId", orderId);
+                    // ssePayload.put("event", isUpdate ? "UPDATE_ORDER" : "CREATE_ORDER");
+                    // ssePayload.put("orgId", orgId);
+                    // ssePayload.put("orderId", orderId);
                     if (orderStatus != null) {
                         ssePayload.put("status", orderStatus);
                     }

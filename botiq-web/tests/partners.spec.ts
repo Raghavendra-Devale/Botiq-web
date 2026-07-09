@@ -1,74 +1,118 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page, Locator } from '@playwright/test';
 
-async function performLogin(page) {
-  await page.goto('http://localhost:4200/mpin-login');
-  await page.locator('#loginMpin').fill('123456');
-  await page.locator('button.btn-primary', { hasText: 'Verify Account' }).click();
-  await expect(page).toHaveURL(/.*\/dashboard/);
+// Use storageState to load authenticated state
+test.use({ storageState: 'playwright/.auth/user.json' });
+
+class PartnersPage {
+  readonly page: Page;
+  readonly pageTitle: Locator;
+  readonly addPartnerButton: Locator;
+  readonly nameInput: Locator;
+  readonly phoneInput: Locator;
+  readonly categorySelect: Locator;
+  readonly addressInput: Locator;
+  readonly notesInput: Locator;
+  readonly statusCheckbox: Locator;
+  readonly submitButton: Locator;
+  readonly cancelButton: Locator;
+  readonly errorMessages: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.pageTitle = page.locator('h2');
+    this.addPartnerButton = page.locator('button.add-btn', { hasText: '+ Add Partner' });
+    this.submitButton = page.locator('button[type="submit"]');
+    this.cancelButton = page.locator('button[type="button"]', { hasText: 'Cancel' });
+    this.nameInput = page.locator('input[name="name"]');
+    this.phoneInput = page.locator('input[name="phone"]');
+    this.categorySelect = page.locator('select[name="category"]');
+    this.addressInput = page.locator('input[name="address"]');
+    this.notesInput = page.locator('textarea[name="notes"]');
+    this.statusCheckbox = page.locator('input[name="status"]');
+    this.errorMessages = page.locator('.error');
+  }
+
+  async navigateToList() {
+    await this.page.goto('http://localhost:4200/partners-list');
+  }
+
+  async navigateToAddForm() {
+    await this.page.goto('http://localhost:4200/add-partner');
+  }
+
+  async fillForm(data: {
+    name?: string;
+    phone?: string;
+    categoryIndex?: number;
+    address?: string;
+    notes?: string;
+    status?: boolean;
+  }) {
+    if (data.name !== undefined) await this.nameInput.fill(data.name);
+    if (data.phone !== undefined) await this.phoneInput.fill(data.phone);
+    if (data.categoryIndex !== undefined) {
+      await this.categorySelect.selectOption({ index: data.categoryIndex });
+    }
+    if (data.address !== undefined) await this.addressInput.fill(data.address);
+    if (data.notes !== undefined) await this.notesInput.fill(data.notes);
+    if (data.status !== undefined) {
+      if (data.status) {
+        await this.statusCheckbox.check();
+      } else {
+        await this.statusCheckbox.uncheck();
+      }
+    }
+  }
 }
 
 test.describe('Partner Management Flow', () => {
+  let partnersPage: PartnersPage;
 
   test.beforeEach(async ({ page }) => {
-    // Perform login to bypass authGuard
-    await performLogin(page);
+    // Intercept and mock backend category data
+    await page.route('**/getMasterByType?type=WORK_CATEGORY', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { key_id: 1, key_name: 'Tailor', price: 0 },
+          { key_id: 2, key_name: 'Embroidery', price: 0 }
+        ])
+      });
+    });
+
+    partnersPage = new PartnersPage(page);
   });
 
-  test('should verify listing page elements and add partner button', async ({ page }) => {
-    await page.goto('http://localhost:4200/partners-list');
-
-    // Title should be "Partners"
-    await expect(page.locator('h2')).toHaveText('Partners');
-
-    // Add Partner button should be visible
-    const addBtn = page.locator('button.add-btn', { hasText: '+ Add Partner' });
-    await expect(addBtn).toBeVisible();
-
-    // Click it and verify navigation to add-partner form
-    await addBtn.click();
-    await expect(page).toHaveURL(/.*\/add-partner/);
+  test('should verify listing page elements and add partner button', async () => {
+    await partnersPage.navigateToList();
+    await expect(partnersPage.pageTitle).toHaveText('Partners');
+    await expect(partnersPage.addPartnerButton).toBeVisible();
+    await partnersPage.addPartnerButton.click();
+    await expect(partnersPage.page).toHaveURL(/.*\/add-partner/);
   });
 
-  test('should validate fields and submit partner creation', async ({ page }) => {
-    await page.goto('http://localhost:4200/add-partner');
+  test('should validate fields and submit partner creation', async () => {
+    await partnersPage.navigateToAddForm();
+    await expect(partnersPage.pageTitle).toHaveText('Add Partner');
+    // Initial state: Form is invalid, but the button is always enabled in this UI
+    await expect(partnersPage.submitButton).toBeEnabled();
 
-    // Page title
-    await expect(page.locator('h2')).toHaveText('Add Partner');
+    await partnersPage.nameInput.focus();
+    await partnersPage.nameInput.blur();
+    await expect(partnersPage.errorMessages.first()).toContainText('Required');
 
-    const nameInput = page.locator('input[name="name"]');
-    const phoneInput = page.locator('input[name="phone"]');
-    const categorySelect = page.locator('select[name="category"]');
-    const addressInput = page.locator('input[name="address"]');
-    const notesInput = page.locator('textarea[name="notes"]');
-    const statusCheckbox = page.locator('input[name="status"]');
-    const submitBtn = page.locator('button[type="submit"]');
+    await partnersPage.fillForm({
+      name: 'John Partner',
+      phone: '9988776655',
+      categoryIndex: 1,
+      address: '12 Partner Lane, Bangalore',
+      notes: 'Regular tailor for boutique designs.',
+      status: true,
+    });
 
-    // Initial state: Form is invalid because name and phone are required
-    await expect(submitBtn).toBeDisabled();
-
-    // Touch name and check error
-    await nameInput.focus();
-    await nameInput.blur();
-    await expect(page.locator('.error').first()).toContainText('Required');
-
-    // Fill name and phone
-    await nameInput.fill('John Partner');
-    await phoneInput.fill('9988776655');
-
-    // Select category (first option after 'Select')
-    await categorySelect.selectOption({ index: 1 });
-
-    await addressInput.fill('12 Partner Lane, Bangalore');
-    await notesInput.fill('Regular tailor for boutique designs.');
-    await statusCheckbox.check();
-
-    // Submit button should be enabled
-    await expect(submitBtn).toBeEnabled();
-
-    // Click cancel to ensure it works
-    const cancelBtn = page.locator('button[type="button"]', { hasText: 'Cancel' });
-    await cancelBtn.click();
-    await expect(page).toHaveURL(/.*\/partners-list/);
+    await expect(partnersPage.submitButton).toBeEnabled();
+    await partnersPage.cancelButton.click();
+    await expect(partnersPage.page).toHaveURL(/.*\/partners-list/);
   });
-
 });

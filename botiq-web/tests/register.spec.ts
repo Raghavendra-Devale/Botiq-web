@@ -1,63 +1,109 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page, Locator } from '@playwright/test';
+
+class RegisterPage {
+  readonly page: Page;
+  readonly title: Locator;
+  readonly subtitle: Locator;
+  readonly orgNameInput: Locator;
+  readonly ownerNameInput: Locator;
+  readonly emailInput: Locator;
+  readonly phoneInput: Locator;
+  readonly addressInput: Locator;
+  readonly termsCheckbox: Locator;
+  readonly submitButton: Locator;
+  readonly loginLink: Locator;
+  readonly phoneErrorMessage: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.title = page.locator('h2');
+    this.subtitle = page.locator('.subtitle');
+    this.orgNameInput = page.locator('#orgName');
+    this.ownerNameInput = page.locator('#ownerName');
+    this.emailInput = page.locator('#email');
+    this.phoneInput = page.locator('input[name="phone"]');
+    this.addressInput = page.locator('#address');
+    this.termsCheckbox = page.getByLabel(/I agree to the/i);
+    this.submitButton = page.locator('button[type="submit"]');
+    this.loginLink = page.locator('a.link', { hasText: 'Log In' });
+    this.phoneErrorMessage = page.locator('.error small');
+  }
+
+  async navigate() {
+    await this.page.goto('http://localhost:4200/register');
+  }
+
+  async fillForm(data: {
+    orgName?: string;
+    ownerName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    agreeTerms?: boolean;
+  }) {
+    if (data.orgName !== undefined) await this.orgNameInput.fill(data.orgName);
+    if (data.ownerName !== undefined) await this.ownerNameInput.fill(data.ownerName);
+    if (data.email !== undefined) await this.emailInput.fill(data.email);
+    if (data.phone !== undefined) await this.phoneInput.fill(data.phone);
+    if (data.address !== undefined) await this.addressInput.fill(data.address);
+    if (data.agreeTerms !== undefined) {
+      if (data.agreeTerms) {
+        await this.termsCheckbox.check();
+      } else {
+        await this.termsCheckbox.uncheck();
+      }
+    }
+  }
+
+  async clickLogin() {
+    await this.loginLink.click();
+  }
+}
 
 test.describe('Organization Registration Page', () => {
+  let registerPage: RegisterPage;
 
   test.beforeEach(async ({ page }) => {
-    // Navigate to the register page before each test
-    await page.goto('http://localhost:4200/register');
+    registerPage = new RegisterPage(page);
+    await registerPage.navigate();
   });
 
-  test('should verify layout and titles', async ({ page }) => {
-    await expect(page).toHaveTitle('BotiqWeb');
-    await expect(page.locator('h2')).toHaveText('Get Started with Botiq');
-    await expect(page.locator('.subtitle')).toHaveText('Create your account to manage your business efficiently');
+  test('should verify layout and titles', async () => {
+    await expect(registerPage.page).toHaveTitle('BotiqWeb');
+    await expect(registerPage.title).toHaveText('Get Started with Botiq');
+    await expect(registerPage.subtitle).toHaveText('Create your account to manage your business efficiently');
   });
 
-  test('should keep the submit button disabled until all required fields are filled and valid', async ({ page }) => {
-    const orgNameInput = page.locator('#orgName');
-    const ownerNameInput = page.locator('#ownerName');
-    const emailInput = page.locator('#email');
-    const phoneInput = page.locator('input[name="phone"]');
-    const addressInput = page.locator('#address');
-    const termsCheckbox = page.locator('#terms');
-    const submitButton = page.locator('button[type="submit"]');
+  test('should keep the submit button disabled until all required fields are filled and valid', async () => {
+    await expect(registerPage.submitButton).toBeDisabled();
 
-    // Initial state: button disabled
-    await expect(submitButton).toBeDisabled();
+    await registerPage.fillForm({
+      orgName: 'Acme Boutique',
+      ownerName: 'Jane Patrick',
+    });
+    await expect(registerPage.submitButton).toBeDisabled();
 
-    // Fill some fields, but not all
-    await orgNameInput.fill('Acme Boutique');
-    await ownerNameInput.fill('Jane Patrick');
-    await expect(submitButton).toBeDisabled();
+    await registerPage.fillForm({
+      email: 'jane@dfive.com',
+      phone: '9876543210',
+      address: '123 Fashion Street, New Delhi',
+    });
+    await expect(registerPage.submitButton).toBeDisabled();
 
-    // Fill remaining inputs but do not check terms checkbox
-    await emailInput.fill('jane@dfive.com');
-    await phoneInput.fill('9876543210');
-    await addressInput.fill('123 Fashion Street, New Delhi');
-    await expect(submitButton).toBeDisabled();
-
-    // Check terms checkbox -> Button should be enabled
-   await page.getByLabel(/I agree to the/i).check();
-   await expect(submitButton).toBeEnabled();
+    await registerPage.termsCheckbox.check();
+    await expect(registerPage.submitButton).toBeEnabled();
   });
 
-  test('should show validation error for invalid phone format', async ({ page }) => {
-    const phoneInput = page.locator('input[name="phone"]');
-    
-    // Fill invalid phone (less than 10 digits)
-    await phoneInput.fill('1234');
-    await phoneInput.blur(); // Blur to trigger touched state
+  test('should show validation error for invalid phone format', async () => {
+    await registerPage.phoneInput.fill('1234');
+    await registerPage.phoneInput.blur();
 
-    // The validation error should appear
-    const errorText = page.locator('.error small');
-    await expect(errorText).toBeVisible();
-    await expect(errorText).toContainText('Enter a valid 10-digit phone number');
+    await expect(registerPage.phoneErrorMessage).toBeVisible();
+    await expect(registerPage.phoneErrorMessage).toContainText('Enter a valid 10-digit phone number');
   });
 
-  test('should navigate to login page when clicking Log In link', async ({ page }) => {
-    const loginLink = page.locator('a.link', { hasText: 'Log In' });
-    await loginLink.click();
-    await expect(page).toHaveURL(/.*\/login/);
+  test('should navigate to login page when clicking Log In link', async () => {
+    await registerPage.clickLogin();
+    await expect(registerPage.page).toHaveURL(/.*\/login/);
   });
-
 });

@@ -338,6 +338,7 @@ public class AuthController {
                 System.out.println("Generated Raw Token = " + rawToken);
                 System.out.println("Generated Hash      = " + tokenHash);
 
+
                 // if (deviceCount >= 3) {
                 // return ResponseEntity.badRequest().body(Map.of("message", "Maximum 3 devices
                 // allowed"));
