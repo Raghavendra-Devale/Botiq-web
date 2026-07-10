@@ -7,11 +7,10 @@ import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-order-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './order-list.component.html',
-  styleUrl: './order-list.component.css'
+    selector: 'app-order-list',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './order-list.component.html',
+    styleUrl: './order-list.component.css'
 })
 export class OrderListComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();

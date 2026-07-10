@@ -5,11 +5,10 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
 
 @Component({
-  selector: 'app-setup-mpin',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './setup-mpin.component.html',
-  styleUrl: './setup-mpin.component.css'
+    selector: 'app-setup-mpin',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './setup-mpin.component.html',
+    styleUrl: './setup-mpin.component.css'
 })
 export class SetupMpinComponent {
 

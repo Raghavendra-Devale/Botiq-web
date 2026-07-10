@@ -34,11 +34,10 @@ interface OrderModel {
 }
 
 @Component({
-  selector: 'app-add-new-order',
-  standalone: true,
-  imports: [FormsModule, CommonModule, RouterModule],
-  templateUrl: './add-new-order.component.html',
-  styleUrl: './add-new-order.component.css'
+    selector: 'app-add-new-order',
+    imports: [FormsModule, CommonModule, RouterModule],
+    templateUrl: './add-new-order.component.html',
+    styleUrl: './add-new-order.component.css'
 })
 export class AddNewOrderComponent implements OnInit, OnDestroy {
 

@@ -5,11 +5,10 @@ import { AuthService } from '../auth/auth.service';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-sidebar',
-  standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule],
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css'
+    selector: 'app-sidebar',
+    imports: [RouterLink, RouterLinkActive, CommonModule],
+    templateUrl: './sidebar.component.html',
+    styleUrl: './sidebar.component.css'
 })
 export class SidebarComponent implements OnInit, OnDestroy {
 

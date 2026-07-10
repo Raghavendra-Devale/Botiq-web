@@ -5,11 +5,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-partners-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './partners-list.component.html',
-  styleUrl: './partners-list.component.css'
+    selector: 'app-partners-list',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './partners-list.component.html',
+    styleUrl: './partners-list.component.css'
 })
 export class PartnersListComponent {
 

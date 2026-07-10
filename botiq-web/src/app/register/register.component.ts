@@ -6,11 +6,10 @@ import { OrderService } from '../order.service';
 import { AuthService } from '../auth/auth.service';
 
 @Component({
-  selector: 'app-register',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+    selector: 'app-register',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './register.component.html',
+    styleUrl: './register.component.css'
 })
 export class RegisterComponent implements AfterViewInit {
 

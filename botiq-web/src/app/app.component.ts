@@ -11,11 +11,10 @@ import { DataService } from './data.service';
 import { Auth } from '@angular/fire/auth';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+    selector: 'app-root',
+    imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
   title = 'botiq-web';

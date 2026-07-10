@@ -18,11 +18,10 @@ interface Partner {
 }
 
 @Component({
-  selector: 'app-add-partner',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './add-partner.component.html',
-  styleUrls: ['./add-partner.component.css']
+    selector: 'app-add-partner',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './add-partner.component.html',
+    styleUrls: ['./add-partner.component.css']
 })
 export class AddPartnerComponent {
 

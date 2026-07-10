@@ -7,11 +7,10 @@ import { AuthService } from '../auth/auth.service';
 import { NotificationService, Notification } from '../notification.service';
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+    selector: 'app-header',
+    imports: [CommonModule],
+    templateUrl: './header.component.html',
+    styleUrl: './header.component.css'
 })
 export class HeaderComponent implements OnInit {
 

@@ -4,11 +4,10 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-devices',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './devices.component.html',
-  styleUrl: './devices.component.css'
+    selector: 'app-devices',
+    imports: [CommonModule],
+    templateUrl: './devices.component.html',
+    styleUrl: './devices.component.css'
 })
 export class DevicesComponent implements OnInit {
 

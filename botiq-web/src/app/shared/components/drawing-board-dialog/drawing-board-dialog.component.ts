@@ -10,11 +10,10 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
-  selector: 'app-drawing-board-dialog',
-  standalone: true,
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatSliderModule, CommonModule],
-  templateUrl: './drawing-board-dialog.component.html',
-  styleUrl: './drawing-board-dialog.component.css'
+    selector: 'app-drawing-board-dialog',
+    imports: [MatDialogModule, MatButtonModule, MatIconModule, MatSliderModule, CommonModule],
+    templateUrl: './drawing-board-dialog.component.html',
+    styleUrl: './drawing-board-dialog.component.css'
 })
 export class DrawingBoardDialogComponent implements AfterViewInit, OnDestroy {
 

@@ -6,11 +6,10 @@ import { FormsModule } from '@angular/forms';
 import { OrderestateService } from '../orderestate.service';
 
 @Component({
-  selector: 'app-job-order',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './job-order.component.html',
-  styleUrl: './job-order.component.css'
+    selector: 'app-job-order',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './job-order.component.html',
+    styleUrl: './job-order.component.css'
 })
 export class JobOrderComponent implements OnInit {
 

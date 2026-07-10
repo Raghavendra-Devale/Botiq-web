@@ -6,11 +6,10 @@ import { AuthService } from '../../../auth/auth.service';
 import { NotificationMessagingService } from '../../../notification_essaging.service';
 
 @Component({
-  selector: 'app-mpin-login',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './mpin-login.component.html',
-  styleUrl: './mpin-login.component.css'
+    selector: 'app-mpin-login',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './mpin-login.component.html',
+    styleUrl: './mpin-login.component.css'
 })
 export class MpinLoginComponent {
 

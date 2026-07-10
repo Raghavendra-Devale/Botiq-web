@@ -6,11 +6,10 @@ import { Router, RouterLink } from '@angular/router';
 import { NotificationMessagingService } from '../notification_essaging.service';
 
 @Component({
-  selector: 'app-verify-otp',
-  standalone: true,
-  imports: [FormsModule, CommonModule, RouterLink],
-  templateUrl: './verify-otp.component.html',
-  styleUrl: './verify-otp.component.css'
+    selector: 'app-verify-otp',
+    imports: [FormsModule, CommonModule, RouterLink],
+    templateUrl: './verify-otp.component.html',
+    styleUrl: './verify-otp.component.css'
 })
 export class VerifyOtpComponent implements OnInit {
 

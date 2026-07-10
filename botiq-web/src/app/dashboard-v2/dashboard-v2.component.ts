@@ -3,11 +3,10 @@ import { Router } from '@angular/router';
 import { DashboardService } from '../dashboard.service';
 
 @Component({
-  selector: 'app-dashboard-v2',
-  standalone: true,
-  imports: [],
-  templateUrl: './dashboard-v2.component.html',
-  styleUrl: './dashboard-v2.component.css'
+    selector: 'app-dashboard-v2',
+    imports: [],
+    templateUrl: './dashboard-v2.component.html',
+    styleUrl: './dashboard-v2.component.css'
 })
 export class DashboardV2Component {
 

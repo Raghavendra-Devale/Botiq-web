@@ -5,11 +5,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-job-order-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './job-order-list.component.html',
-  styleUrl: './job-order-list.component.css'
+    selector: 'app-job-order-list',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './job-order-list.component.html',
+    styleUrl: './job-order-list.component.css'
 })
 export class JobOrderListComponent {
   orders: any[] = [];

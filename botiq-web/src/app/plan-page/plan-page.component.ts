@@ -6,11 +6,10 @@ import { CommonModule } from '@angular/common';
 declare var Razorpay: any;
 
 @Component({
-  selector: 'app-plan-page',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './plan-page.component.html',
-  styleUrl: './plan-page.component.css'
+    selector: 'app-plan-page',
+    imports: [CommonModule],
+    templateUrl: './plan-page.component.html',
+    styleUrl: './plan-page.component.css'
 })
 export class PlanPageComponent implements OnInit {
   currentPlan: any;

@@ -7,11 +7,10 @@ import jsPDF from 'jspdf';
 
 
 @Component({
-  selector: 'app-generate-bill',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './generate-bill.component.html',
-  styleUrl: './generate-bill.component.css'
+    selector: 'app-generate-bill',
+    imports: [CommonModule],
+    templateUrl: './generate-bill.component.html',
+    styleUrl: './generate-bill.component.css'
 })
 export class GenerateBillComponent {
 

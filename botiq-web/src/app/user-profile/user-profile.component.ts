@@ -20,11 +20,10 @@ interface OptionalSettings {
 }
 
 @Component({
-  selector: 'app-user-profile',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './user-profile.component.html',
-  styleUrl: './user-profile.component.css'
+    selector: 'app-user-profile',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './user-profile.component.html',
+    styleUrl: './user-profile.component.css'
 })
 export class UserProfileComponent {
   onFileSelected(event: any, type: string) {

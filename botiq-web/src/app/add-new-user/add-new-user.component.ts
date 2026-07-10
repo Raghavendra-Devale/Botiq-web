@@ -5,11 +5,10 @@ import { Router } from '@angular/router';
 import { DataService } from '../data.service';
 
 @Component({
-  selector: 'app-add-new-user',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './add-new-user.component.html',
-  styleUrl: './add-new-user.component.css'
+    selector: 'app-add-new-user',
+    imports: [CommonModule, FormsModule],
+    templateUrl: './add-new-user.component.html',
+    styleUrl: './add-new-user.component.css'
 })
 export class AddNewUserComponent implements OnInit {
 
