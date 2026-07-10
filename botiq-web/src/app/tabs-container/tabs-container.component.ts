@@ -4,8 +4,9 @@ import { RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-tabs-container',
+    standalone:true,
     templateUrl: './tabs-container.component.html',
-    styleUrls: ['./tabs-container.component.scss'],
+    styleUrls: ['./tabs-container.component.css'],
     imports: [CommonModule, RouterModule]
 })
 export class TabsContainerComponent {
