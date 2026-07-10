@@ -28,9 +28,15 @@ export class AuthService {
 
   private basicDetailsSubject = new BehaviorSubject<any>(null);
   public basicDetails$ = this.basicDetailsSubject.asObservable();
+  private userRole: string = '';
 
   setBasicDetails(details: any) {
     this.basicDetailsSubject.next(details);
+    if (details) {
+      this.userRole = details.user_role || '';
+    } else {
+      this.userRole = '';
+    }
   }
 
   getBasicDetails() {
@@ -288,10 +294,10 @@ export class AuthService {
   }
 
   getRole() {
-    return localStorage.getItem("role") || '';
+    return this.userRole;
   }
 
   setRole(role: string) {
-    localStorage.setItem("role", role);
+    this.userRole = role;
   }
 }

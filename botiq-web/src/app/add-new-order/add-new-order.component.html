@@ -221,7 +221,7 @@
                         <label class="pos-label">Mobile</label>
                         <div class="pos-input-wrapper icon-left">
                             <i class="fa-solid fa-phone input-icon"></i>
-                            <input type="text" name="mobile" [(ngModel)]="newOrder.mobile"
+                            <input type="tel" name="mobile" [(ngModel)]="newOrder.mobile" [maxLength]="10"
                                 (ngModelChange)="onMobileChange($event)" placeholder="10-digit number" required />
                         </div>
                     </div>
