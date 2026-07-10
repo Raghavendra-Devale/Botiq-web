@@ -1,158 +1,141 @@
-<div *ngIf="loading" class="loader-container">
+@if (loading) {
+  <div class="loader-container">
     <div class="spinner"></div>
     <p>{{loaderMessage}}</p>
-</div>
+  </div>
+}
 
-<div *ngIf="!loading" class="profile-container">
-
+@if (!loading) {
+  <div class="profile-container">
     <!-- PAGE TITLE -->
     <h1 class="page-title">Settings</h1>
-
     <!-- ===================== -->
     <!-- ORGANIZATION SECTION -->
     <!-- ===================== -->
     <div class="card accordion-card">
-        <div class="accordion-header" (click)="isOrgSectionOpen = !isOrgSectionOpen">
-            <div style="display: flex; flex-direction: column; gap: 2px;">
-                <h3 class="section-title" style="margin: 0;">🏢 Organization</h3>
-                <span *ngIf="user.businessName || user.ownerName" style="font-size: 13px; color: #64748b;">
-                    {{ user.businessName }} 💠 {{ user.ownerName}} 💠 {{ user.phoneNumber }}
-                </span>
-            </div>
-            <span class="accordion-icon">{{ isOrgSectionOpen ? '▲' : '▼' }}</span>
+      <div class="accordion-header" (click)="isOrgSectionOpen = !isOrgSectionOpen">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h3 class="section-title" style="margin: 0;">🏢 Organization</h3>
+          @if (user.businessName || user.ownerName) {
+            <span style="font-size: 13px; color: #64748b;">
+              {{ user.businessName }} 💠 {{ user.ownerName}} 💠 {{ user.phoneNumber }}
+            </span>
+          }
         </div>
-
-        <div class="accordion-content" [class.open]="isOrgSectionOpen">
-            <div class="org-settings-layout">
-                <div class="org-details">
-                    <div class="info-row">
-                        <span class="info-label">Business Name</span>
-                        <span class="info-value">{{user.businessName}}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Owner Name</span>
-                        <span class="info-value">{{user.ownerName}}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Phone</span>
-                        <span class="info-value">{{user.phoneNumber}}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Email</span>
-                        <span class="info-value">{{user.email}}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Address</span>
-                        <span class="info-value">{{user.address}}</span>
-                    </div>
-                </div>
-
-                <!-- LOGO -->
-                <div class="logo-section">
-                    <span class="logo-title">Business Logo</span>
-                    <div class="logo-upload-container">
-                        <div class="logo-preview-box">
-                            <img [src]="user.businessLogo || 'assets/placeholder.png'" alt="logo">
-                        </div>
-                        <div class="logo-actions">
-                            <button type="button" class="upload-btn" (click)="logoInput.click()">
-                                📁 Upload Logo
-                            </button>
-                            <input #logoInput type="file" style="display: none;" (change)="onFileSelected($event, 'logo')" accept="image/*" />
-                        </div>
-                    </div>
-                </div>
+        <span class="accordion-icon">{{ isOrgSectionOpen ? '▲' : '▼' }}</span>
+      </div>
+      <div class="accordion-content" [class.open]="isOrgSectionOpen">
+        <div class="org-settings-layout">
+          <div class="org-details">
+            <div class="info-row">
+              <span class="info-label">Business Name</span>
+              <span class="info-value">{{user.businessName}}</span>
             </div>
+            <div class="info-row">
+              <span class="info-label">Owner Name</span>
+              <span class="info-value">{{user.ownerName}}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone</span>
+              <span class="info-value">{{user.phoneNumber}}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email</span>
+              <span class="info-value">{{user.email}}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Address</span>
+              <span class="info-value">{{user.address}}</span>
+            </div>
+          </div>
+          <!-- LOGO -->
+          <div class="logo-section">
+            <span class="logo-title">Business Logo</span>
+            <div class="logo-upload-container">
+              <div class="logo-preview-box">
+                <img [src]="user.businessLogo || 'assets/placeholder.png'" alt="logo">
+              </div>
+              <div class="logo-actions">
+                <button type="button" class="upload-btn" (click)="logoInput.click()">
+                  📁 Upload Logo
+                </button>
+                <input #logoInput type="file" style="display: none;" (change)="onFileSelected($event, 'logo')" accept="image/*" />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-
-
     <!-- ===================== -->
     <!-- FEATURES SECTION -->
     <!-- ===================== -->
     <div class="card">
-        <h3 class="section-title">⚙️ Features</h3>
-
-        <div class="toggle-row">
-            <div class="feature-info">
-                <span class="feature-name">Enable Stylus</span>
-                <span class="feature-desc">Use stylus for measurements and annotations.</span>
-            </div>
-
-            <label class="switch">
-                <input type="checkbox" [(ngModel)]="isStylusEnabled" (change)="onStylusToggle()" />
-                <span class="slider"></span>
-            </label>
+      <h3 class="section-title">⚙️ Features</h3>
+      <div class="toggle-row">
+        <div class="feature-info">
+          <span class="feature-name">Enable Stylus</span>
+          <span class="feature-desc">Use stylus for measurements and annotations.</span>
         </div>
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="isStylusEnabled" (change)="onStylusToggle()" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
-
-
     <!-- ===================== -->
     <!-- CATEGORIES SECTION -->
     <!-- ===================== -->
     <div class="card">
-
-        <h3 class="section-title">🏷️ Categories</h3>
-
-        <!-- INPUT ROW -->
-        <div class="category-input-row">
-
-            <!-- WORK INPUT -->
-            <div class="input-box">
-                <input [(ngModel)]="newWorkCategory" placeholder="Add Work Category"
-                    (keydown.enter)="addWorkCategory()" />
-
-                <span class="add-btn" (click)="addWorkCategory()">+</span>
-            </div>
-
-            <!-- JOB INPUT -->
-            <div class="input-box">
-                <input [(ngModel)]="newJobCategory" placeholder="Add Job Category" (keydown.enter)="addJobCategory()" />
-
-                <span class="add-btn" (click)="addJobCategory()">+</span>
-            </div>
-
+      <h3 class="section-title">🏷️ Categories</h3>
+      <!-- INPUT ROW -->
+      <div class="category-input-row">
+        <!-- WORK INPUT -->
+        <div class="input-box">
+          <input [(ngModel)]="newWorkCategory" placeholder="Add Work Category"
+            (keydown.enter)="addWorkCategory()" />
+            <span class="add-btn" (click)="addWorkCategory()">+</span>
+          </div>
+          <!-- JOB INPUT -->
+          <div class="input-box">
+            <input [(ngModel)]="newJobCategory" placeholder="Add Job Category" (keydown.enter)="addJobCategory()" />
+            <span class="add-btn" (click)="addJobCategory()">+</span>
+          </div>
         </div>
-
         <!-- DISPLAY ROW -->
         <div class="category-display-row">
-
-            <!-- WORK -->
-            <div class="category-box">
-                <h4 class="sub-title">Work</h4>
-
-                <div class="tags-container">
-                    <span class="tag" *ngFor="let cat of workCategories; let i = index">
-                        {{cat}}
-                        <span class="remove" (click)="removeWorkCategory(i)">×</span>
-                    </span>
-                </div>
+          <!-- WORK -->
+          <div class="category-box">
+            <h4 class="sub-title">Work</h4>
+            <div class="tags-container">
+              @for (cat of workCategories; track cat; let i = $index) {
+                <span class="tag">
+                  {{cat}}
+                  <span class="remove" (click)="removeWorkCategory(i)">×</span>
+                </span>
+              }
             </div>
-
-            <!-- JOB -->
-            <div class="category-box">
-                <h4 class="sub-title">Job</h4>
-
-                <div class="tags-container">
-                    <span class="tag" *ngFor="let cat of jobCategories; let i = index">
-                        {{cat}}
-                        <span class="remove" (click)="removeJobCategory(i)">×</span>
-                    </span>
-                </div>
+          </div>
+          <!-- JOB -->
+          <div class="category-box">
+            <h4 class="sub-title">Job</h4>
+            <div class="tags-container">
+              @for (cat of jobCategories; track cat; let i = $index) {
+                <span class="tag">
+                  {{cat}}
+                  <span class="remove" (click)="removeJobCategory(i)">×</span>
+                </span>
+              }
             </div>
-
+          </div>
         </div>
-
-    </div>
-
-
-    <!-- ===================== -->
-    <!-- SAVE BUTTON -->
-    <!-- ===================== -->
-    <div class="save-section">
+      </div>
+      <!-- ===================== -->
+      <!-- SAVE BUTTON -->
+      <!-- ===================== -->
+      <div class="save-section">
         <button class="save-btn" [disabled]="!hasChanges()" (click)="onSaveAll()">
-            Save Changes
+          Save Changes
         </button>
+      </div>
     </div>
-
-</div>
+  }

@@ -1,12 +1,14 @@
-<app-sidebar *ngIf="!isPublicRoute"></app-sidebar>
+@if (!isPublicRoute) {
+  <app-sidebar></app-sidebar>
+}
 
 <div class="main-content" [ngClass]="{'public-layout': isPublicRoute}">
 
-    <!-- <app-header *ngIf="!isPublicRoute"></app-header> -->
+  <!-- <app-header *ngIf="!isPublicRoute"></app-header> -->
 
-    <!-- 🔥 ADD THIS WRAPPER -->
-    <div class="content" [class.pos-layout]="isPosRoute">
-        <router-outlet></router-outlet>
-    </div>
+  <!-- 🔥 ADD THIS WRAPPER -->
+  <div class="content" [class.pos-layout]="isPosRoute">
+    <router-outlet></router-outlet>
+  </div>
 
 </div>

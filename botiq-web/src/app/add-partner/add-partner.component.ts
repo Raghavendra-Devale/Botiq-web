@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -19,7 +19,7 @@ interface Partner {
 
 @Component({
     selector: 'app-add-partner',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './add-partner.component.html',
     styleUrls: ['./add-partner.component.css']
 })

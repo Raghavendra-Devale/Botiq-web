@@ -1,78 +1,86 @@
 <div class="sidebar" [class.collapsed]="isCollapsed">
-    <div class="logo-section">
-        <div class="logo" *ngIf="!isCollapsed">
-            <!-- <img src="{{orgLogo}}" alt="Logo"
-                onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'"> -->
-            <span class="logo-text">Botiq</span>
-        </div>
-        <button class="toggle-btn" (click)="isCollapsed = !isCollapsed" aria-label="Toggle Sidebar">
-            <i class="fa-solid fa-bars"></i>
-        </button>
+  <div class="logo-section">
+    @if (!isCollapsed) {
+      <div class="logo">
+        <!-- <img src="{{orgLogo}}" alt="Logo"
+        onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'"> -->
+        <span class="logo-text">Botiq</span>
+      </div>
+    }
+    <button class="toggle-btn" (click)="isCollapsed = !isCollapsed" aria-label="Toggle Sidebar">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </div>
+
+  <ul class="menu">
+    <li class="menu-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <a routerLink="/dashboard">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Dashboard</span>
+      </a>
+    </li>
+
+    <li class="menu-item" routerLinkActive="active">
+      <a routerLink="/order-list">
+        <i class="fa-solid fa-box"></i>
+        <span>Customer Orders</span>
+      </a>
+    </li>
+
+    <li class="menu-item" routerLinkActive="active">
+      <a routerLink="/job-order-list">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Job Order</span>
+      </a>
+    </li>
+
+    <!-- Settings and Security -->
+    @if (role == 'OWNER') {
+      <li class="menu-item" routerLinkActive="active">
+        <a routerLink="/user-profile">
+          <i class="fa-solid fa-gear"></i>
+          <span>Settings</span>
+        </a>
+      </li>
+    }
+
+    @if (role == 'OWNER') {
+      <li class="menu-item disabled">
+        <a routerLink="/partners-list">
+          <i class="fa-solid fa-handshake"></i>
+          <span>Partners</span>
+        </a>
+      </li>
+    }
+
+    @if (role == 'OWNER' ) {
+      <li class="menu-item disabled" routerLinkActive="active">
+        <a routerLink="/add-new-user">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Users</span>
+        </a>
+      </li>
+    }
+
+    <li class="menu-item disabled">
+      <a routerLink="/plan-page">
+        <i class="fa-solid fa-circle-question"></i>
+        <span>Support-Plan</span>
+      </a>
+    </li>
+  </ul>
+
+
+  <div class="user-profile">
+    <div class="user-info">
+      <div class="user-avatar">{{initial}}</div>
+      <div class="user-details">
+        <div class="user-name">{{businessName}}</div>
+        <div class="user-role">{{role}}</div>
+      </div>
     </div>
-
-    <ul class="menu">
-        <li class="menu-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            <a routerLink="/dashboard">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-
-        <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/order-list">
-                <i class="fa-solid fa-box"></i>
-                <span>Customer Orders</span>
-            </a>
-        </li>
-
-        <li class="menu-item" routerLinkActive="active">
-            <a routerLink="/job-order-list">
-                <i class="fa-solid fa-list-check"></i>
-                <span>Job Order</span>
-            </a>
-        </li>
-
-        <!-- Settings and Security -->
-        <li class="menu-item" routerLinkActive="active" *ngIf="role == 'OWNER'">
-            <a routerLink="/user-profile">
-                <i class="fa-solid fa-gear"></i>
-                <span>Settings</span>
-            </a>
-        </li>
-
-        <li class="menu-item disabled" *ngIf="role == 'OWNER'">
-            <a routerLink="/partners-list">
-                <i class="fa-solid fa-handshake"></i>
-                <span>Partners</span>
-            </a>
-        </li>
-
-        <li class="menu-item disabled" routerLinkActive="active" *ngIf="role == 'OWNER' ">
-            <a routerLink="/add-new-user">
-                <i class="fa-solid fa-user-plus"></i>
-                <span>Users</span>
-            </a>
-        </li>
-
-        <li class="menu-item disabled">
-            <a routerLink="/plan-page">
-                <i class="fa-solid fa-circle-question"></i>
-                <span>Support-Plan</span>
-            </a>
-        </li>
-    </ul>
-
-
-    <div class="user-profile">
-        <div class="user-info">
-            <div class="user-avatar">{{initial}}</div>
-            <div class="user-details">
-                <div class="user-name">{{businessName}}</div>
-                <div class="user-role">{{role}}</div>
-            </div>
-        </div>
-        <button class="logout-btn" (click)="logout()" title="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
-    </div>
+    <button class="logout-btn" (click)="logout()" title="Logout">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </button>
+  </div>
 </div>

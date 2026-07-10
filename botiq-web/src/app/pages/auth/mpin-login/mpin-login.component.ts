@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,7 +7,7 @@ import { NotificationMessagingService } from '../../../notification_essaging.ser
 
 @Component({
     selector: 'app-mpin-login',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './mpin-login.component.html',
     styleUrl: './mpin-login.component.css'
 })

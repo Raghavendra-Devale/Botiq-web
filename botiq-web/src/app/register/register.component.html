@@ -1,145 +1,151 @@
 <div class="register-wrapper">
-    <div class="register-card">
-        <div class="brand-header">
-            <div class="logo-box">
-                <svg width="65" height="65" viewBox="0 0 65 65" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="65" height="65" rx="10" fill="#2563EB"></rect>
-                    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24"
-                        font-weight="bold" fill="white" font-family="Arial, sans-serif">
-                        B
-                    </text>
+  <div class="register-card">
+    <div class="brand-header">
+      <div class="logo-box">
+        <svg width="65" height="65" viewBox="0 0 65 65" xmlns="http://www.w3.org/2000/svg">
+          <rect width="65" height="65" rx="10" fill="#2563EB"></rect>
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24"
+            font-weight="bold" fill="white" font-family="Arial, sans-serif">
+            B
+          </text>
+        </svg>
+      </div>
+      <h2>Get Started with Botiq</h2>
+      <p class="subtitle">Create your account to manage your business efficiently</p>
+    </div>
+
+    <form #registerForm="ngForm" (ngSubmit)="onSubmit(registerForm)" class="form-container">
+
+      <div class="input-row">
+        <div class="form-group">
+          <label for="orgName">Organization Name</label>
+          <div class="input-with-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="input-icon">
+              <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
+              <path d="M9 22v-4h6v4" />
+              <path d="M8 6h.01" />
+              <path d="M16 6h.01" />
+              <path d="M12 6h.01" />
+              <path d="M12 10h.01" />
+              <path d="M12 14h.01" />
+              <path d="M16 10h.01" />
+              <path d="M16 14h.01" />
+              <path d="M8 10h.01" />
+              <path d="M8 14h.01" />
+            </svg>
+            <input type="text" class="custom-input" id="orgName" name="orgName"
+              [(ngModel)]="registerData.orgName" placeholder="e.g. Acme Corp" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ownerName">Owner Name</label>
+            <div class="input-with-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="input-icon">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <input type="text" class="custom-input" id="ownerName" name="ownerName"
+                [(ngModel)]="registerData.ownerName" placeholder="e.g. Jane Doe" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <div class="input-with-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="input-icon">
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
-            </div>
-            <h2>Get Started with Botiq</h2>
-            <p class="subtitle">Create your account to manage your business efficiently</p>
-        </div>
-
-        <form #registerForm="ngForm" (ngSubmit)="onSubmit(registerForm)" class="form-container">
-
-            <div class="input-row">
-                <div class="form-group">
-                    <label for="orgName">Organization Name</label>
-                    <div class="input-with-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="input-icon">
-                            <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
-                            <path d="M9 22v-4h6v4" />
-                            <path d="M8 6h.01" />
-                            <path d="M16 6h.01" />
-                            <path d="M12 6h.01" />
-                            <path d="M12 10h.01" />
-                            <path d="M12 14h.01" />
-                            <path d="M16 10h.01" />
-                            <path d="M16 14h.01" />
-                            <path d="M8 10h.01" />
-                            <path d="M8 14h.01" />
-                        </svg>
-                        <input type="text" class="custom-input" id="orgName" name="orgName"
-                            [(ngModel)]="registerData.orgName" placeholder="e.g. Acme Corp" required>
-                    </div>
+                <input type="email" class="custom-input" id="email" name="email"
+                  [(ngModel)]="registerData.email" placeholder="jane@example.com" required>
                 </div>
+              </div>
 
-                <div class="form-group">
-                    <label for="ownerName">Owner Name</label>
-                    <div class="input-with-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="input-icon">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                        <input type="text" class="custom-input" id="ownerName" name="ownerName"
-                            [(ngModel)]="registerData.ownerName" placeholder="e.g. Jane Doe" required>
-                    </div>
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <div class="input-with-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="input-icon">
+                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+                    <path d="M12 18h.01" />
+                  </svg>
+                  <input type="tel" name="phone" class="custom-input" [(ngModel)]="registerData.phone"
+                    #phone="ngModel" required pattern="^[0-9]{10}$" maxlength="10" inputmode="numeric"
+                    placeholder="Enter 10-digit number" />
+
+                    @if (phone.invalid && phone.touched) {
+                      <div class="error">
+                        @if (phone.errors?.['required']) {
+                          <small>
+                            Phone number is required
+                          </small>
+                        }
+                        @if (phone.errors?.['pattern']) {
+                          <small>
+                            Enter a valid 10-digit phone number
+                          </small>
+                        }
+                      </div>
+                    }
+                  </div>
                 </div>
-            </div>
+              </div>
 
-            <div class="input-row">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <div class="input-with-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="input-icon">
-                            <rect width="20" height="16" x="2" y="4" rx="2" />
-                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                        </svg>
-                        <input type="email" class="custom-input" id="email" name="email"
-                            [(ngModel)]="registerData.email" placeholder="jane@example.com" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Phone Number</label>
-                    <div class="input-with-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="input-icon">
-                            <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                            <path d="M12 18h.01" />
-                        </svg>
-                        <input type="tel" name="phone" class="custom-input" [(ngModel)]="registerData.phone"
-                            #phone="ngModel" required pattern="^[0-9]{10}$" maxlength="10" inputmode="numeric"
-                            placeholder="Enter 10-digit number" />
-
-                        <div class="error" *ngIf="phone.invalid && phone.touched">
-                            <small *ngIf="phone.errors?.['required']">
-                                Phone number is required
-                            </small>
-                            <small *ngIf="phone.errors?.['pattern']">
-                                Enter a valid 10-digit phone number
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group full-width">
+              <div class="form-group full-width">
                 <label for="address">Full Address</label>
                 <div class="input-with-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="input-icon">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                        <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    <input type="text" class="custom-input" id="address" name="address"
-                        [(ngModel)]="registerData.address" placeholder="Building, Street, City" required>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="input-icon">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <input type="text" class="custom-input" id="address" name="address"
+                    [(ngModel)]="registerData.address" placeholder="Building, Street, City" required>
+                  </div>
                 </div>
-            </div>
 
-            <div class="form-group checkbox-group full-width">
-                <div class="checkbox-wrapper">
+                <div class="form-group checkbox-group full-width">
+                  <div class="checkbox-wrapper">
                     <label class="checkbox-container" for="terms">
-                        <input type="checkbox" id="terms" name="terms" [(ngModel)]="registerData.terms" #terms="ngModel"
-                            required>
+                      <input type="checkbox" id="terms" name="terms" [(ngModel)]="registerData.terms" #terms="ngModel"
+                        required>
                         <span class="checkmark"></span>
                         <span class="terms-text">I agree to the</span>
-                    </label>
-                    <span class="terms-links">
+                      </label>
+                      <span class="terms-links">
                         <a href="/terms" class="link">Terms and Conditions</a> and <a
-                            href="/privacy" class="link">Privacy Policy</a>
+                      href="/privacy" class="link">Privacy Policy</a>
                     </span>
+                  </div>
                 </div>
-            </div>
 
-            <div id="recaptcha-container"></div>
+                <div id="recaptcha-container"></div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn-primary" [disabled]="!registerForm.valid">
+                <div class="form-actions">
+                  <button type="submit" class="btn-primary" [disabled]="!registerForm.valid">
                     Create Account
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14" />
-                        <path d="m12 5 7 7-7 7" />
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
                     </svg>
-                </button>
-            </div>
+                  </button>
+                </div>
 
-            <div class="login-prompt">
-                Already have an account? <a href="/login" class="link">Log In</a>
+                <div class="login-prompt">
+                  Already have an account? <a href="/login" class="link">Log In</a>
+                </div>
+              </form>
             </div>
-        </form>
-    </div>
-</div>
+          </div>

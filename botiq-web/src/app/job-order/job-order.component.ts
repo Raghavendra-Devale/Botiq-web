@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrderService } from '../order.service';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { OrderestateService } from '../orderestate.service';
 
 @Component({
     selector: 'app-job-order',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './job-order.component.html',
     styleUrl: './job-order.component.css'
 })

@@ -1,34 +1,36 @@
 <div class="auth-layout">
-    <!-- Left Side Branding -->
-    <div class="brand-panel">
-        <div class="brand-content">
-            <h1>Botiq<span class="dot">.</span></h1>
-            <h2>Secure your account<br>with ease.</h2>
-            <p>We use state-of-the-art security protocols to keep your business data completely safe and accessible only
-                to you.</p>
-        </div>
-        <div class="brand-overlay"></div>
+  <!-- Left Side Branding -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <h1>Botiq<span class="dot">.</span></h1>
+      <h2>Secure your account<br>with ease.</h2>
+      <p>We use state-of-the-art security protocols to keep your business data completely safe and accessible only
+      to you.</p>
     </div>
+    <div class="brand-overlay"></div>
+  </div>
 
-    <!-- Right Side Form -->
-    <div class="form-panel">
-        <div class="form-container">
-            <div class="mobile-logo">Botiq<span>.</span></div>
+  <!-- Right Side Form -->
+  <div class="form-panel">
+    <div class="form-container">
+      <div class="mobile-logo">Botiq<span>.</span></div>
 
-            <a routerLink="/login" class="back-link"><i class="fas fa-arrow-left"></i> Back to Login</a>
+      <a routerLink="/login" class="back-link"><i class="fas fa-arrow-left"></i> Back to Login</a>
 
-            <h2 class="title">Verify OTP</h2>
-            <p class="subtitle">Enter the 6-digit code sent securely to your number.</p>
+      <h2 class="title">Verify OTP</h2>
+      <p class="subtitle">Enter the 6-digit code sent securely to your number.</p>
 
-            <div class="otp-group">
-                <input *ngFor="let digit of otpDigits; let i = index; trackBy: trackByIndex" type="text" maxlength="1"
-                    [(ngModel)]="otpDigits[i]" (input)="onInput(i, $event)" (keydown)="handleBackspace(i, $event)"
-                    placeholder="-" title="OTP Digit {{i + 1}}" [attr.aria-label]="'OTP Digit ' + (i + 1)" />
-            </div>
+      <div class="otp-group">
+        @for (digit of otpDigits; track trackByIndex(i, digit); let i = $index) {
+          <input type="text" maxlength="1"
+            [(ngModel)]="otpDigits[i]" (input)="onInput(i, $event)" (keydown)="handleBackspace(i, $event)"
+            placeholder="-" title="OTP Digit {{i + 1}}" [attr.aria-label]="'OTP Digit ' + (i + 1)" />
+        }
+      </div>
 
-            <button class="btn-primary" (click)="verifyOtp()">
-                Verify Account
-            </button>
-        </div>
+      <button class="btn-primary" (click)="verifyOtp()">
+        Verify Account
+      </button>
     </div>
+  </div>
 </div>

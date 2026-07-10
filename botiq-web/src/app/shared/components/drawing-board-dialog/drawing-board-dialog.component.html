@@ -27,14 +27,15 @@
     <div class="toolbar-group">
       <span class="group-label">Thickness</span>
       <div class="thickness-options">
-        <button mat-icon-button 
-                *ngFor="let w of strokeWidths" 
-                class="thickness-btn"
-                [class.width-active]="selectedWidth === w.value"
-                (click)="changeWidth(w.value)"
-                [title]="w.label">
-          <span class="dot-indicator" [style.width.px]="w.value" [style.height.px]="w.value"></span>
-        </button>
+        @for (w of strokeWidths; track w) {
+          <button mat-icon-button
+            class="thickness-btn"
+            [class.width-active]="selectedWidth === w.value"
+            (click)="changeWidth(w.value)"
+            [title]="w.label">
+            <span class="dot-indicator" [style.width.px]="w.value" [style.height.px]="w.value"></span>
+          </button>
+        }
       </div>
     </div>
   </div>

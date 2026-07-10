@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,7 +21,7 @@ interface OptionalSettings {
 
 @Component({
     selector: 'app-user-profile',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './user-profile.component.html',
     styleUrl: './user-profile.component.css'
 })

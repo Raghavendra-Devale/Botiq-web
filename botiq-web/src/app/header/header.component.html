@@ -1,65 +1,77 @@
 <header class="header">
-    <div class="header-left">
-        <!-- Search Bar -->
-        <!-- <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search orders, customers...">
-        </div> -->
-    </div>
+  <div class="header-left">
+    <!-- Search Bar -->
+    <!-- <div class="search-bar">
+    <i class="fas fa-search"></i>
+    <input type="text" placeholder="Search orders, customers...">
+  </div> -->
+</div>
 
-    <div class="header-right">
-        <!-- Notifications -->
-        <div class="notification-container">
-            <button class="icon-btn" (click)="toggleNotifications($event)">
-                <i class="fas fa-bell"></i>
-                <span class="badge" *ngIf="unreadCount > 0">{{unreadCount}}</span>
+<div class="header-right">
+  <!-- Notifications -->
+  <div class="notification-container">
+    <button class="icon-btn" (click)="toggleNotifications($event)">
+      <i class="fas fa-bell"></i>
+      @if (unreadCount > 0) {
+        <span class="badge">{{unreadCount}}</span>
+      }
+    </button>
+
+
+    @if (showNotifications) {
+      <div class="notification-dropdown" (click)="$event.stopPropagation()">
+        <div class="dropdown-header">
+          <h4>Notifications</h4>
+          @if (unreadCount > 0) {
+            <button class="mark-all-read" (click)="markAllAsRead()">
+              Mark all as read
             </button>
-
-
-            <div class="notification-dropdown" *ngIf="showNotifications" (click)="$event.stopPropagation()">
-                <div class="dropdown-header">
-                    <h4>Notifications</h4>
-                    <button class="mark-all-read" *ngIf="unreadCount > 0" (click)="markAllAsRead()">
-                        Mark all as read
-                    </button>
-                </div>
-                <div class="dropdown-body">
-                    <div class="no-notifications" *ngIf="notifications.length === 0">
-                        <i class="fas fa-bell-slash"></i>
-                        <p>All caught up!</p>
-                        <span>No new notifications</span>
-                    </div>
-                    <div class="notification-item" *ngFor="let note of notifications"
-                        [class.unread]="!note.acknwoledgedAt" [class.priority-high]="note.priority === 'HIGH'"
-                        [class.priority-medium]="note.priority === 'MEDIUM'">
-                        <div class="item-header">
-                            <span class="type-badge" [class]="note.messageType | lowercase">{{note.messageType}}</span>
-                            <span class="timestamp">{{getRelativeTime(note.createdAt)}}</span>
-                        </div>
-                        <p class="message-text">{{note.messageText}}</p>
-                        <div class="item-actions" *ngIf="!note.acknwoledgedAt">
-                            <button class="btn-ack" (click)="acknowledge(note, $event)">Mark as read</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          }
         </div>
-
-        <div class="divider"></div>
-
-        <!-- User Profile Dropdown Simulator -->
-        <div class="user-dropdown">
-            <div class="user-info">
-                <span class="greeting">Hello,</span>
-                <span class="user-name">{{userName}}</span>
+        <div class="dropdown-body">
+          @if (notifications.length === 0) {
+            <div class="no-notifications">
+              <i class="fas fa-bell-slash"></i>
+              <p>All caught up!</p>
+              <span>No new notifications</span>
             </div>
-            <!-- Dynamic UI avatar generator -->
-            <img class="avatar" src="{{data.org_logo}}" alt="User Avatar"
-                onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'">
-
-            <button class="logout-icon-btn" (click)="logout()" title="Logout">
-                <i class="fas fa-sign-out-alt">logout</i>
-            </button>
+          }
+          @for (note of notifications; track note) {
+            <div class="notification-item"
+              [class.unread]="!note.acknwoledgedAt" [class.priority-high]="note.priority === 'HIGH'"
+              [class.priority-medium]="note.priority === 'MEDIUM'">
+              <div class="item-header">
+                <span class="type-badge" [class]="note.messageType | lowercase">{{note.messageType}}</span>
+                <span class="timestamp">{{getRelativeTime(note.createdAt)}}</span>
+              </div>
+              <p class="message-text">{{note.messageText}}</p>
+              @if (!note.acknwoledgedAt) {
+                <div class="item-actions">
+                  <button class="btn-ack" (click)="acknowledge(note, $event)">Mark as read</button>
+                </div>
+              }
+            </div>
+          }
         </div>
+      </div>
+    }
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- User Profile Dropdown Simulator -->
+  <div class="user-dropdown">
+    <div class="user-info">
+      <span class="greeting">Hello,</span>
+      <span class="user-name">{{userName}}</span>
     </div>
+    <!-- Dynamic UI avatar generator -->
+    <img class="avatar" src="{{data.org_logo}}" alt="User Avatar"
+      onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'">
+
+      <button class="logout-icon-btn" (click)="logout()" title="Logout">
+        <i class="fas fa-sign-out-alt">logout</i>
+      </button>
+    </div>
+  </div>
 </header>

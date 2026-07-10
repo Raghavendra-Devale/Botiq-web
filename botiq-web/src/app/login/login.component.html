@@ -1,60 +1,56 @@
-<div *ngIf="!loading">
-
+@if (!loading) {
+  <div>
     <div class="auth-layout">
-        <!-- Left Side Branding -->
-        <div class="brand-panel">
-            <div class="brand-content">
-                <h1>Botiq<span class="dot">.</span></h1>
-                <h2>Manage your business<br>effortlessly.</h2>
-                <p>Streamline orders, inventory, and customer relationships in one intelligent dashboard designed
-                    specifically for your boutique.</p>
-            </div>
-            <div class="brand-overlay"></div>
+      <!-- Left Side Branding -->
+      <div class="brand-panel">
+        <div class="brand-content">
+          <h1>Botiq<span class="dot">.</span></h1>
+          <h2>Manage your business<br>effortlessly.</h2>
+          <p>Streamline orders, inventory, and customer relationships in one intelligent dashboard designed
+          specifically for your boutique.</p>
         </div>
-
-        <!-- Right Side Form -->
-        <div class="form-panel">
-            <div class="form-container">
-                <div class="mobile-logo">Botiq<span>.</span></div>
-
-                <h2 class="title">Welcome Back</h2>
-                <p class="subtitle">Login using your phone number to continue</p>
-
-                <div class="phone-input">
-                    <span class="country-code">+91</span>
-                    <input type="tel" [(ngModel)]="phoneNumber" placeholder="Enter phone number" maxlength="10" />
-                </div>
-
-                <button class="btn-primary" (click)="requestOtp()" [disabled]="!phoneNumber || phoneNumber.length < 10">
-                    Send OTP
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-
-                <p class="register-text">
-                    New to Botiq?
-                    <span routerLink="/register">Create an account</span>
-                </p>
-
-            </div>
+        <div class="brand-overlay"></div>
+      </div>
+      <!-- Right Side Form -->
+      <div class="form-panel">
+        <div class="form-container">
+          <div class="mobile-logo">Botiq<span>.</span></div>
+          <h2 class="title">Welcome Back</h2>
+          <p class="subtitle">Login using your phone number to continue</p>
+          <div class="phone-input">
+            <span class="country-code">+91</span>
+            <input type="tel" [(ngModel)]="phoneNumber" placeholder="Enter phone number" maxlength="10" />
+          </div>
+          <button class="btn-primary" (click)="requestOtp()" [disabled]="!phoneNumber || phoneNumber.length < 10">
+            Send OTP
+            <i class="fas fa-arrow-right"></i>
+          </button>
+          <p class="register-text">
+            New to Botiq?
+            <span routerLink="/register">Create an account</span>
+          </p>
         </div>
+      </div>
     </div>
-
     <!-- Device Conflict Confirmation Modal -->
-    <div class="modal-overlay" *ngIf="showConfirmModal">
+    @if (showConfirmModal) {
+      <div class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header">
-                <i class="fa-solid fa-circle-exclamation warning-icon"></i>
-                <h3>{{ modalTitle }}</h3>
-            </div>
-            <div class="modal-body">
-                <p>{{ modalMessage }}</p>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel-modal" (click)="cancelAction()">Cancel</button>
-                <button class="btn-confirm-modal" (click)="confirmAction()">Confirm</button>
-            </div>
+          <div class="modal-header">
+            <i class="fa-solid fa-circle-exclamation warning-icon"></i>
+            <h3>{{ modalTitle }}</h3>
+          </div>
+          <div class="modal-body">
+            <p>{{ modalMessage }}</p>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel-modal" (click)="cancelAction()">Cancel</button>
+            <button class="btn-confirm-modal" (click)="confirmAction()">Confirm</button>
+          </div>
         </div>
-    </div>
-</div>
+      </div>
+    }
+  </div>
+}
 
 <div id="recaptcha-container"></div>

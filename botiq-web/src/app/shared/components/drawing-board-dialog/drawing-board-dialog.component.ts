@@ -2,7 +2,7 @@
 import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import SignaturePad from 'signature_pad';
-import { CommonModule } from '@angular/common';
+
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
     selector: 'app-drawing-board-dialog',
-    imports: [MatDialogModule, MatButtonModule, MatIconModule, MatSliderModule, CommonModule],
+    imports: [MatDialogModule, MatButtonModule, MatIconModule, MatSliderModule],
     templateUrl: './drawing-board-dialog.component.html',
     styleUrl: './drawing-board-dialog.component.css'
 })

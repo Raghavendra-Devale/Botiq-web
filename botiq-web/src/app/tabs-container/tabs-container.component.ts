@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 
 @Component({
@@ -7,7 +7,7 @@ import { RouterModule } from '@angular/router';
     standalone:true,
     templateUrl: './tabs-container.component.html',
     styleUrls: ['./tabs-container.component.css'],
-    imports: [CommonModule, RouterModule]
+    imports: [RouterModule]
 })
 export class TabsContainerComponent {
   isAssignEnabled = false;

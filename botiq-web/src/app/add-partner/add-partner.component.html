@@ -1,96 +1,104 @@
 <div class="add-partner-container">
-    <div class="glass-panel card animate-fade-in">
-        
-        <div class="brand-header">
-            <div class="logo-box">
-                <i class="fa-solid logo-icon" [class.fa-user-pen]="isEditMode" [class.fa-user-plus]="!isEditMode"></i>
-            </div>
-            <h2>{{ isEditMode ? 'Edit Partner' : 'Add Partner' }}</h2>
-            <p class="subtitle">Enter details below to manage your boutique partner relationships.</p>
+  <div class="glass-panel card animate-fade-in">
+
+    <div class="brand-header">
+      <div class="logo-box">
+        <i class="fa-solid logo-icon" [class.fa-user-pen]="isEditMode" [class.fa-user-plus]="!isEditMode"></i>
+      </div>
+      <h2>{{ isEditMode ? 'Edit Partner' : 'Add Partner' }}</h2>
+      <p class="subtitle">Enter details below to manage your boutique partner relationships.</p>
+    </div>
+
+    <form #partnerForm="ngForm" (ngSubmit)="onSubmit(partnerForm)" class="partner-form">
+
+      <!-- Name & Phone Row -->
+      <div class="form-row">
+        <div class="field-group">
+          <label>Name *</label>
+          <div class="input-container" [class.has-error]="name.invalid && name.touched">
+            <i class="fa-solid fa-user field-icon"></i>
+            <input type="text" name="name" [(ngModel)]="partner.name" required #name="ngModel" placeholder="e.g. Rahul Sharma" [disabled]="loading" />
+          </div>
+          @if (name.invalid && name.touched) {
+            <span class="error">Required</span>
+          }
         </div>
 
-        <form #partnerForm="ngForm" (ngSubmit)="onSubmit(partnerForm)" class="partner-form">
-            
-            <!-- Name & Phone Row -->
-            <div class="form-row">
-                <div class="field-group">
-                    <label>Name *</label>
-                    <div class="input-container" [class.has-error]="name.invalid && name.touched">
-                        <i class="fa-solid fa-user field-icon"></i>
-                        <input type="text" name="name" [(ngModel)]="partner.name" required #name="ngModel" placeholder="e.g. Rahul Sharma" [disabled]="loading" />
-                    </div>
-                    <span class="error" *ngIf="name.invalid && name.touched">Required</span>
-                </div>
+        <div class="field-group">
+          <label>Phone *</label>
+          <div class="input-container" [class.has-error]="phone.invalid && phone.touched">
+            <i class="fa-solid fa-phone field-icon"></i>
+            <input type="text" name="phone" [(ngModel)]="partner.phone" required pattern="[0-9]{10}" #phone="ngModel" placeholder="e.g. 9876543210" [disabled]="loading" />
+          </div>
+          @if (phone.invalid && phone.touched) {
+            <span class="error">
+              Invalid phone
+            </span>
+          }
+        </div>
+      </div>
 
-                <div class="field-group">
-                    <label>Phone *</label>
-                    <div class="input-container" [class.has-error]="phone.invalid && phone.touched">
-                        <i class="fa-solid fa-phone field-icon"></i>
-                        <input type="text" name="phone" [(ngModel)]="partner.phone" required pattern="[0-9]{10}" #phone="ngModel" placeholder="e.g. 9876543210" [disabled]="loading" />
-                    </div>
-                    <span class="error" *ngIf="phone.invalid && phone.touched">
-                        Invalid phone
-                    </span>
-                </div>
-            </div>
+      <!-- Category Field -->
+      <div class="field-group">
+        <label>Category *</label>
+        <div class="input-container">
+          <i class="fa-solid fa-tags field-icon"></i>
+          <select [(ngModel)]="partner.partnerCategory" name="category" required [disabled]="loading">
+            <option [ngValue]="null">Select a category</option>
+            @for (cat of selectCategory; track cat) {
+              <option [ngValue]="cat">
+                {{ cat.key_name }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
 
-            <!-- Category Field -->
-            <div class="field-group">
-                <label>Category *</label>
-                <div class="input-container">
-                    <i class="fa-solid fa-tags field-icon"></i>
-                    <select [(ngModel)]="partner.partnerCategory" name="category" required [disabled]="loading">
-                        <option [ngValue]="null">Select a category</option>
-                        <option *ngFor="let cat of selectCategory" [ngValue]="cat">
-                            {{ cat.key_name }}
-                        </option>
-                    </select>
-                </div>
-            </div>
+      <!-- Address Field -->
+      <div class="field-group">
+        <label>Address</label>
+        <div class="input-container">
+          <i class="fa-solid fa-map-location-dot field-icon"></i>
+          <input type="text" name="address" [(ngModel)]="partner.address" placeholder="e.g. 12 Main St, Bangalore" [disabled]="loading" />
+        </div>
+      </div>
 
-            <!-- Address Field -->
-            <div class="field-group">
-                <label>Address</label>
-                <div class="input-container">
-                    <i class="fa-solid fa-map-location-dot field-icon"></i>
-                    <input type="text" name="address" [(ngModel)]="partner.address" placeholder="e.g. 12 Main St, Bangalore" [disabled]="loading" />
-                </div>
-            </div>
+      <!-- Notes Field -->
+      <div class="field-group">
+        <label>Notes</label>
+        <div class="input-container textarea-container">
+          <i class="fa-solid fa-clipboard field-icon"></i>
+          <textarea name="notes" [(ngModel)]="partner.notes" placeholder="e.g. Specialized in bridal embroidery, fast turnaround..." [disabled]="loading"></textarea>
+        </div>
+      </div>
 
-            <!-- Notes Field -->
-            <div class="field-group">
-                <label>Notes</label>
-                <div class="input-container textarea-container">
-                    <i class="fa-solid fa-clipboard field-icon"></i>
-                    <textarea name="notes" [(ngModel)]="partner.notes" placeholder="e.g. Specialized in bridal embroidery, fast turnaround..." [disabled]="loading"></textarea>
-                </div>
-            </div>
+      <!-- Status Toggle -->
+      <div class="status-group">
+        <span class="status-label">Partner Status</span>
+        <div class="toggle-wrapper">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="partner.status" name="status" [disabled]="loading" />
+            <span class="slider round"></span>
+          </label>
+          <span class="status-text" [class.active]="partner.status">
+            {{ partner.status ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+      </div>
 
-            <!-- Status Toggle -->
-            <div class="status-group">
-                <span class="status-label">Partner Status</span>
-                <div class="toggle-wrapper">
-                    <label class="switch">
-                        <input type="checkbox" [(ngModel)]="partner.status" name="status" [disabled]="loading" />
-                        <span class="slider round"></span>
-                    </label>
-                    <span class="status-text" [class.active]="partner.status">
-                        {{ partner.status ? 'Active' : 'Inactive' }}
-                    </span>
-                </div>
-            </div>
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="router.navigate(['/partners-list'])" [disabled]="loading">
+          Cancel
+        </button>
+        <button type="submit" class="btn-submit" [disabled]="loading">
+          @if (loading) {
+            <i class="fa-solid fa-spinner fa-spin button-spinner"></i>
+          }
+          <span>{{ isEditMode ? 'Update Partner' : 'Save Partner' }}</span>
+        </button>
+      </div>
 
-            <!-- Form Actions -->
-            <div class="form-actions">
-                <button type="button" class="btn-cancel" (click)="router.navigate(['/partners-list'])" [disabled]="loading">
-                    Cancel
-                </button>
-                <button type="submit" class="btn-submit" [disabled]="loading">
-                    <i *ngIf="loading" class="fa-solid fa-spinner fa-spin button-spinner"></i>
-                    <span>{{ isEditMode ? 'Update Partner' : 'Save Partner' }}</span>
-                </button>
-            </div>
-
-        </form>
-    </div>
+    </form>
+  </div>
 </div>

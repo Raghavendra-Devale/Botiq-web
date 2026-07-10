@@ -1,337 +1,356 @@
 <div class="page-container">
-    <!-- Header -->
-    <header class="app-header">
-        <h2 class="page-title">Orders</h2>
-        <div class="popover-wrapper">
-            <button class="icon-btn header-menu-btn" (click)="toggleMenu()" title="More Options">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="1" />
-                    <circle cx="12" cy="5" r="1" />
-                    <circle cx="12" cy="19" r="1" />
-                </svg>
-            </button>
-            <!-- Popover dropdown -->
-            <div *ngIf="isPopoverOpen" class="popover-menu">
-                <button class="popover-btn" (click)="exportOrders()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Export Orders
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <div class="scroll-content">
-        <!-- Notes Banner -->
-        <div *ngFor="let note of notes" class="alert note-alert" [ngClass]="getNoteClass(note)">
-            <svg class="alert-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  <!-- Header -->
+  <header class="app-header">
+    <h2 class="page-title">Orders</h2>
+    <div class="popover-wrapper">
+      <button class="icon-btn header-menu-btn" (click)="toggleMenu()" title="More Options">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="12" cy="5" r="1" />
+          <circle cx="12" cy="19" r="1" />
+        </svg>
+      </button>
+      <!-- Popover dropdown -->
+      @if (isPopoverOpen) {
+        <div class="popover-menu">
+          <button class="popover-btn" (click)="exportOrders()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            <span class="alert-text">{{ note.message_text }}</span>
+            Export Orders
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
+  <div class="scroll-content">
+    <!-- Notes Banner -->
+    @for (note of notes; track note) {
+      <div class="alert note-alert" [ngClass]="getNoteClass(note)">
+        <svg class="alert-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span class="alert-text">{{ note.message_text }}</span>
+      </div>
+    }
+
+    <!-- Plan Expiry Banner -->
+    @if (daysLeft !== null && daysLeft <= 30) {
+      <div class="alert plan-alert"
+        [ngClass]="daysLeft <= 7 ? 'danger-alert' : 'warning-alert'">
+        <div class="plan-content">
+          <div class="plan-info">
+            <strong>{{ currentPlan?.plan_type }}</strong>
+            <span class="subtext">{{ daysLeft }} days left</span>
+          </div>
+          <button class="btn-renew" (click)="onBuyNowClick()">Renew Plan</button>
+        </div>
+      </div>
+    }
+
+    <!-- Main Card Component holding Table & Header Controls -->
+    <div class="table-card">
+      <!-- Table Action Header (Title + Tabs + Filter) -->
+      <div class="table-card-header">
+        <div class="title-area">
+          <h3 class="table-title">Delivery Activities</h3>
+          <p class="table-subtitle">Track your recent shipping activities</p>
         </div>
 
-        <!-- Plan Expiry Banner -->
-        <div *ngIf="daysLeft !== null && daysLeft <= 30" class="alert plan-alert"
-            [ngClass]="daysLeft <= 7 ? 'danger-alert' : 'warning-alert'">
-            <div class="plan-content">
-                <div class="plan-info">
-                    <strong>{{ currentPlan?.plan_type }}</strong>
-                    <span class="subtext">{{ daysLeft }} days left</span>
-                </div>
-                <button class="btn-renew" (click)="onBuyNowClick()">Renew Plan</button>
-            </div>
-        </div>
-
-        <!-- Main Card Component holding Table & Header Controls -->
-        <div class="table-card">
-            <!-- Table Action Header (Title + Tabs + Filter) -->
-            <div class="table-card-header">
-                <div class="title-area">
-                    <h3 class="table-title">Delivery Activities</h3>
-                    <p class="table-subtitle">Track your recent shipping activities</p>
-                </div>
-
-                <div class="header-actions-row">
-                    <!-- Segment Tabs -->
-                    <div class="segments-wrapper">
-                        <div class="segments">
-                            <button *ngIf="showCustomTab" [class.active]="selectedSegment === 'Custom'"
-                                (click)="onSegmentChange('Custom')" class="segment-btn custom-tab">
-                                {{ tabLabel }}
-                            </button>
-
-                            <button *ngFor="let tab of ['All','Pending','Started','Ready','Delivered','Hold']"
-                                [class.active]="selectedSegment === tab" (click)="onSegmentChange(tab)"
-                                class="segment-btn">
-                                {{ tab }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <button class="btn-filter" (click)="toggleMenu()">
-                        <svg class="filter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2">
-                            <line x1="4" y1="21" x2="4" y2="14"></line>
-                            <line x1="4" y1="10" x2="4" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12" y2="3"></line>
-                            <line x1="20" y1="21" x2="20" y2="16"></line>
-                            <line x1="20" y1="12" x2="20" y2="3"></line>
-                            <line x1="1" y1="14" x2="7" y2="14"></line>
-                            <line x1="9" y1="8" x2="15" y2="8"></line>
-                            <line x1="17" y1="16" x2="23" y2="16"></line>
-                        </svg>
-                        Filter
-                    </button>
-
-                    <!-- Add Order Button -->
-                    <button class="btn-add-order" (click)="addNewOrder()" title="Add New Order">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Add Order
-                    </button>
-                </div>
-            </div>
-
-            <!-- Search Bar inside Card -->
-            <div class="table-search-container">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input class="search-input-card" [(ngModel)]="searchQuery" (input)="onSearchInput($event)"
-                    placeholder="Search by customer name, mobile or order details..." />
-                <button class="clear-search-btn" *ngIf="searchQuery" (click)="onCancelSearch()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+        <div class="header-actions-row">
+          <!-- Segment Tabs -->
+          <div class="segments-wrapper">
+            <div class="segments">
+              @if (showCustomTab) {
+                <button [class.active]="selectedSegment === 'Custom'"
+                  (click)="onSegmentChange('Custom')" class="segment-btn custom-tab">
+                  {{ tabLabel }}
                 </button>
-            </div>
+              }
 
-            <!-- Responsive Table View -->
-            <div class="table-responsive">
-                <table class="logistics-table">
-                    <thead>
-                        <tr>
-                            <th class="col-checkbox">
-                                <label class="checkbox-container">
-                                    <input type="checkbox" (change)="toggleSelectAll($event)"
-                                        [checked]="isAllSelected()" />
-                                    <span class="checkmark"></span>
-                                </label>
-                            </th>
-                            <th class="col-order-id" (click)="sort('order_id')">
-                                <div class="th-inner">
-                                    Order ID
-                                    <span class="sort-indicator" [class.active]="sortColumn === 'order_id'">
-                                        <svg class="sort-arrow"
-                                            [class.desc]="sortColumn === 'order_id' && sortDirection === 'desc'"
-                                            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="3">
-                                            <polyline points="18 15 12 9 6 15"></polyline>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </th>
-                            <th class="col-customer" (click)="sort('customer_name')">
-                                <div class="th-inner">
-                                    Customer
-                                    <span class="sort-indicator" [class.active]="sortColumn === 'customer_name'">
-                                        <svg class="sort-arrow"
-                                            [class.desc]="sortColumn === 'customer_name' && sortDirection === 'desc'"
-                                            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="3">
-                                            <polyline points="18 15 12 9 6 15"></polyline>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </th>
-                            <th class="col-details">
-                                <div class="th-inner">Order Details</div>
-                            </th>
-                            <th class="col-price" (click)="sort('order_amount')">
-                                <div class="th-inner">
-                                    Price
-                                    <span class="sort-indicator" [class.active]="sortColumn === 'order_amount'">
-                                        <svg class="sort-arrow"
-                                            [class.desc]="sortColumn === 'order_amount' && sortDirection === 'desc'"
-                                            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="3">
-                                            <polyline points="18 15 12 9 6 15"></polyline>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </th>
-                            <th class="col-status" (click)="sort('order_status')">
-                                <div class="th-inner">
-                                    Status
-                                    <span class="sort-indicator" [class.active]="sortColumn === 'order_status'">
-                                        <svg class="sort-arrow"
-                                            [class.desc]="sortColumn === 'order_status' && sortDirection === 'desc'"
-                                            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="3">
-                                            <polyline points="18 15 12 9 6 15"></polyline>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </th>
-                            <th class="col-actions">
-                                <div class="th-inner">Actions</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let order of paginatedOrders; let i = index" (click)="editOrder(order)"
-                            class="table-row">
-                            <td class="col-checkbox" (click)="$event.stopPropagation()">
-                                <label class="checkbox-container">
-                                    <input type="checkbox" (change)="toggleSelectOrder(order.order_id, $event)"
-                                        [checked]="isOrderSelected(order.order_id)" />
-                                    <span class="checkmark"></span>
-                                </label>
-                            </td>
-                            <td class="col-order-id font-medium text-slate-800">
-                                #{{ order.order_id }}
-                            </td>
-                            <td class="col-customer">
-                                <div class="customer-info">
-                                    <span class="customer-name-text">{{ order.customer_name }}</span>
-                                    <span class="customer-phone" *ngIf="order.contact_number">{{ order.contact_number
-                                        }}</span>
-                                </div>
-                            </td>
-                            <td class="col-details">
-                                <span class="details-text" [title]="formatOrderDetails(order.order_details)">
-                                    {{ formatOrderDetails(order.order_details) || 'No items listed' }}
-                                </span>
-                            </td>
-                            <td class="col-price font-semibold">
-                                ₹{{ order.order_amount }}
-                            </td>
-                            <td class="col-status">
-                                <span class="status-badge" [ngClass]="order.order_status.toLowerCase()">
-                                    <span class="status-dot"></span>
-                                    {{ order.order_status }}
-                                </span>
-                            </td>
-                            <td class="col-actions" (click)="$event.stopPropagation()">
-                                <div class="action-buttons-row">
-                                    <!-- Call -->
-                                    <button class="action-btn-circle call"
-                                        (click)="makeCall(order.contact_number, $event)" title="Call Customer">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <path
-                                                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
-                                            </path>
-                                        </svg>
-                                    </button>
-                                    <!-- WhatsApp -->
-                                    <button class="action-btn-circle whatsapp"
-                                        (click)="openWhatsApp(order.customer_name, order.contact_number, $event)"
-                                        title="Send WhatsApp">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <path
-                                                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
-                                            </path>
-                                        </svg>
-                                    </button>
-                                    <!-- Delete -->
-                                    <button class="action-btn-circle delete" (click)="removeOrder(order, i, $event)"
-                                        title="Delete Order">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path
-                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                                            </path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Empty State -->
-                        <tr *ngIf="paginatedOrders.length === 0">
-                            <td colspan="7" class="empty-state-row">
-                                <div class="empty-state-container">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
-                                        stroke-width="1.5">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <path d="M8 15h8"></path>
-                                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                                    </svg>
-                                    <p>No orders found matching the filter criteria.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+              @for (tab of ['All','Pending','Started','Ready','Delivered','Hold']; track tab) {
+                <button
+                  [class.active]="selectedSegment === tab" (click)="onSegmentChange(tab)"
+                  class="segment-btn">
+                  {{ tab }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <button class="btn-filter" (click)="toggleMenu()">
+            <svg class="filter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line>
+              <line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+            Filter
+          </button>
+
+          <!-- Add Order Button -->
+          <button class="btn-add-order" (click)="addNewOrder()" title="Add New Order">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Order
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Bar inside Card -->
+      <div class="table-search-container">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input class="search-input-card" [(ngModel)]="searchQuery" (input)="onSearchInput($event)"
+          placeholder="Search by customer name, mobile or order details..." />
+          @if (searchQuery) {
+            <button class="clear-search-btn" (click)="onCancelSearch()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          }
+        </div>
+
+        <!-- Responsive Table View -->
+        <div class="table-responsive">
+          <table class="logistics-table">
+            <thead>
+              <tr>
+                <th class="col-checkbox">
+                  <label class="checkbox-container">
+                    <input type="checkbox" (change)="toggleSelectAll($event)"
+                      [checked]="isAllSelected()" />
+                      <span class="checkmark"></span>
+                    </label>
+                  </th>
+                  <th class="col-order-id" (click)="sort('order_id')">
+                    <div class="th-inner">
+                      Order ID
+                      <span class="sort-indicator" [class.active]="sortColumn === 'order_id'">
+                        <svg class="sort-arrow"
+                          [class.desc]="sortColumn === 'order_id' && sortDirection === 'desc'"
+                          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="3">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      </span>
+                    </div>
+                  </th>
+                  <th class="col-customer" (click)="sort('customer_name')">
+                    <div class="th-inner">
+                      Customer
+                      <span class="sort-indicator" [class.active]="sortColumn === 'customer_name'">
+                        <svg class="sort-arrow"
+                          [class.desc]="sortColumn === 'customer_name' && sortDirection === 'desc'"
+                          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="3">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      </span>
+                    </div>
+                  </th>
+                  <th class="col-details">
+                    <div class="th-inner">Order Details</div>
+                  </th>
+                  <th class="col-price" (click)="sort('order_amount')">
+                    <div class="th-inner">
+                      Price
+                      <span class="sort-indicator" [class.active]="sortColumn === 'order_amount'">
+                        <svg class="sort-arrow"
+                          [class.desc]="sortColumn === 'order_amount' && sortDirection === 'desc'"
+                          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="3">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      </span>
+                    </div>
+                  </th>
+                  <th class="col-status" (click)="sort('order_status')">
+                    <div class="th-inner">
+                      Status
+                      <span class="sort-indicator" [class.active]="sortColumn === 'order_status'">
+                        <svg class="sort-arrow"
+                          [class.desc]="sortColumn === 'order_status' && sortDirection === 'desc'"
+                          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="3">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      </span>
+                    </div>
+                  </th>
+                  <th class="col-actions">
+                    <div class="th-inner">Actions</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (order of paginatedOrders; track order; let i = $index) {
+                  <tr (click)="editOrder(order)"
+                    class="table-row">
+                    <td class="col-checkbox" (click)="$event.stopPropagation()">
+                      <label class="checkbox-container">
+                        <input type="checkbox" (change)="toggleSelectOrder(order.order_id, $event)"
+                          [checked]="isOrderSelected(order.order_id)" />
+                          <span class="checkmark"></span>
+                        </label>
+                      </td>
+                      <td class="col-order-id font-medium text-slate-800">
+                        #{{ order.order_id }}
+                      </td>
+                      <td class="col-customer">
+                        <div class="customer-info">
+                          <span class="customer-name-text">{{ order.customer_name }}</span>
+                          @if (order.contact_number) {
+                            <span class="customer-phone">{{ order.contact_number
+                            }}</span>
+                          }
+                        </div>
+                      </td>
+                      <td class="col-details">
+                        <span class="details-text" [title]="formatOrderDetails(order.order_details)">
+                          {{ formatOrderDetails(order.order_details) || 'No items listed' }}
+                        </span>
+                      </td>
+                      <td class="col-price font-semibold">
+                        ₹{{ order.order_amount }}
+                      </td>
+                      <td class="col-status">
+                        <span class="status-badge" [ngClass]="order.order_status.toLowerCase()">
+                          <span class="status-dot"></span>
+                          {{ order.order_status }}
+                        </span>
+                      </td>
+                      <td class="col-actions" (click)="$event.stopPropagation()">
+                        <div class="action-buttons-row">
+                          <!-- Call -->
+                          <button class="action-btn-circle call"
+                            (click)="makeCall(order.contact_number, $event)" title="Call Customer">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2">
+                              <path
+                                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                              </path>
+                            </svg>
+                          </button>
+                          <!-- WhatsApp -->
+                          <button class="action-btn-circle whatsapp"
+                            (click)="openWhatsApp(order.customer_name, order.contact_number, $event)"
+                            title="Send WhatsApp">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2">
+                              <path
+                                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+                              </path>
+                            </svg>
+                          </button>
+                          <!-- Delete -->
+                          <button class="action-btn-circle delete" (click)="removeOrder(order, i, $event)"
+                            title="Delete Order">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path
+                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                              </path>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                  <!-- Empty State -->
+                  @if (paginatedOrders.length === 0) {
+                    <tr>
+                      <td colspan="7" class="empty-state-row">
+                        <div class="empty-state-container">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
+                            stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 15h8"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                          </svg>
+                          <p>No orders found matching the filter criteria.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
 
             <!-- Table Card Footer (Pagination Controls) -->
-            <div class="table-card-footer" *ngIf="paginatedOrders.length > 0 || loading">
+            @if (paginatedOrders.length > 0 || loading) {
+              <div class="table-card-footer">
                 <div class="showing-records">
-                    Page <strong>{{ currentPage }}</strong> (Showing <strong>{{ paginatedOrders.length }}</strong>
-                    orders)
-                    <span *ngIf="loading" class="loading-indicator-inline"
-                        style="margin-left: 12px; color: #2563eb; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13.5px;">
-                        <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5">
-                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
-                            <path
-                                d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
-                                fill="currentColor"></path>
-                        </svg>
-                        Loading...
+                  Page <strong>{{ currentPage }}</strong> (Showing <strong>{{ paginatedOrders.length }}</strong>
+                  orders)
+                  @if (loading) {
+                    <span class="loading-indicator-inline"
+                      style="margin-left: 12px; color: #2563eb; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13.5px;">
+                      <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25" stroke="currentColor"></circle>
+                        <path
+                          d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                        fill="currentColor"></path>
+                      </svg>
+                      Loading...
                     </span>
+                  }
                 </div>
-
                 <div class="pagination-navigation">
-                    <!-- Prev Button -->
-                    <button class="btn-pagination-nav" [disabled]="currentPage === 1 || loading"
-                        (click)="onPageChange(currentPage - 1)" title="Previous Page">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                    </button>
-
-                    <span class="current-page-indicator">Page {{ currentPage }}</span>
-
-                    <!-- Next Button -->
-                    <button class="btn-pagination-nav" [disabled]="!hasMore || loading"
-                        (click)="onPageChange(currentPage + 1)" title="Next Page">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </button>
+                  <!-- Prev Button -->
+                  <button class="btn-pagination-nav" [disabled]="currentPage === 1 || loading"
+                    (click)="onPageChange(currentPage - 1)" title="Previous Page">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <span class="current-page-indicator">Page {{ currentPage }}</span>
+                  <!-- Next Button -->
+                  <button class="btn-pagination-nav" [disabled]="!hasMore || loading"
+                    (click)="onPageChange(currentPage + 1)" title="Next Page">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
                 </div>
-            </div>
+              </div>
+            }
+          </div>
         </div>
-    </div>
 
-    <!-- Add New Order FAB -->
-    <button class="fab" (click)="addNewOrder()" title="Add New Order">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        <!-- Add New Order FAB -->
+        <button class="fab" (click)="addNewOrder()" title="Add New Order">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-    </button>
-</div>
+          </svg>
+        </button>
+      </div>

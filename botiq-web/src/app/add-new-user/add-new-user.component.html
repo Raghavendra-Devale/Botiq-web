@@ -1,169 +1,169 @@
 <div class="page-wrapper">
-    <!-- List View -->
-    <ng-container *ngIf="!showForm">
-        <div class="page-header">
-            <div class="page-title-group">
-                <h2>Members</h2>
-                <span class="user-count" *ngIf="usersList && usersList.length > 0">{{ usersList.length }} users</span>
-            </div>
-            <button class="btn-primary" (click)="addNewUser()">
-                <i class="fa-solid fa-plus"></i> Add User
-            </button>
+  <!-- List View -->
+  @if (!showForm) {
+    <div class="page-header">
+      <div class="page-title-group">
+        <h2>Members</h2>
+        @if (usersList && usersList.length > 0) {
+          <span class="user-count">{{ usersList.length }} users</span>
+        }
+      </div>
+      <button class="btn-primary" (click)="addNewUser()">
+        <i class="fa-solid fa-plus"></i> Add User
+      </button>
+    </div>
+    @if (usersList && usersList.length > 0) {
+      <div>
+        <!-- Search input -->
+        <div class="search-container">
+          <div class="input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Search members by name, phone, email, or role..." />
+          </div>
         </div>
-
-        <div *ngIf="usersList && usersList.length > 0; else noUsers">
-            <!-- Search input -->
-            <div class="search-container">
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" [(ngModel)]="searchQuery" placeholder="Search members by name, phone, email, or role..." />
+        @if (filteredUsers && filteredUsers.length > 0) {
+          <div class="list-container">
+            @for (u of filteredUsers; track u) {
+              <div class="user-card">
+                <div class="user-avatar">
+                  {{ (u.firstname || 'U').charAt(0).toUpperCase() }}
                 </div>
+                <div class="user-info">
+                  <h3 class="user-name">{{ u.firstname || 'Unnamed User' }}</h3>
+                  <div class="user-details">
+                    <span class="detail-item">
+                      <i class="fa-solid fa-phone"></i> {{ u.mobilenumber }}
+                    </span>
+                    <span class="detail-item">
+                      <i class="fa-solid fa-envelope"></i> {{ u.email }}
+                    </span>
+                  </div>
+                </div>
+                <div class="user-meta">
+                  <span class="status-pill" [ngClass]="u.enabled ? 'active' : 'inactive'">
+                    <span class="status-dot"></span> {{ u.enabled ? 'Active' : 'Inactive' }}
+                  </span>
+                  <span class="role-chip">{{ u.userrole }}</span>
+                  <div class="user-actions">
+                    <button class="btn-edit" (click)="editUser(u)">
+                      <i class="fa-solid fa-pen-to-square"></i> Edit
+                    </button>
+                    <button class="btn-delete" (click)="removeUser(u)">
+                      <i class="fa-solid fa-trash-can"></i> Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <div class="empty-icon">
+              <i class="fa-solid fa-users-slash"></i>
             </div>
-
-            <div *ngIf="filteredUsers && filteredUsers.length > 0; else noResults" class="list-container">
-                <div *ngFor="let u of filteredUsers" class="user-card">
-                    <div class="user-avatar">
-                        {{ (u.firstname || 'U').charAt(0).toUpperCase() }}
-                    </div>
-                    <div class="user-info">
-                        <h3 class="user-name">{{ u.firstname || 'Unnamed User' }}</h3>
-                        <div class="user-details">
-                            <span class="detail-item">
-                                <i class="fa-solid fa-phone"></i> {{ u.mobilenumber }}
-                            </span>
-                            <span class="detail-item">
-                                <i class="fa-solid fa-envelope"></i> {{ u.email }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="user-meta">
-                        <span class="status-pill" [ngClass]="u.enabled ? 'active' : 'inactive'">
-                            <span class="status-dot"></span> {{ u.enabled ? 'Active' : 'Inactive' }}
-                        </span>
-                        <span class="role-chip">{{ u.userrole }}</span>
-                        
-                        <div class="user-actions">
-                            <button class="btn-edit" (click)="editUser(u)">
-                                <i class="fa-solid fa-pen-to-square"></i> Edit
-                            </button>
-                            <button class="btn-delete" (click)="removeUser(u)">
-                                <i class="fa-solid fa-trash-can"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <ng-template #noResults>
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fa-solid fa-users-slash"></i>
-                    </div>
-                    <h3>No matching users</h3>
-                    <p>Try adjusting your search query.</p>
-                </div>
-            </ng-template>
+            <h3>No matching users</h3>
+            <p>Try adjusting your search query.</p>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="fa-solid fa-users"></i>
         </div>
+        <h3>No users yet</h3>
+        <p>Add your first team member to get started.</p>
+        <button class="btn-primary" (click)="addNewUser()">
+          <i class="fa-solid fa-plus"></i> Add User
+        </button>
+      </div>
+    }
+  }
 
-        <ng-template #noUsers>
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fa-solid fa-users"></i>
-                </div>
-                <h3>No users yet</h3>
-                <p>Add your first team member to get started.</p>
-                <button class="btn-primary" (click)="addNewUser()">
-                    <i class="fa-solid fa-plus"></i> Add User
-                </button>
-            </div>
-        </ng-template>
-    </ng-container>
-
-    <!-- Form View -->
-    <ng-container *ngIf="showForm">
-        <div class="form-header">
-            <button class="btn-back" (click)="onCancel()">
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-            <div>
-                <h2>{{ isEditMode ? 'Edit User' : 'Add New User' }}</h2>
-                <p class="form-subtitle">
-                    {{ isEditMode ? 'Update user details for your organization.' : 'Fill in the details to add a new team member.' }}
-                </p>
-            </div>
+  <!-- Form View -->
+  @if (showForm) {
+    <div class="form-header">
+      <button class="btn-back" (click)="onCancel()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div>
+        <h2>{{ isEditMode ? 'Edit User' : 'Add New User' }}</h2>
+        <p class="form-subtitle">
+          {{ isEditMode ? 'Update user details for your organization.' : 'Fill in the details to add a new team member.' }}
+        </p>
+      </div>
+    </div>
+    <form class="form-card" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="firstName">Full Name</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" id="firstName" [(ngModel)]="user.firstName" name="firstName" required
+            placeholder="Enter full name">
+          </div>
         </div>
-
-        <form class="form-card" (ngSubmit)="onSubmit()">
-            <div class="form-group">
-                <label for="firstName">Full Name</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-user"></i>
-                    <input type="text" id="firstName" [(ngModel)]="user.firstName" name="firstName" required
-                        placeholder="Enter full name">
-                </div>
+        <div class="form-group">
+          <label for="mobileNumber">Mobile Number</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-phone"></i>
+            <input type="text" id="mobileNumber" [(ngModel)]="user.mobileNumber" name="mobileNumber" required
+              maxlength="10" pattern="[0-9]{10}" (input)="onMobileInput($event)"
+              placeholder="Enter 10-digit number">
             </div>
-
-            <div class="form-group">
-                <label for="mobileNumber">Mobile Number</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-phone"></i>
-                    <input type="text" id="mobileNumber" [(ngModel)]="user.mobileNumber" name="mobileNumber" required
-                        maxlength="10" pattern="[0-9]{10}" (input)="onMobileInput($event)"
-                        placeholder="Enter 10-digit number">
-                </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-envelope"></i>
+              <input type="email" id="email" [(ngModel)]="user.email" name="email" required
+                placeholder="Enter email address">
+              </div>
             </div>
-
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-envelope"></i>
-                    <input type="email" id="email" [(ngModel)]="user.email" name="email" required
-                        placeholder="Enter email address">
-                </div>
+              <label for="userType">User Role</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-shield-halved"></i>
+                <select id="userType" [(ngModel)]="user.userType" name="userType" required>
+                  <option value="">Select role</option>
+                  <option value="1">User</option>
+                  <option value="2">Admin</option>
+                </select>
+              </div>
             </div>
-
-            <div class="form-group">
-                <label for="userType">User Role</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <select id="userType" [(ngModel)]="user.userType" name="userType" required>
-                        <option value="">Select role</option>
-                        <option value="1">User</option>
-                        <option value="2">Admin</option>
-                    </select>
-                </div>
-            </div>
-
             <div class="form-actions">
-                <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
-                <button type="submit" class="btn-primary" [disabled]="loading">
-                    <i class="fa-solid" [ngClass]="isEditMode ? 'fa-check' : 'fa-plus'"></i>
-                    {{ loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update User' : 'Add User') }}
-                </button>
+              <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
+              <button type="submit" class="btn-primary" [disabled]="loading">
+                <i class="fa-solid" [ngClass]="isEditMode ? 'fa-check' : 'fa-plus'"></i>
+                {{ loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update User' : 'Add User') }}
+              </button>
             </div>
-        </form>
-    </ng-container>
+          </form>
+        }
 
-    <!-- Custom Modal -->
-    <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-        <div class="modal-container glass-panel" (click)="$event.stopPropagation()">
-            <div class="modal-header" [ngClass]="modalType">
+        <!-- Custom Modal -->
+        @if (showModal) {
+          <div class="modal-overlay" (click)="closeModal()">
+            <div class="modal-container glass-panel" (click)="$event.stopPropagation()">
+              <div class="modal-header" [ngClass]="modalType">
                 <div class="modal-icon-wrapper">
-                    <i class="fa-solid" [ngClass]="modalIcon"></i>
+                  <i class="fa-solid" [ngClass]="modalIcon"></i>
                 </div>
                 <h3>{{ modalTitle }}</h3>
-            </div>
-            <div class="modal-body">
+              </div>
+              <div class="modal-body">
                 <p>{{ modalMessage }}</p>
-            </div>
-            <div class="modal-footer">
-                <button *ngIf="showModalCancel" class="btn-modal-secondary" (click)="closeModal()">
+              </div>
+              <div class="modal-footer">
+                @if (showModalCancel) {
+                  <button class="btn-modal-secondary" (click)="closeModal()">
                     {{ modalCancelText || 'Cancel' }}
-                </button>
+                  </button>
+                }
                 <button class="btn-modal-primary" [ngClass]="modalType" (click)="onPrimaryClick()">
-                    {{ modalPrimaryText || 'OK' }}
+                  {{ modalPrimaryText || 'OK' }}
                 </button>
+              </div>
             </div>
-        </div>
-    </div>
-</div>
+          </div>
+        }
+      </div>

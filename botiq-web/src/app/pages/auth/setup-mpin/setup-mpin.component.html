@@ -49,17 +49,23 @@
         </div>
 
         <!-- Error Panel -->
-        <div class="error-message" *ngIf="error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <span>{{ error }}</span>
-        </div>
+        @if (error) {
+          <div class="error-message">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>{{ error }}</span>
+          </div>
+        }
 
         <!-- Submit Button -->
         <button class="btn-primary" (click)="setupMpin()" [disabled]="loading || mpin.length !== 6 || confirmMpin.length !== 6">
-          <span *ngIf="!loading">Configure PIN</span>
-          <div class="spinner" *ngIf="loading"></div>
+          @if (!loading) {
+            <span>Configure PIN</span>
+          }
+          @if (loading) {
+            <div class="spinner"></div>
+          }
         </button>
       </div>
 

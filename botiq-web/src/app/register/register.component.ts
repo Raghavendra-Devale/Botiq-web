@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,7 +7,7 @@ import { AuthService } from '../auth/auth.service';
 
 @Component({
     selector: 'app-register',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './register.component.html',
     styleUrl: './register.component.css'
 })

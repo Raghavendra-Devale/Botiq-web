@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+
 import { AuthService } from '../auth/auth.service';
 import { Router, RouterLink } from '@angular/router';
 import { NotificationMessagingService } from '../notification_essaging.service';
 
 @Component({
     selector: 'app-verify-otp',
-    imports: [FormsModule, CommonModule, RouterLink],
+    imports: [FormsModule, RouterLink],
     templateUrl: './verify-otp.component.html',
     styleUrl: './verify-otp.component.css'
 })
