@@ -6,9 +6,10 @@ import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth.service';
+import { Auth } from '@angular/fire/auth';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = getAuth();
+  const auth = inject(Auth);
   const router = inject(Router);
   const authService = inject(AuthService);
 

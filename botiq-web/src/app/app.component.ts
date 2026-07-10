@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -8,6 +8,7 @@ import { getAuth, onIdTokenChanged } from 'firebase/auth';
 import { AuthService } from './auth/auth.service';
 import { NotificationMessagingService } from './notification_essaging.service';
 import { DataService } from './data.service';
+import { Auth } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-root',
@@ -54,7 +55,7 @@ export class AppComponent implements OnInit {
       }
     });
 
-    const auth = getAuth();
+    const auth = inject(Auth);
     // Listen to Firebase token changes (login, logout, AND automatic token refreshes)
     // and seamlessly update it within in-memory store.
     onIdTokenChanged(auth, async (user) => {
