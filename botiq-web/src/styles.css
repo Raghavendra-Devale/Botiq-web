@@ -105,3 +105,21 @@ button:active {
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Mobile safe area & burger button clearing overrides */
+@media (max-width: 768px) {
+  .main-content:not(.public-layout) .main-header,
+  .main-content:not(.public-layout) .app-header,
+  .main-content:not(.public-layout) .pos-header,
+  .main-content:not(.public-layout) .page-header,
+  .main-content:not(.public-layout) .form-header,
+  .main-content:not(.public-layout) .header-banner {
+    padding-left: calc(64px + env(safe-area-inset-left, 0px)) !important;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+  }
+  
+  .main-content:not(.public-layout) h1.page-title {
+    padding-left: calc(64px + env(safe-area-inset-left, 0px)) !important;
+    margin-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+  }
+}

@@ -935,31 +935,248 @@
     .table-card-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 14px;
+        padding: 16px 20px;
     }
 
     .header-actions-row {
         width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
         justify-content: space-between;
-    }
-
-    .segments-wrapper {
-        width: calc(100% - 90px);
-    }
-}
-
-@media (max-width: 480px) {
-    .header-actions-row {
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: wrap;
         gap: 12px;
     }
 
     .segments-wrapper {
         width: 100%;
+        order: 1;
     }
 
     .btn-filter {
-        width: 100%;
+        order: 2;
+        flex: 1;
         justify-content: center;
+        min-width: 100px;
+    }
+
+    .btn-add-order {
+        order: 3;
+        flex: 1.5;
+        justify-content: center;
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: visible;
+        padding: 4px;
+    }
+
+    .logistics-table {
+        min-width: 100% !important;
+        display: block;
+    }
+
+    .logistics-table thead {
+        display: none;
+    }
+
+    .logistics-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 4px 12px 16px 12px;
+    }
+
+    .logistics-table tr.table-row {
+        display: grid;
+        grid-template-areas:
+            "checkbox order-id status"
+            "customer customer price"
+            "details details details"
+            "actions actions actions";
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        padding: 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .logistics-table tr.table-row:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        background-color: #ffffff;
+    }
+
+    .logistics-table td {
+        display: block;
+        padding: 0 !important;
+        border-bottom: none !important;
+        width: auto !important;
+        max-width: none !important;
+        min-height: auto;
+    }
+
+    .col-checkbox {
+        grid-area: checkbox;
+        display: flex;
+        align-items: center;
+        margin-right: 8px;
+    }
+
+    .col-checkbox .checkbox-container {
+        padding-left: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .col-checkbox .checkmark {
+        top: 2px;
+    }
+
+    .col-order-id {
+        grid-area: order-id;
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+    }
+
+    .col-status {
+        grid-area: status;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .col-customer {
+        grid-area: customer;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-top: 4px;
+    }
+
+    .customer-info {
+        gap: 2px;
+    }
+
+    .customer-name-text {
+        font-size: 15px;
+    }
+
+    .col-price {
+        grid-area: price;
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .col-details {
+        grid-area: details;
+        background: #f8fafc;
+        padding: 10px 14px !important;
+        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+        margin-top: 4px;
+    }
+
+    .details-text {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        font-size: 13.5px;
+        line-height: 1.4;
+    }
+
+    .col-actions {
+        grid-area: actions;
+        border-top: 1px solid #f1f5f9 !important;
+        padding-top: 12px !important;
+        margin-top: 6px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .action-buttons-row {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .action-btn-circle {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-content {
+        padding: 12px 12px 80px 12px;
+    }
+
+    .app-header {
+        padding: 12px 16px;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .table-card-header {
+        padding: 12px 16px;
+    }
+
+    .table-search-container {
+        padding: 10px 16px;
+    }
+
+    .table-search-container .search-icon {
+        left: 28px;
+    }
+
+    .search-input-card {
+        padding-left: 32px;
+        font-size: 13.5px;
+    }
+
+    .clear-search-btn {
+        right: 24px;
+    }
+
+    .btn-filter, .btn-add-order {
+        width: 100%;
+        flex: none;
+    }
+
+    .table-card-footer {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .plan-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .btn-renew {
+        width: 100%;
+        text-align: center;
     }
 }

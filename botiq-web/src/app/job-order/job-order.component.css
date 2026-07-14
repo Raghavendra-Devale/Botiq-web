@@ -282,3 +282,52 @@ button {
 .btn-danger-icon:hover {
     background: #fca5a5;
 }
+
+/* =========================
+   MOBILE RESPONSIVENESS
+========================= */
+@media (max-width: 768px) {
+    .job-container {
+        padding: 16px;
+        padding-top: 64px !important;
+    }
+    
+    .header-banner h2 {
+        font-size: 1.4rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .job-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .summary-info {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .summary-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .bottom-actions {
+        flex-direction: column-reverse;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .bottom-actions button {
+        width: 100%;
+        padding: 12px;
+        text-align: center;
+    }
+}

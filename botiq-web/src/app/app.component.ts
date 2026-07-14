@@ -23,9 +23,17 @@ export class AppComponent implements OnInit {
     window.location.pathname.includes('/verify-otp') ||
     window.location.pathname.includes('/register') ||
     window.location.pathname.includes('/setup-mpin') ||
-    window.location.pathname.includes('/mpin-login')
+    window.location.pathname.includes('/mpin-login') ||
+    window.location.hash.includes('/login') ||
+    window.location.hash.includes('/verify-otp') ||
+    window.location.hash.includes('/register') ||
+    window.location.hash.includes('/setup-mpin') ||
+    window.location.hash.includes('/mpin-login')
   );
-  isPosRoute = typeof window !== 'undefined' && window.location.pathname.includes('/add-new-order');
+  isPosRoute = typeof window !== 'undefined' && (
+    window.location.pathname.includes('/add-new-order') ||
+    window.location.hash.includes('/add-new-order')
+  );
 
   constructor(
     private router: Router, 

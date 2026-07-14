@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -41,7 +41,20 @@ interface OrderModel {
 })
 export class AddNewOrderComponent implements OnInit, OnDestroy {
 
+  // Native Mobile Camera trigger references
+  @ViewChild('measurementsCamera') measurementsCamera!: ElementRef<HTMLInputElement>;
+  @ViewChild('patternsCamera') patternsCamera!: ElementRef<HTMLInputElement>;
+  @ViewChild('materialsCamera') materialsCamera!: ElementRef<HTMLInputElement>;
 
+  // WebRTC Device Camera properties
+  @ViewChild('cameraVideo') cameraVideo!: ElementRef<HTMLVideoElement>;
+  showCameraModal = false;
+  cameraType: 'measurements' | 'patterns' | 'materials' | null = null;
+  videoStream: MediaStream | null = null;
+  capturedImage: string | null = null;
+  cameraError: string | null = null;
+  videoDevices: MediaDeviceInfo[] = [];
+  selectedDeviceId: string | null = null;
   showDeliveredDate = false;
   isOrderLoaded = false;
   isCategoryLoaded = false;
@@ -932,6 +945,137 @@ ngOnDestroy() {
   if (this.audio) {
     this.audio.pause();
     this.audio = null;
+  }
+  this.stopCameraStream();
+}
+
+isMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+triggerCamera(type: 'measurements' | 'patterns' | 'materials') {
+  if (this.isMobileDevice()) {
+    if (type === 'measurements' && this.measurementsCamera) {
+      this.measurementsCamera.nativeElement.click();
+    } else if (type === 'patterns' && this.patternsCamera) {
+      this.patternsCamera.nativeElement.click();
+    } else if (type === 'materials' && this.materialsCamera) {
+      this.materialsCamera.nativeElement.click();
+    }
+  } else {
+    this.openCamera(type);
+  }
+}
+
+async openCamera(type: 'measurements' | 'patterns' | 'materials') {
+  this.cameraType = type;
+  this.showCameraModal = true;
+  this.capturedImage = null;
+  this.cameraError = null;
+  await this.startCamera();
+}
+
+async startCamera() {
+  this.stopCameraStream();
+  try {
+    const constraints: MediaStreamConstraints = {
+      video: this.selectedDeviceId 
+        ? { deviceId: { exact: this.selectedDeviceId } }
+        : { facingMode: 'environment' }
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    this.videoStream = stream;
+    
+    if (this.cameraVideo && this.cameraVideo.nativeElement) {
+      this.cameraVideo.nativeElement.srcObject = stream;
+    }
+
+    // Enumerate devices to allow switching cameras
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    this.videoDevices = devices.filter(device => device.kind === 'videoinput');
+    
+    // Select the active device ID if not already selected
+    if (!this.selectedDeviceId && this.videoDevices.length > 0) {
+      const activeTrack = stream.getVideoTracks()[0];
+      if (activeTrack) {
+        const settings = activeTrack.getSettings();
+        this.selectedDeviceId = settings.deviceId || null;
+      }
+    }
+  } catch (err: any) {
+    console.error('Error accessing camera:', err);
+    this.cameraError = 'Could not access camera. Please check permissions.';
+  }
+}
+
+async switchCamera() {
+  if (this.videoDevices.length <= 1) return;
+  const currentIndex = this.videoDevices.findIndex(d => d.deviceId === this.selectedDeviceId);
+  const nextIndex = (currentIndex + 1) % this.videoDevices.length;
+  this.selectedDeviceId = this.videoDevices[nextIndex].deviceId;
+  await this.startCamera();
+}
+
+capturePhoto() {
+  if (!this.cameraVideo || !this.cameraVideo.nativeElement) return;
+  const video = this.cameraVideo.nativeElement;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    this.capturedImage = dataUrl;
+    this.stopCameraStream();
+  }
+}
+
+retakePhoto() {
+  this.capturedImage = null;
+  this.startCamera();
+}
+
+async confirmPhoto() {
+  if (!this.capturedImage || !this.cameraType) return;
+  let finalBase64 = this.capturedImage;
+
+  try {
+    console.log(`Original captured photo size: ${this.calculateBase64SizeInKB(finalBase64).toFixed(2)} KB`);
+    finalBase64 = await this.compressImage(finalBase64, 0.4, 600);
+    console.log(`Compressed captured photo size: ${this.calculateBase64SizeInKB(finalBase64).toFixed(2)} KB`);
+  } catch (err) {
+    console.error('Failed to compress captured photo, using original', err);
+  }
+
+  const imageData: ImageData = {
+    base64: finalBase64,
+    blobUrl: this.convertBase64ToBlobUrl(finalBase64),
+    temp_id: Date.now()
+  };
+
+  this.addImageToType(imageData, this.cameraType);
+  this.closeCamera();
+}
+
+closeCamera() {
+  this.stopCameraStream();
+  this.showCameraModal = false;
+  this.cameraType = null;
+  this.capturedImage = null;
+  this.cameraError = null;
+}
+
+private stopCameraStream() {
+  if (this.videoStream) {
+    this.videoStream.getTracks().forEach(track => track.stop());
+    this.videoStream = null;
+  }
+  if (this.cameraVideo && this.cameraVideo.nativeElement) {
+    this.cameraVideo.nativeElement.srcObject = null;
   }
 }
 

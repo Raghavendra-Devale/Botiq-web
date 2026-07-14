@@ -1,5 +1,7 @@
 package com.dfive.botiq.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import com.dfive.botiq.dto.CreateOrgUserDto;
 import com.dfive.botiq.entities.OrgUser;
@@ -58,6 +60,8 @@ public class OrganizationController {
 
     @Autowired
     private EmailService emailService;
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
 
     @PostMapping("/check-user")
     public ResponseEntity<Map<String, Object>> checkUserExists(@RequestBody Map<String, String> payload) {
@@ -65,6 +69,9 @@ public class OrganizationController {
 
         String phoneNumber = payload.get("phoneNumber");
         String deviceId = payload.get("deviceId");
+
+        log.info("Received payload: {}", payload);
+        log.info("Phone: {}, Device: {}", phoneNumber, deviceId);
 
         System.out.println("Phone Number: " + phoneNumber);
         System.out.println("Device ID: " + deviceId);
@@ -117,7 +124,7 @@ public class OrganizationController {
             response.put("status", 1);
             response.put("message", "New User.");
         }
-
+        System.out.println("sending response: " + response);
         return ResponseEntity.ok(response);
     }
 

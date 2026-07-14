@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { initializeApp } from 'firebase/app';
-import { getMessaging,getToken,onMessage } from 'firebase/messaging';
+// import { getMessaging,getToken,onMessage } from 'firebase/messaging';
 import {notificationFirebaseConfig,notificationVapidKey} from '../environments/notification-firebase';
 import { NotificationService } from './notification.service';
 
@@ -9,7 +9,7 @@ export class NotificationMessagingService {
 
   private app = initializeApp(notificationFirebaseConfig,'notification-app');
 
-  private messaging = getMessaging(this.app);
+  // private messaging = getMessaging(this.app);
 
   constructor(private apiService: NotificationService) {}
 

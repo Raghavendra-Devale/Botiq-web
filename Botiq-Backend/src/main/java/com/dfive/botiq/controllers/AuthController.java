@@ -74,14 +74,14 @@ public class AuthController {
 
                 Cookie[] cookies = request.getCookies();
 
-                for (Cookie cookie : cookies) {
-                        System.out.println(
-                                        cookie.getName() + " = " + cookie.getValue());
-                }
-
                 if (cookies == null) {
                         return ResponseEntity.ok(DeviceStatusResponse.builder().knownDevice(false).build());
                 }
+
+//                for (Cookie cookie : cookies) {
+//                        System.out.println(
+//                                        cookie.getName() + " = " + cookie.getValue());
+//                }
 
                 String rawToken = null;
 

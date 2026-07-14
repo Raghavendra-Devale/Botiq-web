@@ -1638,3 +1638,278 @@ button.asset-upload-label {
         opacity: 1;
     }
 }
+
+/* ==========================================================================
+   SPLIT UPLOAD & CAMERA BUTTONS
+   ========================================================================== */
+.asset-upload-actions-wrapper {
+    display: flex;
+    align-items: center;
+    height: 34px;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--border-radius-sm);
+    background: #f8fafc;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.asset-upload-actions-wrapper:hover {
+    border-color: var(--primary-accent);
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.asset-upload-label-split {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    height: 100%;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: color var(--transition-fast);
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.asset-upload-actions-wrapper:hover .asset-upload-label-split {
+    color: var(--primary-accent);
+}
+
+.asset-camera-btn-split {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 100%;
+    border: none;
+    background: none;
+    border-left: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-top-right-radius: calc(var(--border-radius-sm) - 1.5px);
+    border-bottom-right-radius: calc(var(--border-radius-sm) - 1.5px);
+}
+
+.asset-camera-btn-split:hover {
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--primary-accent);
+}
+
+.asset-upload-actions-wrapper:hover .asset-camera-btn-split {
+    border-left-color: var(--primary-accent);
+}
+
+/* ==========================================================================
+   CAMERA MODAL STYLES
+   ========================================================================== */
+.camera-modal-hidden {
+    display: none !important;
+}
+
+.camera-modal-content {
+    width: 600px;
+    max-width: 95%;
+    background: #fff;
+    border: 1px solid var(--border-strong);
+}
+
+.camera-modal-body {
+    background: #0f172a;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 350px;
+    position: relative;
+    overflow: hidden;
+}
+
+.camera-viewport-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.camera-video-feed {
+    width: 100%;
+    max-height: 450px;
+    object-fit: cover;
+    background: #000;
+}
+
+.camera-captured-preview {
+    width: 100%;
+    max-height: 450px;
+    object-fit: cover;
+    background: #000;
+    animation: fadeIn var(--transition-fast) forwards;
+}
+
+.camera-error-message {
+    color: #ef4444;
+    text-align: center;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.camera-error-message i {
+    font-size: 40px;
+}
+
+.camera-error-message p {
+    color: #cbd5e1;
+    font-size: 14px;
+    margin: 0;
+}
+
+.retry-btn {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.retry-btn:hover {
+    background: #dc2626;
+}
+
+.camera-modal-footer {
+    padding: 16px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+}
+
+.camera-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 24px;
+}
+
+/* Shutter button style */
+.camera-shutter-btn {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    padding: 0;
+}
+
+.camera-shutter-btn:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-accent);
+}
+
+.camera-shutter-btn:active {
+    transform: scale(0.95);
+}
+
+.shutter-inner {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #ef4444;
+    display: block;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.camera-shutter-btn:hover .shutter-inner {
+    background: var(--primary-accent);
+}
+
+/* Control action buttons */
+.camera-action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.camera-action-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: var(--text-primary);
+    border-color: #94a3b8;
+}
+
+.camera-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.camera-action-btn.cancel-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+/* Preview actions buttons */
+.camera-preview-action-btn {
+    height: 38px;
+    padding: 0 20px;
+    border-radius: var(--border-radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid transparent;
+}
+
+.camera-preview-action-btn.retake-btn {
+    background: #fff;
+    border-color: #cbd5e1;
+    color: var(--text-primary);
+}
+
+.camera-preview-action-btn.retake-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.camera-preview-action-btn.confirm-btn {
+    background: var(--primary-gradient);
+    color: #fff;
+}
+
+.camera-preview-action-btn.confirm-btn:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}

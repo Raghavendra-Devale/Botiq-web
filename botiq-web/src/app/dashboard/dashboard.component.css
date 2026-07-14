@@ -305,18 +305,21 @@
 @media (max-width: 1024px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
-        overflow-y: auto;
+        overflow: visible;
     }
 
     .dashboard {
         height: auto;
+        overflow: visible;
     }
 }
 
 @media (max-width: 768px) {
     .main-header {
         flex-direction: column;
+        align-items: stretch;
         gap: 15px;
+        padding-left: 64px !important;
     }
 
     .metric-wrapper {
@@ -331,6 +334,40 @@
 
     .job-orders .stats-grid,
     .summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-header {
+        padding-left: 64px !important;
+        align-items: stretch;
+    }
+
+    .metric-wrapper {
+        gap: 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+        justify-content: flex-start;
+        padding: 10px 14px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .metric-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+
+    .metric-item {
+        flex-shrink: 0;
+        min-width: 70px;
+    }
+
+    .customer-orders .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .job-orders .stats-grid {
         grid-template-columns: 1fr;
     }
 }

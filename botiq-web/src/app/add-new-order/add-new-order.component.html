@@ -147,41 +147,59 @@
                     <div class="asset-upload-box">
                       <input type="file" multiple (change)="onFileSelected($event, 'measurements')"
                         id="measurements-pos" class="file-input-hide" />
-                        <label for="measurements-pos" class="asset-upload-label">
+                      <input #measurementsCamera type="file" accept="image/*" capture="environment" class="file-input-hide"
+                        (change)="onFileSelected($event, 'measurements')" />
+                      <div class="asset-upload-actions-wrapper">
+                        <label for="measurements-pos" class="asset-upload-label-split" title="Upload File">
                           <i class="fa-solid fa-ruler-combined"></i>
                           <span>Measurements</span>
                           @if (measurementImages.length > 0) {
-                            <span class="asset-count-badge">{{
-                            measurementImages.length }}</span>
+                            <span class="asset-count-badge">{{ measurementImages.length }}</span>
                           }
                         </label>
+                        <button type="button" class="asset-camera-btn-split" (click)="triggerCamera('measurements')" title="Take Photo">
+                          <i class="fa-solid fa-camera"></i>
+                        </button>
                       </div>
-                      <!-- Patterns -->
-                      <div class="asset-upload-box">
-                        <input type="file" multiple (change)="onFileSelected($event, 'patterns')" id="patterns-pos"
-                          class="file-input-hide" />
-                          <label for="patterns-pos" class="asset-upload-label">
-                            <i class="fa-solid fa-drafting-compass"></i>
-                            <span>Patterns</span>
-                            @if (patternImages.length > 0) {
-                              <span class="asset-count-badge">{{ patternImages.length
-                              }}</span>
-                            }
-                          </label>
-                        </div>
-                        <!-- Materials -->
-                        <div class="asset-upload-box">
-                          <input type="file" multiple (change)="onFileSelected($event, 'materials')" id="materials-pos"
-                            class="file-input-hide" />
-                            <label for="materials-pos" class="asset-upload-label">
-                              <i class="fa-solid fa-shirt"></i>
-                              <span>Materials</span>
-                              @if (materialImages.length > 0) {
-                                <span class="asset-count-badge">{{ materialImages.length
-                                }}</span>
-                              }
-                            </label>
-                          </div>
+                    </div>
+                    <!-- Patterns -->
+                    <div class="asset-upload-box">
+                      <input type="file" multiple (change)="onFileSelected($event, 'patterns')" id="patterns-pos"
+                        class="file-input-hide" />
+                      <input #patternsCamera type="file" accept="image/*" capture="environment" class="file-input-hide"
+                        (change)="onFileSelected($event, 'patterns')" />
+                      <div class="asset-upload-actions-wrapper">
+                        <label for="patterns-pos" class="asset-upload-label-split" title="Upload File">
+                          <i class="fa-solid fa-drafting-compass"></i>
+                          <span>Patterns</span>
+                          @if (patternImages.length > 0) {
+                            <span class="asset-count-badge">{{ patternImages.length }}</span>
+                          }
+                        </label>
+                        <button type="button" class="asset-camera-btn-split" (click)="triggerCamera('patterns')" title="Take Photo">
+                          <i class="fa-solid fa-camera"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Materials -->
+                    <div class="asset-upload-box">
+                      <input type="file" multiple (change)="onFileSelected($event, 'materials')" id="materials-pos"
+                        class="file-input-hide" />
+                      <input #materialsCamera type="file" accept="image/*" capture="environment" class="file-input-hide"
+                        (change)="onFileSelected($event, 'materials')" />
+                      <div class="asset-upload-actions-wrapper">
+                        <label for="materials-pos" class="asset-upload-label-split" title="Upload File">
+                          <i class="fa-solid fa-shirt"></i>
+                          <span>Materials</span>
+                          @if (materialImages.length > 0) {
+                            <span class="asset-count-badge">{{ materialImages.length }}</span>
+                          }
+                        </label>
+                        <button type="button" class="asset-camera-btn-split" (click)="triggerCamera('materials')" title="Take Photo">
+                          <i class="fa-solid fa-camera"></i>
+                        </button>
+                      </div>
+                    </div>
                           <!-- Handwritten Notes -->
                           <div class="asset-upload-box">
                             <button type="button" class="asset-upload-label" (click)="addHandwrittenNote()">
@@ -475,6 +493,67 @@
                           <div class="modal-content">
                             <img [src]="previewImage" alt="Preview Image" />
                             <button class="close-btn" (click)="closePreview()">✕</button>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- CAMERA CAPTURE MODAL -->
+                      @if (showCameraModal) {
+                        <div class="image-modal camera-modal">
+                          <div class="overlay" (click)="closeCamera()"></div>
+                          <div class="modal-content camera-modal-content">
+                            <div class="modal-header">
+                              <h3><i class="fa-solid fa-camera"></i> Capture {{ cameraType | titlecase }}</h3>
+                              <button type="button" class="close-modal-btn" (click)="closeCamera()">✕</button>
+                            </div>
+                            
+                            <div class="modal-body camera-modal-body">
+                              @if (cameraError) {
+                                <div class="camera-error-message">
+                                  <i class="fa-solid fa-triangle-exclamation"></i>
+                                  <p>{{ cameraError }}</p>
+                                  <button type="button" class="retry-btn" (click)="startCamera()">Retry</button>
+                                </div>
+                              } @else {
+                                <div class="camera-viewport-wrapper">
+                                  <!-- Video feed for live stream -->
+                                  <video #cameraVideo autoplay playsinline muted [style.display]="capturedImage ? 'none' : 'block'" class="camera-video-feed"></video>
+                                  
+                                  <!-- Image element for captured preview -->
+                                  @if (capturedImage) {
+                                    <img [src]="capturedImage" alt="Captured Preview" class="camera-captured-preview" />
+                                  }
+                                </div>
+                              }
+                            </div>
+
+                            <div class="modal-footer camera-modal-footer">
+                              <div class="camera-controls">
+                                @if (!capturedImage && !cameraError) {
+                                  <!-- Live controls -->
+                                  <button type="button" class="camera-action-btn switch-btn" (click)="switchCamera()" [disabled]="videoDevices.length <= 1" title="Switch Camera">
+                                    <i class="fa-solid fa-camera-rotate"></i>
+                                  </button>
+                                  <button type="button" class="camera-shutter-btn" (click)="capturePhoto()" title="Capture Photo">
+                                    <span class="shutter-inner"></span>
+                                  </button>
+                                  <button type="button" class="camera-action-btn cancel-btn" (click)="closeCamera()" title="Cancel">
+                                    <i class="fa-solid fa-xmark"></i>
+                                  </button>
+                                } @else if (capturedImage) {
+                                  <!-- Preview controls -->
+                                  <button type="button" class="camera-preview-action-btn retake-btn" (click)="retakePhoto()">
+                                    <i class="fa-solid fa-arrow-rotate-left"></i> Retake
+                                  </button>
+                                  <button type="button" class="camera-preview-action-btn confirm-btn" (click)="confirmPhoto()">
+                                    <i class="fa-solid fa-check"></i> Use Photo
+                                  </button>
+                                } @else {
+                                  <!-- Error control -->
+                                  <button type="button" class="modal-close-action" (click)="closeCamera()">Close</button>
+                                }
+                              </div>
+                            </div>
                           </div>
                         </div>
                       }

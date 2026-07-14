@@ -95,6 +95,7 @@ public class SecurityConfig {
                                 "https://botiqcloud.com",
                                 "https://botiq.dfivetechnologies.com",
                                 "capacitor://localhost",
+                                "http://192.168.94.124:4200",
                                 "http://192.168.94.246:8080"));
 
                 configuration.setAllowedMethods(

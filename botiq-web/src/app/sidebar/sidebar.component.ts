@@ -23,6 +23,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit() {
+    this.isCollapsed = window.innerWidth <= 768;
     this.sub = this.authService.basicDetails$.subscribe(details => {
       if (details) {
         this.userName = details.owner_name || '';

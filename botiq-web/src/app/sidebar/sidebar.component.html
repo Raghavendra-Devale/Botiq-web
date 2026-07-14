@@ -1,3 +1,15 @@
+<!-- Mobile Burger Button -->
+@if (isCollapsed) {
+  <button class="mobile-burger-btn" (click)="isCollapsed = false" aria-label="Open Sidebar">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+}
+
+<!-- Backdrop overlay on mobile -->
+@if (!isCollapsed) {
+  <div class="sidebar-backdrop" (click)="isCollapsed = true"></div>
+}
+
 <div class="sidebar" [class.collapsed]="isCollapsed">
   <div class="logo-section">
     @if (!isCollapsed) {

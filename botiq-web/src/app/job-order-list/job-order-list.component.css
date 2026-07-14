@@ -606,29 +606,224 @@
    RESPONSIVE DESIGN
 ========================= */
 @media (max-width: 820px) {
+    .app-header {
+        padding-left: 64px !important; /* Avoid overlap with floating mobile burger menu */
+    }
+
     .table-card-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 14px;
+        padding: 16px 20px;
     }
 
     .header-actions-row {
         width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
         justify-content: space-between;
-    }
-
-    .segments-wrapper {
-        width: calc(100% - 90px);
-    }
-}
-
-@media (max-width: 480px) {
-    .header-actions-row {
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: wrap;
         gap: 12px;
     }
 
     .segments-wrapper {
         width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: visible;
+        padding: 4px;
+    }
+
+    .logistics-table {
+        min-width: 100% !important;
+        display: block;
+    }
+
+    .logistics-table thead {
+        display: none;
+    }
+
+    .logistics-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 4px 12px 16px 12px;
+    }
+
+    .logistics-table tr.table-row {
+        display: grid;
+        grid-template-areas:
+            "checkbox order-id status"
+            "customer customer customer"
+            "partner partner partner"
+            "due-date due-date due-date";
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        padding: 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .logistics-table tr.table-row:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        background-color: #ffffff;
+    }
+
+    .logistics-table td {
+        display: block;
+        padding: 0 !important;
+        border-bottom: none !important;
+        width: auto !important;
+        max-width: none !important;
+        min-height: auto;
+    }
+
+    .col-checkbox {
+        grid-area: checkbox;
+        display: flex;
+        align-items: center;
+        margin-right: 8px;
+    }
+
+    .col-checkbox .checkbox-container {
+        padding-left: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .col-checkbox .checkmark {
+        top: 2px;
+    }
+
+    .col-order-id {
+        grid-area: order-id;
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+    }
+
+    .col-status {
+        grid-area: status;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .col-customer {
+        grid-area: customer;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .col-customer::before {
+        content: "Customer:";
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+        min-width: 70px;
+    }
+
+    .col-customer .customer-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .col-partner {
+        grid-area: partner;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .col-partner::before {
+        content: "Partner:";
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+        min-width: 70px;
+    }
+
+    .col-partner .customer-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .col-due-date {
+        grid-area: due-date;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .col-due-date::before {
+        content: "Due Date:";
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+        min-width: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-content {
+        padding: 12px 12px 80px 12px;
+    }
+
+    .app-header {
+        padding: 12px 16px;
+        padding-left: 64px !important;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .table-card-header {
+        padding: 12px 16px;
+    }
+
+    .table-search-container {
+        padding: 10px 16px;
+    }
+
+    .table-search-container .search-icon {
+        left: 28px;
+    }
+
+    .search-input-card {
+        padding-left: 32px;
+        font-size: 13.5px;
+    }
+
+    .clear-search-btn {
+        right: 24px;
+    }
+
+    .table-card-footer {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
     }
 }
