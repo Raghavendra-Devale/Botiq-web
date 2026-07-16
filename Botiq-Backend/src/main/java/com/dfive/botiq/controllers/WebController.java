@@ -13,15 +13,22 @@ import io.grpc.InternalGlobalInterceptors;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.cache.annotation.Cacheable;
 
+import java.io.ByteArrayOutputStream;
 import java.net.http.HttpClient;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -1807,6 +1814,105 @@ public class WebController {
         }
     }
 
+    @GetMapping("/exportOrders")
+    public ResponseEntity<byte[]> exportOrders(HttpServletRequest request) {
+
+        try {
+
+            UserPrincipal principal = getUserPrincipal();
+            Integer orgId = principal.getOrgId();
+
+            String sql = """
+                SELECT
+                    o.*,
+                    c.customer_name,
+                    c.contact_number,
+                    c.customer_address,
+                    d.details_data
+                FROM botiq_order_w o
+                LEFT JOIN botiq_customer_w c
+                    ON o.customer_id = c.customer_id
+                LEFT JOIN LATERAL (
+                    SELECT details_data
+                    FROM botiq_order_docs_w
+                    WHERE order_id = o.order_id
+                      AND details_type = 2
+                    ORDER BY details_id
+                    LIMIT 1
+                ) d ON true
+                WHERE o.org_id = ?
+                """;
+
+            List<Map<String, Object>> orders = jdbcTemplate.queryForList(sql, orgId);
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Orders");
+
+            // Header
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("Order ID");
+            header.createCell(1).setCellValue("Customer");
+            header.createCell(2).setCellValue("Phone");
+            header.createCell(3).setCellValue("Status");
+            header.createCell(4).setCellValue("Amount");
+            header.createCell(5).setCellValue("Due Date");
+            header.createCell(6).setCellValue("Order Details");
+
+            int rowNum = 1;
+
+            for (Map<String, Object> order : orders) {
+
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(value(order.get("order_id")));
+                row.createCell(1).setCellValue(value(order.get("customer_name")));
+                row.createCell(2).setCellValue(value(order.get("contact_number")));
+                row.createCell(3).setCellValue(value(order.get("order_status")));
+
+                Object amount = order.get("order_amount");
+                if (amount != null) {
+                    row.createCell(4).setCellValue(Double.parseDouble(amount.toString()));
+                }
+
+                row.createCell(5).setCellValue(value(order.get("due_date")));
+
+                String orderDetails = value(order.get("order_details"));
+
+                // Excel cell limit = 32767 characters
+                if (orderDetails.length() > 32767) {
+                    orderDetails = orderDetails.substring(0, 32767);
+                }
+
+                row.createCell(6).setCellValue(orderDetails);
+            }
+
+            for (int i = 0; i < 7; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            workbook.close();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=orders.xlsx")
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(out.toByteArray());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private String value(Object obj) {
+        return obj == null ? "" : obj.toString();
+    }
+
+
     @PostMapping("/saveOrUpdateCustomer")
     public ResponseEntity<?> saveOrUpdateCustomer(
             @RequestBody BotiqCustomer customer,
@@ -2289,7 +2395,9 @@ public class WebController {
                             s.org_logo AS orgLogo,
                             s.optional_settings AS optionalSettings,
                             s.work_categories,
-                            s.partner_categories
+                            s.partner_categories,
+                            o.plan_end_date,
+                            o.plan_type
                         FROM organization o
                         INNER JOIN org_user u ON o.org_id = u.org_id AND u.firebase_id = ?
                         LEFT JOIN (
@@ -2346,6 +2454,9 @@ public class WebController {
             response.put("org_logo", profile.get("orgLogo"));
             response.put("email_id", profile.get("email_id"));
             response.put("mobile_number", profile.get("mobile_number"));
+            response.put("expiry_date",profile.get("plan_end_date"));
+            response.put("plan_end_date",profile.get("plan_end_date"));
+            response.put("plan_type", profile.get("plan_type"));
             response.put("user_role", profile.get("userRole"));
             response.put("optional_settings", profile.get("optionalSettings"));
             response.put("work_categories", workCategoriesStr);

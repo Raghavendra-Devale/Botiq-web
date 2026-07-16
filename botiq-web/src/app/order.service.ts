@@ -73,6 +73,12 @@ export class OrderService {
     return this.http.post<any>(this.baseUrl + "/getPaginatedOrders", payload);
   }
 
+  downloadReport() {
+    return this.http.get(this.baseUrl + '/exportOrders', {
+      responseType: 'blob'
+    });
+  }
+
   addOrUpdatePartner(partner: any) {
     return this.http.post<any>(this.baseUrl + "/savePartner", partner);
   }

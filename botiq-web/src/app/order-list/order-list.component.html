@@ -42,20 +42,6 @@
       </div>
     }
 
-    <!-- Plan Expiry Banner -->
-    @if (daysLeft !== null && daysLeft <= 30) {
-      <div class="alert plan-alert"
-        [ngClass]="daysLeft <= 7 ? 'danger-alert' : 'warning-alert'">
-        <div class="plan-content">
-          <div class="plan-info">
-            <strong>{{ currentPlan?.plan_type }}</strong>
-            <span class="subtext">{{ daysLeft }} days left</span>
-          </div>
-          <button class="btn-renew" (click)="onBuyNowClick()">Renew Plan</button>
-        </div>
-      </div>
-    }
-
     <!-- Main Card Component holding Table & Header Controls -->
     <div class="table-card">
       <!-- Table Action Header (Title + Tabs + Filter) -->
@@ -174,6 +160,19 @@
                   <th class="col-details">
                     <div class="th-inner">Order Details</div>
                   </th>
+                  <th class="col-due-date" (click)="sort('due_date')">
+                    <div class="th-inner">
+                      Due Date
+                      <span class="sort-indicator" [class.active]="sortColumn === 'due_date'">
+                        <svg class="sort-arrow"
+                          [class.desc]="sortColumn === 'due_date' && sortDirection === 'desc'"
+                          width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          stroke-width="3">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      </span>
+                    </div>
+                  </th>
                   <th class="col-price" (click)="sort('order_amount')">
                     <div class="th-inner">
                       Price
@@ -217,7 +216,17 @@
                         </label>
                       </td>
                       <td class="col-order-id font-medium text-slate-800">
-                        #{{ order.order_id }}
+                        <div class="order-id-wrapper">
+                          #{{ order.order_id }}
+                          @if (order.order_priority === 1) {
+                            <span class="priority-indicator urgent" title="Urgent Order">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                <line x1="4" y1="22" x2="4" y2="15"></line>
+                              </svg>
+                            </span>
+                          }
+                        </div>
                       </td>
                       <td class="col-customer">
                         <div class="customer-info">
@@ -232,6 +241,10 @@
                         <span class="details-text" [title]="formatOrderDetails(order.order_details)">
                           {{ formatOrderDetails(order.order_details) || 'No items listed' }}
                         </span>
+                      </td>
+                      <td class="col-due-date font-medium text-slate-600">
+                        <span class="mobile-label">Due Date: </span>
+                        <span class="due-date-text">{{ order.due_date ? (order.due_date | date:'dd MMM yyyy') : '—' }}</span>
                       </td>
                       <td class="col-price font-semibold">
                         ₹{{ order.order_amount }}
@@ -283,7 +296,7 @@
                   <!-- Empty State -->
                   @if (paginatedOrders.length === 0) {
                     <tr>
-                      <td colspan="7" class="empty-state-row">
+                      <td colspan="8" class="empty-state-row">
                         <div class="empty-state-container">
                           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1"
                             stroke-width="1.5">

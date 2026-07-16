@@ -132,7 +132,17 @@
                     </label>
                   </td>
                   <td class="col-order-id font-medium text-slate-800">
-                    #{{ order.order_id }}
+                    <div class="order-id-wrapper">
+                      #{{ order.order_id }}
+                      @if (order.job_priority === 1 || order.order_priority === 1) {
+                        <span class="priority-indicator urgent" title="Urgent Order">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                          </svg>
+                        </span>
+                      }
+                    </div>
                   </td>
                   <td class="col-customer">
                     <div class="customer-info">
@@ -150,8 +160,9 @@
                       }
                     </div>
                   </td>
-                  <td class="col-due-date font-medium" [class.overdue-text]="isOverdue(order)">
-                    {{ order.job_due_date | date:'mediumDate' }}
+                  <td class="col-due-date font-medium text-slate-600" [class.overdue-text]="isOverdue(order)">
+                    <span class="mobile-label">Due Date: </span>
+                    <span class="due-date-text">{{ order.job_due_date ? (order.job_due_date | date:'dd MMM yyyy') : '—' }}</span>
                   </td>
                   <td class="col-status">
                     <span class="status-badge" [ngClass]="getStatusClass(order)">

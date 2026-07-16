@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { Inject, Injectable, Injector } from '@angular/core';
+import { PlatformAuthService } from '../platform-auth-service';
 import {
   Auth,
   signInWithPhoneNumber,
@@ -61,7 +62,8 @@ export class AuthService {
 
   constructor(
     @Inject(Auth) private auth: Auth,
-    private http: HttpClient
+    private http: HttpClient,
+    private injector: Injector
   ) {
     if (!environment.production) {
       (this.auth.settings as any).appVerificationDisabledForTesting = true;
@@ -274,9 +276,9 @@ export class AuthService {
   }
 
   async logout() {
-
     this.clearSession();
     this.setBasicDetails(null);
+    sessionStorage.removeItem('auto_login_attempted');
 
     try {
       await signOut(this.auth);

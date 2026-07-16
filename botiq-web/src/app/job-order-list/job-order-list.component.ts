@@ -21,7 +21,7 @@ export class JobOrderListComponent {
 
   // Pagination & Sorting properties
   currentPage: number = 1;
-  pageSize: number = 5;
+  pageSize: number = 15;
   sortColumn: string = 'order_id';
   sortDirection: 'asc' | 'desc' = 'desc';
   selectedOrderIds = new Set<number>();

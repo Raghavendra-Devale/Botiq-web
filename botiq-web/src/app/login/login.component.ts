@@ -4,6 +4,7 @@ import { AuthService } from '../auth/auth.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { DataService } from '../data.service';
+import { PlatformAuthService } from '../platform-auth-service';
 
 @Component({
     selector: 'app-login',
@@ -21,21 +22,28 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private dataService: DataService
+    private dataService: DataService,
+    private platformAuthService: PlatformAuthService
   ) { }
 
   loading = true;
 
-ngOnInit() {
-
+async ngOnInit() {
   const forceOtp =
     this.route.snapshot.queryParamMap.get('otp');
 
   if (forceOtp === 'true') {
-
     this.loading = false;
-
     return;
+  }
+
+  try {
+    if (await this.platformAuthService.hasStoredMpin()) {
+      this.router.navigate(['/mpin-login']);
+      return;
+    }
+  } catch (e) {
+    console.error('Error checking stored MPIN status:', e);
   }
 
   this.authService.getDeviceStatus()

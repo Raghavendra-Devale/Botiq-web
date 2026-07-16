@@ -20,7 +20,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    padding: 12px 16px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -32,7 +32,7 @@
 
 .page-title {
     margin: 0;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
     color: #0f172a;
     letter-spacing: -0.5px;
@@ -113,10 +113,10 @@
    ALERTS & BANNERS
 ========================= */
 .scroll-content {
-    padding: 16px 20px;
+    padding: 12px 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .alert {
@@ -336,10 +336,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
+    padding: 12px 16px;
     border-bottom: 1px solid #f1f5f9;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
 }
 
 .title-area {
@@ -348,8 +348,8 @@
 }
 
 .table-title {
-    margin: 0 0 4px 0;
-    font-size: 20px;
+    margin: 0 0 2px 0;
+    font-size: 18px;
     font-weight: 700;
     color: #1c2434;
     letter-spacing: -0.3px;
@@ -357,14 +357,14 @@
 
 .table-subtitle {
     margin: 0;
-    font-size: 13.5px;
+    font-size: 13px;
     color: #64748b;
 }
 
 .header-actions-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
@@ -379,9 +379,9 @@
 }
 
 .table-card-header .segment-btn {
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 500;
     border-color: #e2e8f0;
 }
@@ -450,7 +450,7 @@
 ========================= */
 .table-search-container {
     position: relative;
-    padding: 12px 24px;
+    padding: 8px 16px;
     border-bottom: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
@@ -459,17 +459,17 @@
 
 .table-search-container .search-icon {
     position: absolute;
-    left: 36px;
+    left: 28px;
     color: #64748b;
 }
 
 .search-input-card {
     width: 100%;
-    padding: 10px 14px 10px 36px;
+    padding: 8px 12px 8px 32px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
     background: #ffffff;
-    font-size: 14px;
+    font-size: 13.5px;
     color: #1e293b;
     transition: all 0.2s;
 }
@@ -486,7 +486,7 @@
 
 .clear-search-btn {
     position: absolute;
-    right: 36px;
+    right: 28px;
     background: transparent;
     border: none;
     color: #94a3b8;
@@ -518,16 +518,19 @@
 
 .logistics-table th {
     background: #f8fafc;
-    padding: 14px 24px;
-    font-size: 13px;
+    padding: 4px 8px;
+    font-size: 12px;
     font-weight: 600;
     color: #475569;
     border-bottom: 1px solid #e2e8f0;
     user-select: none;
+    white-space: nowrap;
+    line-height: 1.4;
 }
 
 .logistics-table th.col-order-id,
 .logistics-table th.col-customer,
+.logistics-table th.col-due-date,
 .logistics-table th.col-price,
 .logistics-table th.col-status {
     cursor: pointer;
@@ -535,6 +538,7 @@
 
 .logistics-table th.col-order-id:hover,
 .logistics-table th.col-customer:hover,
+.logistics-table th.col-due-date:hover,
 .logistics-table th.col-price:hover,
 .logistics-table th.col-status:hover {
     background: #f1f5f9;
@@ -569,11 +573,13 @@
 }
 
 .logistics-table td {
-    padding: 16px 24px;
+    padding: 3px 8px;
     border-bottom: 1px solid #f1f5f9;
-    font-size: 14px;
+    font-size: 12.5px;
     color: #1e293b;
     vertical-align: middle;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 
 .table-row {
@@ -589,9 +595,12 @@
    CUSTOM SLEEK CHECKBOXES
 ========================= */
 .checkbox-container {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
-    padding-left: 20px;
+    width: 14px;
+    height: 14px;
     cursor: pointer;
     user-select: none;
 }
@@ -606,21 +615,21 @@
 
 .checkmark {
     position: absolute;
-    top: -8px;
+    top: 0;
     left: 0;
-    height: 16px;
-    width: 16px;
+    height: 14px;
+    width: 14px;
     background-color: #ffffff;
     border: 1.5px solid #cbd5e1;
-    border-radius: 4px;
+    border-radius: 3px;
     transition: all 0.2s ease;
 }
 
-.checkbox-container:hover input ~ .checkmark {
+.checkbox-container:hover input~.checkmark {
     border-color: #2563eb;
 }
 
-.checkbox-container input:checked ~ .checkmark {
+.checkbox-container input:checked~.checkmark {
     background-color: #2563eb;
     border-color: #2563eb;
 }
@@ -631,7 +640,7 @@
     display: none;
 }
 
-.checkbox-container input:checked ~ .checkmark:after {
+.checkbox-container input:checked~.checkmark:after {
     display: block;
 }
 
@@ -649,36 +658,56 @@
    COLUMN SPECIFICS
 ========================= */
 .col-checkbox {
-    width: 50px;
+    width: 40px;
+    text-align: center;
 }
 
 .col-order-id {
-    width: 110px;
+    width: 90px;
     font-weight: 500;
 }
 
+.order-id-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.priority-indicator.urgent {
+    color: #ef4444;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .col-customer {
-    width: 180px;
+    width: 160px;
 }
 
 .customer-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
 }
 
 .customer-name-text {
     font-weight: 600;
     color: #1c2434;
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
 }
 
 .customer-phone {
-    font-size: 12px;
-    color: #64748b;
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.2;
 }
 
 .col-details {
-    max-width: 250px;
+    max-width: 220px;
 }
 
 .details-text {
@@ -687,19 +716,53 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: #475569;
+    font-size: 13px;
+}
+
+.col-due-date {
+    width: 110px;
+    color: #475569;
+    text-align: right;
+}
+
+.col-due-date .th-inner {
+    justify-content: flex-end;
+}
+
+.due-date-text {
+    font-size: 13px;
 }
 
 .col-price {
-    width: 110px;
+    width: 90px;
     color: #1c2434;
+    text-align: right;
+}
+
+.col-price .th-inner {
+    justify-content: flex-end;
 }
 
 .col-status {
-    width: 120px;
+    width: 110px;
+    text-align: right;
+}
+
+.col-status .th-inner {
+    justify-content: flex-end;
 }
 
 .col-actions {
-    width: 130px;
+    width: 120px;
+    text-align: right;
+}
+
+.col-actions .th-inner {
+    justify-content: flex-end;
+}
+
+.mobile-label {
+    display: none;
 }
 
 /* =========================
@@ -708,11 +771,13 @@
 .status-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
+    padding: 1px 6px;
     border-radius: 9999px;
-    font-size: 12.5px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: capitalize;
+    white-space: nowrap;
+    line-height: 1.4;
 }
 
 .status-badge.delivered {
@@ -743,10 +808,10 @@
 
 .status-badge .status-dot {
     display: inline-block;
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
-    margin-right: 6px;
+    margin-right: 4px;
     background-color: currentColor;
 }
 
@@ -755,19 +820,21 @@
 ========================= */
 .action-buttons-row {
     display: flex;
-    gap: 8px;
+    gap: 4px;
+    justify-content: flex-end;
 }
 
 .action-btn-circle {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .action-btn-circle.call {
@@ -813,14 +880,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 0;
+    padding: 32px 0;
     color: #94a3b8;
     gap: 12px;
 }
 
 .empty-state-container p {
     margin: 0;
-    font-size: 14.5px;
+    font-size: 13.5px;
     font-weight: 500;
 }
 
@@ -831,15 +898,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
+    padding: 10px 16px;
     border-top: 1px solid #f1f5f9;
     background: #ffffff;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
 }
 
 .showing-records {
-    font-size: 14px;
+    font-size: 13px;
     color: #64748b;
 }
 
@@ -857,8 +924,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     border: 1px solid #e2e8f0;
     background: #ffffff;
     border-radius: 6px;
@@ -879,14 +946,16 @@
 }
 
 .current-page-indicator {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #475569;
-    padding: 0 12px;
+    padding: 0 10px;
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .animate-spin {
@@ -987,7 +1056,7 @@
     .logistics-table tbody {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
         padding: 4px 12px 16px 12px;
     }
 
@@ -997,21 +1066,22 @@
             "checkbox order-id status"
             "customer customer price"
             "details details details"
+            "due-date due-date due-date"
             "actions actions actions";
         grid-template-columns: auto 1fr auto;
-        gap: 12px;
-        padding: 16px;
+        gap: 8px;
+        padding: 12px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .logistics-table tr.table-row:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         background-color: #ffffff;
     }
 
@@ -1028,23 +1098,24 @@
         grid-area: checkbox;
         display: flex;
         align-items: center;
-        margin-right: 8px;
+        margin-right: 6px;
     }
 
     .col-checkbox .checkbox-container {
-        padding-left: 20px;
-        height: 20px;
+        height: 16px;
+        width: 16px;
         display: flex;
         align-items: center;
+        justify-content: center;
     }
 
     .col-checkbox .checkmark {
-        top: 2px;
+        top: 0;
     }
 
     .col-order-id {
         grid-area: order-id;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
         color: #0f172a;
         display: flex;
@@ -1063,20 +1134,20 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        margin-top: 4px;
+        margin-top: 2px;
     }
 
     .customer-info {
-        gap: 2px;
+        gap: 1px;
     }
 
     .customer-name-text {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .col-price {
         grid-area: price;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 700;
         color: #0f172a;
         display: flex;
@@ -1087,25 +1158,41 @@
     .col-details {
         grid-area: details;
         background: #f8fafc;
-        padding: 10px 14px !important;
-        border-radius: 8px;
+        padding: 8px 12px !important;
+        border-radius: 6px;
         border: 1px solid #f1f5f9;
-        margin-top: 4px;
+        margin-top: 2px;
     }
 
     .details-text {
         white-space: normal;
         overflow: visible;
         text-overflow: clip;
-        font-size: 13.5px;
+        font-size: 12.5px;
         line-height: 1.4;
+    }
+
+    .col-due-date {
+        grid-area: due-date;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .col-due-date .mobile-label {
+        font-weight: 600;
+        color: #475569;
+        display: inline;
     }
 
     .col-actions {
         grid-area: actions;
         border-top: 1px solid #f1f5f9 !important;
-        padding-top: 12px !important;
-        margin-top: 6px;
+        padding-top: 8px !important;
+        margin-top: 4px;
         display: flex;
         justify-content: flex-end;
     }
@@ -1114,12 +1201,12 @@
         width: 100%;
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
+        gap: 8px;
     }
 
     .action-btn-circle {
-        width: 36px;
-        height: 36px;
+        width: 30px;
+        height: 30px;
     }
 }
 
@@ -1157,7 +1244,8 @@
         right: 24px;
     }
 
-    .btn-filter, .btn-add-order {
+    .btn-filter,
+    .btn-add-order {
         width: 100%;
         flex: none;
     }

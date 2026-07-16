@@ -24,7 +24,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         HttpSession session = request.getSession(false);
 
-        System.out.println("SESSION FILTER HIT");
+//        System.out.println("SESSION FILTER HIT");
 
 
 

@@ -17,7 +17,14 @@ export class OrderListComponent implements OnInit, OnDestroy {
   private searchSubscription!: Subscription;
 
   exportOrders() {
-    console.log("export orders as csv or pdf");
+    this.orderService.downloadReport().subscribe((blob: Blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'orders.xlsx';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
   }
 
   orders: any[] = [];
@@ -37,11 +44,8 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   loading = false;
   hasMore = true;
-  limit = 10;
+  limit = 15;
   offset = 0;
-  daysLeft: number | null = 5;
-  currentPlan: any = { plan_type: 'Free' };
-  nextPlan: any = null;
   mobileNumber: any;
 
   // Pagination & Sorting properties
@@ -98,9 +102,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
     console.log('Navigate to dashboard');
   }
 
-  onBuyNowClick() {
-    this.router.navigate(['/plan-page']);
-  }
+
   fetchOrders(reset = false) {
     if (reset) {
       this.orders = [];

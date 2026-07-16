@@ -371,3 +371,102 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Plan Expiry Banner styles */
+.plan-alert {
+    padding: 16px;
+    border-radius: var(--border-radius-md);
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    animation: slideInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.plan-alert.fade-out {
+    animation: slideOutUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.warning-alert {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.danger-alert {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.plan-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.plan-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.plan-info strong {
+    font-size: 15px;
+}
+
+.subtext {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.btn-renew {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #0f172a;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+}
+
+.btn-renew:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+}
+
+.danger-alert .btn-renew {
+    background: #dc2626;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 100px;
+        margin-bottom: 20px;
+        padding: 16px;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+        max-height: 0;
+        margin-bottom: 0;
+        padding: 0 16px;
+    }
+}

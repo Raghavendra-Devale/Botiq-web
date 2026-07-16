@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
+import { PlatformAuthService } from '../../../platform-auth-service';
 
 @Component({
     selector: 'app-setup-mpin',
@@ -20,7 +21,8 @@ export class SetupMpinComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private platformAuthService: PlatformAuthService
   ) {}
 
   setupMpin() {
@@ -48,10 +50,13 @@ export class SetupMpinComponent {
           this.authService.setupMpin(this.mpin)
             .subscribe({
 
-              next: () => {
-
+              next: async () => {
+                try {
+                  await this.platformAuthService.saveMpin(this.mpin);
+                } catch (saveErr) {
+                  console.error('Failed to save MPIN on device:', saveErr);
+                }
                 this.loading = false;
-
                 this.router.navigate([
                   '/dashboard'
                 ]);
