@@ -76,6 +76,7 @@
     padding: 8px 0;
     border-bottom: 1px solid #f1f5f9;
     font-size: 14px;
+    gap: 8px;
 }
 .info-row:last-child {
     border-bottom: none;
@@ -83,11 +84,13 @@
 .info-label {
     color: #64748b;
     font-weight: 500;
+    flex-shrink: 0;
 }
 .info-value {
     color: #1e293b;
     font-weight: 600;
     text-align: right;
+    word-break: break-word;
 }
 
 /* LOGO */
@@ -295,10 +298,18 @@
 }
 
 .category-input-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 12px;
+}
+
+@media (min-width: 600px) {
+    .category-input-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
 }
 
 .input-box {
@@ -307,24 +318,36 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     padding: 6px 10px;
+    background: white;
 }
 
 .input-box input {
     border: none;
     flex: 1;
+    min-width: 0;
     outline: none;
+    font-size: 14px;
 }
 
 .add-btn {
     cursor: pointer;
     font-size: 18px;
     color: #1976d2;
+    padding-left: 6px;
 }
 
 .category-display-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 16px;
+}
+
+@media (min-width: 600px) {
+    .category-display-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
 }
 
 .tags-container {
@@ -338,12 +361,17 @@
     padding: 6px 10px;
     border-radius: 14px;
     font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    word-break: break-word;
 }
 
 .remove {
     margin-left: 6px;
     cursor: pointer;
     color: red;
+    font-weight: bold;
 }
 
 .save-section {
@@ -381,6 +409,7 @@
     background: #fafafa;
     padding: 10px;
     border-radius: 8px;
+    min-width: 0;
 }
 
 /* SUB TITLE */

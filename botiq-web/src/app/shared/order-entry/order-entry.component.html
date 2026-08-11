@@ -1,0 +1,164 @@
+<div class="order-page" [class.details-closed]="!detailsOpen">
+  <header class="topbar">
+    <div class="topbar-main">
+      <button class="icon-button menu" aria-label="Main menu">☰</button>
+      <div class="order-title">
+        <strong>Edit Order</strong>
+        <span>#1020</span>
+      </div>
+      <div class="customer">
+        <strong>Raghavendra</strong>
+        <span>7676500120</span>
+        <span>Davanagere</span>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <span class="save-state">● Saved</span>
+      <button class="secondary-button">Previous Orders</button>
+      <button class="secondary-button">Job Order</button>
+      <button class="primary-button">Update Order</button>
+      <button class="details-trigger" (click)="detailsOpen = !detailsOpen">
+        References <span class="count-pill">5</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="entry-panel">
+      <section class="garment-picker card">
+        <div class="section-label">Add garment</div>
+        <div class="garment-buttons">
+          <button *ngFor="let garment of garmentTypes"
+                  (click)="addGarment(garment)"
+                  [class.more]="garment === 'More'">
+            {{ garment }}
+          </button>
+          <button class="custom-garment">＋ Custom item</button>
+        </div>
+      </section>
+
+      <section class="items-card card">
+        <div class="items-heading">
+          <div>
+            <span class="section-label">Order items</span>
+            <span class="items-count">{{ items.length }} items</span>
+          </div>
+          <span class="hint">Tap an item to view more details</span>
+        </div>
+
+        <div class="item-table">
+          <div class="item-row table-head">
+            <span>Item</span><span>Qty</span><span>Rate</span><span>Total</span><span></span>
+          </div>
+
+          <div class="item-row" *ngFor="let item of items; let i = index">
+            <div class="item-name"><span class="garment-icon">{{ item.icon }}</span>{{ item.name }}</div>
+            <div class="stepper">
+              <button (click)="changeQuantity(item, -1)">−</button>
+              <strong>{{ item.quantity }}</strong>
+              <button (click)="changeQuantity(item, 1)">＋</button>
+            </div>
+            <label class="money-input"><span>₹</span><input type="number" [(ngModel)]="item.rate"></label>
+            <strong class="line-total">{{ item.quantity * item.rate | currency:'INR':'symbol':'1.0-0' }}</strong>
+            <button class="delete-button" (click)="removeItem(i)" aria-label="Remove item">⌫</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="billing-card card">
+        <div class="billing-totals">
+          <div><span>Subtotal</span><strong>{{ subtotal | currency:'INR':'symbol':'1.0-0' }}</strong></div>
+          <div><span>Discount</span><strong>₹0</strong></div>
+          <div class="grand-total"><span>Total</span><strong>{{ subtotal | currency:'INR':'symbol':'1.0-0' }}</strong></div>
+        </div>
+
+        <div class="order-meta">
+          <label>Due date <input type="date" value="2026-07-16"></label>
+          <label>Status
+            <select [(ngModel)]="status">
+              <option>Draft</option>
+              <option>Confirmed</option>
+              <option>In progress</option>
+              <option>Trial ready</option>
+              <option>Ready</option>
+              <option>Delivered</option>
+            </select>
+          </label>
+          <label>Priority <button class="urgent">🔥 Urgent</button></label>
+          <label>Advance <span class="inline-money">₹ <input type="number" [(ngModel)]="advance"></span></label>
+          <div class="balance"><span>Balance</span><strong>{{ balance | currency:'INR':'symbol':'1.0-0' }}</strong></div>
+        </div>
+
+        <div class="billing-actions">
+          <button class="secondary-button">Save Draft</button>
+          <button class="primary-button">Confirm Order</button>
+        </div>
+      </section>
+    </section>
+
+    <aside class="details-panel" [class.open]="detailsOpen">
+      <div class="details-heading">
+        <div>
+          <span class="section-label">Order references</span>
+          <small>Common to this order</small>
+        </div>
+        <button class="icon-button" (click)="detailsOpen = false" aria-label="Close details">›</button>
+      </div>
+
+      <div class="reference-list">
+        <article class="reference-card" *ngFor="let reference of references"
+                 (click)="openCategory(reference)">
+          <div class="preview" *ngIf="reference.image; else noPhoto"
+               [style.background]="reference.image">
+            <span class="photo-count">＋{{ reference.count - 1 }}</span>
+          </div>
+          <ng-template #noPhoto>
+            <div class="preview empty">📷<small>No photo</small></div>
+          </ng-template>
+          <div class="reference-info">
+            <div><strong>{{ reference.name }}</strong><span>{{ reference.count }} photo{{ reference.count === 1 ? '' : 's' }}</span></div>
+            <div class="reference-actions">
+              <button title="Capture photo">📷</button>
+              <button>View / Edit</button>
+            </div>
+          </div>
+        </article>
+
+        <div class="notes-heading">Notes</div>
+
+        <article class="compact-reference">
+          <div class="sketch-preview">〽</div>
+          <div><strong>Drawing note</strong><span>1 sketch</span></div>
+          <button>Open</button>
+        </article>
+
+        <article class="compact-reference voice">
+          <button class="play">▶</button>
+          <div><strong>Voice note</strong><span>01:24 recorded</span></div>
+          <button>Record</button>
+        </article>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="modal-backdrop" *ngIf="modalCategory" (click)="modalCategory = null">
+  <section class="photo-modal" (click)="$event.stopPropagation()">
+    <header>
+      <div><strong>{{ modalCategory.name }} photos</strong><span>Order #1020</span></div>
+      <button class="icon-button" (click)="modalCategory = null">×</button>
+    </header>
+    <div class="modal-gallery">
+      <div class="gallery-photo primary" [style.background]="modalCategory.image">
+        <span>✓ Primary</span>
+      </div>
+      <div class="gallery-photo alternate"></div>
+      <button class="add-photo">＋<span>Add photo</span></button>
+    </div>
+    <footer>
+      <button class="secondary-button">📷 Take photo</button>
+      <button class="primary-button" (click)="modalCategory = null">Done</button>
+    </footer>
+  </section>
+</div>

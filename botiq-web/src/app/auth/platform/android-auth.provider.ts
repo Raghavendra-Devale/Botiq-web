@@ -3,16 +3,6 @@ import { AuthProvider } from "./auth-provider";
 import { AuthService } from "../auth.service";
 import { firstValueFrom } from "rxjs";
 
-declare global {
-  interface Window {
-    AndroidBridge?: any;
-
-    AndroidCallbacks: {
-      onBiometricLoginSuccess: (response: string) => void;
-      onBiometricLoginError: (error: string) => void;
-    };
-  }
-}
 
 @Injectable({
     providedIn: 'root'
@@ -63,7 +53,7 @@ export class AndroidAuthProvider implements AuthProvider {
         if (!window.AndroidBridge) {
             return;
         }
-        window.AndroidBridge.authenticateWithBiometric();
+        window.AndroidBridge.authenticateWithBiometric?.();
     }
 
     async loginWithMpin(mpin: string): Promise<any> {
@@ -99,11 +89,11 @@ export class AndroidAuthProvider implements AuthProvider {
                 return new Promise((resolve, reject) => {
                     this.biometricPromiseResolver = resolve;
                     this.biometricPromiseRejecter = reject;
-                    window.AndroidBridge.authenticateWithBiometric();
+                    window.AndroidBridge?.authenticateWithBiometric?.();
                 });
             } else if (typeof window.AndroidBridge.loginWithStoredMpin === 'function') {
                 console.log("[AndroidAuthProvider] Calling AndroidBridge.loginWithStoredMpin()");
-                const response = window.AndroidBridge.loginWithStoredMpin();
+                const response = window.AndroidBridge.loginWithStoredMpin() || '{}';
                 console.log("[AndroidAuthProvider] Stored MPIN login response:", response);
                 return JSON.parse(response);
             } else {
@@ -121,7 +111,7 @@ export class AndroidAuthProvider implements AuthProvider {
             console.log("[AndroidAuthProvider] window.AndroidBridge is available");
             if (typeof window.AndroidBridge.saveMpin === 'function') {
                 console.log("[AndroidAuthProvider] Calling AndroidBridge.saveMpin()");
-                const result = window.AndroidBridge.saveMpin(mpin);
+                const result = window.AndroidBridge.saveMpin(mpin) || '';
                 console.log("[AndroidAuthProvider] AndroidBridge.saveMpin response:", result);
                 try {
                     const parsed = JSON.parse(result);
@@ -176,5 +166,36 @@ export class AndroidAuthProvider implements AuthProvider {
             console.log("[AndroidAuthProvider] window.AndroidBridge is undefined, returning false");
         }
         return false;
+    }
+
+    hasServerIp(): boolean {
+        const bridge = window.AndroidBridge;
+        if (bridge && typeof bridge.hasServerIp === 'function') {
+            return bridge.hasServerIp();
+        }
+        return false;
+    }
+
+    getServerIp(): string {
+        const bridge = window.AndroidBridge;
+        if (bridge && typeof bridge.getServerIp === 'function') {
+            return bridge.getServerIp();
+        }
+        return '';
+    }
+
+    saveServerIp(ip: string): boolean {
+        const bridge = window.AndroidBridge;
+        if (bridge && typeof bridge.saveServerIp === 'function') {
+            return bridge.saveServerIp(ip);
+        }
+        return false;
+    }
+
+    reloadApplication(): void {
+        const bridge = window.AndroidBridge;
+        if (bridge && typeof bridge.reloadApplication === 'function') {
+            bridge.reloadApplication();
+        }
     }
 }

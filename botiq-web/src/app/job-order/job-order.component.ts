@@ -74,19 +74,21 @@ export class JobOrderComponent implements OnInit {
 
   loadPartners() {
     this.orderService.getPartners().subscribe((res: any) => {
-      this.partners = res;
+      const allPartners = res || [];
+      this.partners = allPartners.filter(
+        (p: any) => p.enabled == 1 || p.enabled === true || p.enabled === '1' || p.enabled === 'true'
+      );
 
       // ✅ Now map partner into jobOrders (after API loads)
       this.jobOrders.forEach(job => {
         if (job.partnerId) {
-          job.selectedPartner = this.partners.find(
-            p => (p.partner_id || p.partnerId) === job.partnerId
+          job.selectedPartner = allPartners.find(
+            (p: any) => (p.partner_id || p.partnerId) === job.partnerId
           ) || null;
         }
       });
     });
   }
-
 
   reverseMapPriority(priority: number): string {
     switch (priority) {
@@ -205,4 +207,3 @@ export class JobOrderComponent implements OnInit {
     });
   }
 }
-

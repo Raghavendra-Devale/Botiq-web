@@ -1,98 +1,114 @@
-<!-- Mobile Burger Button -->
-@if (isCollapsed) {
-  <button class="mobile-burger-btn" (click)="isCollapsed = false" aria-label="Open Sidebar">
-    <i class="fa-solid fa-bars"></i>
-  </button>
-}
-
-<!-- Backdrop overlay on mobile -->
-@if (!isCollapsed) {
-  <div class="sidebar-backdrop" (click)="isCollapsed = true"></div>
-}
-
 <div class="sidebar" [class.collapsed]="isCollapsed">
   <div class="logo-section">
     @if (!isCollapsed) {
-      <div class="logo">
-        <!-- <img src="{{orgLogo}}" alt="Logo"
-        onerror="this.src='https://ui-avatars.com/api/?name=Raghavendra&background=3b82f6&color=fff&rounded=true'"> -->
-        <span class="logo-text">Botiq</span>
-      </div>
+    <div class="logo">
+      <span class="logo-text">Botiq</span>
+    </div>
     }
-    <button class="toggle-btn" (click)="isCollapsed = !isCollapsed" aria-label="Toggle Sidebar">
+    <button class="toggle-btn" (click)="toggleSidebar()" aria-label="Toggle Sidebar"
+      [title]="isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'">
       <i class="fa-solid fa-bars"></i>
     </button>
   </div>
 
   <ul class="menu">
-    <li class="menu-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    <li class="menu-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+      [title]="isCollapsed ? 'Dashboard' : ''">
       <a routerLink="/dashboard">
         <i class="fa-solid fa-chart-pie"></i>
         <span>Dashboard</span>
       </a>
     </li>
-
-    <li class="menu-item" routerLinkActive="active">
+    @if (role == 'OWNER' || role == 'APP_USER') {
+    <li class="menu-item" routerLinkActive="active" [title]="isCollapsed ? 'Customer Orders' : ''">
       <a routerLink="/order-list">
         <i class="fa-solid fa-box"></i>
         <span>Customer Orders</span>
       </a>
     </li>
+    }
 
-    <li class="menu-item" routerLinkActive="active">
+    @if (role == 'OWNER' || role == 'APP_USER') {
+    <li class="menu-item" routerLinkActive="active" [title]="isCollapsed ? 'Job Order' : ''">
       <a routerLink="/job-order-list">
         <i class="fa-solid fa-list-check"></i>
         <span>Job Order</span>
       </a>
     </li>
-
+    }
+    @if (role == 'OWNER' || role == 'APP_USER') {
+    <li class="menu-item" routerLinkActive="active" [title]="isCollapsed ? 'Reports' : ''">
+      <a routerLink="/reports">
+        <i class="fa-solid fa-chart-column"></i>
+        <span>Reports</span>
+      </a>
+    </li>
+    }
     <!-- Settings and Security -->
     @if (role == 'OWNER') {
-      <li class="menu-item" routerLinkActive="active">
-        <a routerLink="/user-profile">
-          <i class="fa-solid fa-gear"></i>
-          <span>Settings</span>
-        </a>
-      </li>
+    <li class="menu-item" routerLinkActive="active" [title]="isCollapsed ? 'Settings' : ''">
+      <a routerLink="/user-profile">
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+      </a>
+    </li>
     }
 
     @if (role == 'OWNER') {
-      <li class="menu-item disabled">
-        <a routerLink="/partners-list">
-          <i class="fa-solid fa-handshake"></i>
-          <span>Partners</span>
-        </a>
-      </li>
+    <li class="menu-item disabled" [title]="isCollapsed ? 'Partners' : ''">
+      <a routerLink="/partners-list">
+        <i class="fa-solid fa-handshake"></i>
+        <span>Partners</span>
+      </a>
+    </li>
+    }
+
+    @if (role == 'OWNER') {
+    <li class="menu-item" routerLinkActive="active" [title]="isCollapsed ? 'New Order' : ''">
+      <a routerLink="dashboard-v2">
+        <i class="fa-solid fa-plus"></i>
+        <span>New Order list</span>
+      </a>
+    </li>
     }
 
     @if (role == 'OWNER' ) {
-      <li class="menu-item disabled" routerLinkActive="active">
-        <a routerLink="/add-new-user">
-          <i class="fa-solid fa-user-plus"></i>
-          <span>Users</span>
-        </a>
-      </li>
+    <li class="menu-item disabled" routerLinkActive="active" [title]="isCollapsed ? 'Users' : ''">
+      <a routerLink="/add-new-user">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Users</span>
+      </a>
+    </li>
     }
+    @if (role == 'OWNER' || role == 'APP_USER') {
 
-    <li class="menu-item disabled">
+    <li class="menu-item disabled" [title]="isCollapsed ? 'Support-Plan' : ''">
       <a routerLink="/plan-page">
         <i class="fa-solid fa-circle-question"></i>
         <span>Support-Plan</span>
       </a>
     </li>
+    }
   </ul>
 
-
   <div class="user-profile">
-    <div class="user-info">
-      <div class="user-avatar">{{initial}}</div>
+    <div class="user-info" [title]="userName || businessName || 'User Profile'">
+      <div class="user-avatar">{{initial || 'B'}}</div>
+      @if (!isCollapsed) {
       <div class="user-details">
-        <div class="user-name">{{businessName}}</div>
-        <div class="user-role">{{role}}</div>
+        <div class="user-name">{{userName || businessName || 'User'}}</div>
+        <div class="user-role">{{role || 'Admin'}}</div>
       </div>
+      }
     </div>
+    @if (!isCollapsed) {
     <button class="logout-btn" (click)="logout()" title="Logout">
       <i class="fa-solid fa-right-from-bracket"></i>
     </button>
+    } @else {
+    <button class="logout-btn collapsed-logout" (click)="logout()" title="Logout">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </button>
+    }
   </div>
 </div>

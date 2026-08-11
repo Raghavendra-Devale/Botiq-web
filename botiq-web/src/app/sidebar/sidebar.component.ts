@@ -1,5 +1,5 @@
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, HostBinding } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { Subscription } from 'rxjs';
@@ -17,13 +17,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
   businessName = '';
   orgLogo = '';
   role = '';
-  isCollapsed = false;
+
+  @HostBinding('class.collapsed')
+  isCollapsed = true;
   private sub!: Subscription;
 
   constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit() {
-    this.isCollapsed = window.innerWidth <= 768;
+    this.checkScreenSize();
     this.sub = this.authService.basicDetails$.subscribe(details => {
       if (details) {
         this.userName = details.owner_name || '';
@@ -37,6 +39,28 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.role = '';
       }
     });
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.checkScreenSize();
+  }
+
+  private checkScreenSize() {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth <= 1024;
+      if (isMobile) {
+        this.isCollapsed = true;
+      }
+    }
+  }
+
+  toggleSidebar() {
+    this.isCollapsed = !this.isCollapsed;
+  }
+
+  onNavClick() {
+    this.isCollapsed = true;
   }
 
   ngOnDestroy() {

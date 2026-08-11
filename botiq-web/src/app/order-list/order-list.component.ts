@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -27,13 +27,14 @@ export class OrderListComponent implements OnInit, OnDestroy {
     });
   }
 
-  orders: any[] = [];
+  orders = signal<any[]>([]);
+
   filteredOrders: any[] = [];
   notes: any[] = [];
   selectedItems: any[] = [];
 
   selectedSegment: string = 'All';
-  searchQuery: string = '';
+  searchQuery = signal('');
   tabId: number = 0;
   tabLabel: string = '';
   isSearchBarVisible = true;
@@ -74,7 +75,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
       debounceTime(300),
       distinctUntilChanged()
     ).subscribe(query => {
-      this.searchQuery = query;
+      this.searchQuery.set(query);
       this.fetchOrders(true);
     });
 
@@ -105,7 +106,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   fetchOrders(reset = false) {
     if (reset) {
-      this.orders = [];
+      this.orders.set([]);
       this.paginatedOrders = [];
       this.filteredOrders = [];
       this.selectedItems = [];
@@ -132,7 +133,8 @@ export class OrderListComponent implements OnInit, OnDestroy {
       status = this.selectedSegment;
     }
 
-    const searchCriteria = this.searchQuery && this.searchQuery.trim() !== '' ? this.searchQuery : null;
+    const query = this.searchQuery().trim();
+    const searchCriteria = query !== '' ? query : null;
 
     const payload = {
       limit: this.limit,
@@ -150,12 +152,12 @@ export class OrderListComponent implements OnInit, OnDestroy {
         const transformedOrders = fetchedOrders.map(order => this.transformOrder(order));
         
         // Always replace orders for the page instead of appending
-        this.orders = transformedOrders;
+        this.orders.set(transformedOrders);
 
         // If we fetched exactly the limit, there might be more
         this.hasMore = fetchedOrders.length === this.limit;
 
-        this.selectedItems = (this.orders.length > 0) ? this.orders[0].order_details : [];
+        this.selectedItems = (this.orders().length > 0) ? this.orders()[0].order_details : [];
         console.log(this.selectedItems);
 
         this.applyFilters();
@@ -188,9 +190,9 @@ export class OrderListComponent implements OnInit, OnDestroy {
     console.log('Delete order:', order, index);
     this.orderService.deleteOrder({ id: order.order_id }).subscribe({
       next: () => {
-        const mainIndex = this.orders.findIndex(o => o.order_id === order.order_id);
+        const mainIndex = this.orders().findIndex(o => o.order_id === order.order_id);
         if (mainIndex !== -1) {
-          this.orders.splice(mainIndex, 1);
+          this.orders().splice(mainIndex, 1);
         }
         this.selectedOrderIds.delete(order.order_id);
         this.applyFilters();
@@ -200,20 +202,20 @@ export class OrderListComponent implements OnInit, OnDestroy {
       }
     });
   }
-  onSearchInput(event: any) {
-    this.searchSubject.next(event.target.value);
-  }
 
+  onSearchInput(value: string) {
+    this.searchQuery.set(value);
+    this.searchSubject.next(value);
+}
   onSegmentChange(segment: string) {
     this.selectedSegment = segment;
     this.fetchOrders(true);
   }
 
   onCancelSearch() {
-    this.searchQuery = '';
-    console.log('Search cleared');
+    this.searchQuery.set('');
     this.fetchOrders(true);
-  }
+}
   dismissNote(id: number) {
     console.log('Dismiss note:', id);
   }
@@ -232,8 +234,111 @@ export class OrderListComponent implements OnInit, OnDestroy {
     console.log('WhatsApp:', name, number);
   }
 
+  getMaterialImage(order: any): string | null {
+    if (!order) return null;
+
+    const isImage = (val: any): string | null => {
+      if (!val || typeof val !== 'string') return null;
+      const str = val.trim();
+      if (str.startsWith('data:image/') || str.startsWith('http://') || str.startsWith('https://') || str.startsWith('assets/') || str.startsWith('blob:') || /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(str)) {
+        return str;
+      }
+      return str.length > 15 ? str : null;
+    };
+
+    // 1. Direct properties
+    for (const key of ['material_image', 'material_url', 'first_material_image', 'image', 'image_url', 'photo', 'photo_url', 'details_data', 'material']) {
+      const img = isImage(order[key]);
+      if (img) return img;
+    }
+
+    // 2. Documents array (details_type 2 = material)
+    if (Array.isArray(order.documents) && order.documents.length > 0) {
+      const matDoc = order.documents.find((doc: any) => Number(doc.details_type) === 2 || doc.type === 'material' || doc.details_type === 'material');
+      if (matDoc) {
+        const url = isImage(matDoc.details_data || matDoc.url || matDoc.image_url || matDoc.file_path || matDoc.blobUrl);
+        if (url) return url;
+      }
+      for (const doc of order.documents) {
+        const url = isImage(doc.details_data || doc.url || doc.image_url || doc.file_path || doc.blobUrl);
+        if (url) return url;
+      }
+    }
+
+    // 3. Materials array
+    if (Array.isArray(order.materials) && order.materials.length > 0) {
+      for (const mat of order.materials) {
+        if (typeof mat === 'string') {
+          const url = isImage(mat);
+          if (url) return url;
+        } else if (mat && typeof mat === 'object') {
+          const url = isImage(mat.url || mat.details_data || mat.blobUrl || mat.image || mat.image_url);
+          if (url) return url;
+        }
+      }
+    }
+
+    // 4. Attachments / files / images arrays
+    for (const arrKey of ['attachments', 'files', 'images', 'photos']) {
+      if (Array.isArray(order[arrKey]) && order[arrKey].length > 0) {
+        for (const item of order[arrKey]) {
+          const url = isImage(typeof item === 'string' ? item : (item.url || item.details_data || item.image || item.file_path));
+          if (url) return url;
+        }
+      }
+    }
+
+    // 5. order_details items
+    let details = order.order_details;
+    if (typeof details === 'string') {
+      try { details = JSON.parse(details); } catch (e) { details = []; }
+    }
+    if (Array.isArray(details) && details.length > 0) {
+      for (const item of details) {
+        if (!item || typeof item !== 'object') continue;
+        for (const key of ['material_image', 'material_url', 'image', 'image_url', 'photo', 'photo_url', 'url']) {
+          const url = isImage(item[key]);
+          if (url) return url;
+        }
+        if (Array.isArray(item.materials) && item.materials.length > 0) {
+          for (const mat of item.materials) {
+            const url = isImage(typeof mat === 'string' ? mat : (mat.url || mat.details_data || mat.blobUrl || mat.image));
+            if (url) return url;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  openImagePreview(imageUrl: string, event: Event) {
+    event.stopPropagation();
+    this.selectedImage = imageUrl;
+    this.isModalOpen = true;
+  }
+
+  closeImagePreview() {
+    this.isModalOpen = false;
+    this.selectedImage = null;
+  }
+
+  isStatusStepActive(orderStatus: string, step: number): boolean {
+    if (!orderStatus) return step <= 1;
+    const status = orderStatus.toLowerCase();
+    const statusLevels: Record<string, number> = {
+      'pending': 1,
+      'started': 2,
+      'processing': 3,
+      'ready': 4,
+      'delivered': 5
+    };
+    const currentLevel = statusLevels[status] || 1;
+    return step <= currentLevel;
+  }
+
   getImages(order: any) {
-    return 'assets/images/noimge.jpg';
+    return this.getMaterialImage(order) || 'assets/images/noimge.jpg';
   }
 
   getStatusClass(order: any, status: string) {
@@ -317,7 +422,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   applyFilters() {
-    let temp = [...this.orders];
+    let temp = [...this.orders()];
 
     // Sort
     if (this.sortColumn) {
@@ -367,16 +472,16 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   getTabCount(tab: string): number {
     if (tab === 'All') {
-      return this.orders.length;
+      return this.orders().length;
     }
-    return this.orders.filter(order => order.order_status?.toLowerCase() === tab.toLowerCase()).length;
+    return this.orders().filter((order: any) => order.order_status?.toLowerCase() === tab.toLowerCase()).length;
   }
 
   getCustomTabCount(): number {
     if (!this.tabId) return 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    let temp = [...this.orders];
+    let temp = [...this.orders()];
     switch (this.tabId) {
       case 1:
         temp = temp.filter(order => {

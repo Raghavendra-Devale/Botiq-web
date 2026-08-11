@@ -1,14 +1,10 @@
 @if (!isPublicRoute) {
-  <app-sidebar></app-sidebar>
+<app-sidebar></app-sidebar>
 }
 
-<div class="main-content" [ngClass]="{'public-layout': isPublicRoute}">
-
-  <!-- <app-header *ngIf="!isPublicRoute"></app-header> -->
-
-  <!-- 🔥 ADD THIS WRAPPER -->
+<div class="main-content"
+  [ngClass]="{'public-layout': isPublicRoute, 'pos-layout-active': isPosRoute, 'mobile-webview-container': isMobileDevice}">
   <div class="content" [class.pos-layout]="isPosRoute">
     <router-outlet></router-outlet>
   </div>
-
 </div>

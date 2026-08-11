@@ -1,83 +1,84 @@
 <div class="dashboard">
     <!-- Plan Expiry Banner -->
-    @if (showExpiryBanner) {
-      <div class="alert plan-alert"
-        [class.fade-out]="bannerFadeOut"
-        [class.danger-alert]="daysLeft !== null && daysLeft <= 7"
-        [class.warning-alert]="daysLeft !== null && daysLeft > 7">
+    @if (showExpiryBanner()) {
+    <div class="alert plan-alert" [class.fade-out]="bannerFadeOut()"
+        [class.danger-alert]="daysLeft() !== null && daysLeft()! <= 7"
+        [class.warning-alert]="daysLeft() !== null && daysLeft()! > 7">
         <div class="plan-content">
-          <div class="plan-info">
-            <strong>{{ currentPlan?.plan_type }} Plan Expiry</strong>
-            <span class="subtext">{{ daysLeft }} days left</span>
-          </div>
-          <button class="btn-renew" (click)="onBuyNowClick()">Renew Plan</button>
+            <div class="plan-info">
+                <strong>{{ currentPlan()?.plan_type }} Plan Expiry</strong>
+                <span class="subtext">{{ daysLeft() }} days left</span>
+            </div>
+            <button class="btn-renew" (click)="onBuyNowClick()">Renew Plan</button>
         </div>
-      </div>
+    </div>
     }
 
     <!-- COMPACT HEADER -->
     <div class="main-header">
         <div class="header-title">
             <h2>Dashboard</h2>
-            <div class="today-date">{{ todayDate }}</div>
-            <p class="light-text">Total Orders Due: {{ monthlyDueSummary?.total || 0 }}</p>
+            <div class="today-date">{{ todayDate() }}</div>
+            <p class="light-text">Total Orders Due: {{ monthlyDueSummary()?.total || 0 }}</p>
         </div>
-        
+
         <div class="metric-wrapper">
             <div class="metric-item">
                 <p>Overdue</p>
-                <b>{{ monthlyDueSummary?.over_due || 0 }}</b>
+                <b>{{ monthlyDueSummary()?.over_due || 0 }}</b>
             </div>
             <div class="metric-item">
-                <p>{{ monthLabels.m1 }}</p>
-                <b>{{ monthlyDueSummary?.m1 || 0 }}</b>
+                <p>{{ monthLabels()?.m1 }}</p>
+                <b>{{ monthlyDueSummary()?.m1 || 0 }}</b>
             </div>
             <div class="metric-item">
-                <p>{{ monthLabels.m2 }}</p>
-                <b>{{ monthlyDueSummary?.m2 || 0 }}</b>
+                <p>{{ monthLabels()?.m2 }}</p>
+                <b>{{ monthlyDueSummary()?.m2 || 0 }}</b>
             </div>
             <div class="metric-item">
-                <p>{{ monthLabels.m3 }}</p>
-                <b>{{ monthlyDueSummary?.m3 || 0 }}</b>
+                <p>{{ monthLabels()?.m3 }}</p>
+                <b>{{ monthlyDueSummary()?.m3 || 0 }}</b>
             </div>
             <div class="metric-item">
                 <p>Later</p>
-                <b>{{ monthlyDueSummary?.later || 0 }}</b>
+                <b>{{ monthlyDueSummary()?.later || 0 }}</b>
             </div>
         </div>
+
+        <!-- <button class="btn-new-order" (click)="partnerDashboard()">Partner Dashboard</button> -->
 
         <button class="btn-new-order" (click)="addNewOrder()">+ NEW ORDER</button>
     </div>
 
     <!-- MAIN GRID -->
     <div class="dashboard-grid">
-        
+
         <!-- LEFT COLUMN: CUSTOMER ORDERS -->
         <div class="dashboard-section customer-orders">
             <div class="section-header">Customer Orders This Week</div>
             <div class="stats-grid">
                 <div class="card" (click)="goToOrderList('Custom',1)">
-                    <p>{{ orderSummary?.due || 0 }}</p>
+                    <p>{{ orderSummary()?.due || 0 }}</p>
                     <h3>Due</h3>
                 </div>
                 <div class="card alert" (click)="goToOrderList('Custom',2)">
-                    <p>{{ orderSummary?.over_due || 0 }}</p>
+                    <p>{{ orderSummary()?.over_due || 0 }}</p>
                     <h3>Overdue</h3>
                 </div>
                 <div class="card warning" (click)="goToOrderList('Custom',3)">
-                    <p>{{ orderSummary?.urgent || 0 }}</p>
+                    <p>{{ orderSummary()?.urgent || 0 }}</p>
                     <h3>Urgent</h3>
                 </div>
                 <div class="card success" (click)="goToOrderList('Custom',4)">
-                    <p>{{ orderSummary?.ready || 0 }}</p>
+                    <p>{{ orderSummary()?.ready || 0 }}</p>
                     <h3>Ready</h3>
                 </div>
                 <div class="card" (click)="goToOrderList('Custom',5)">
-                    <p>{{ orderSummary?.delivered || 0 }}</p>
+                    <p>{{ orderSummary()?.delivered || 0 }}</p>
                     <h3>Delivered</h3>
                 </div>
                 <div class="card" (click)="goToOrderList('Custom',6)">
-                    <p>{{ orderSummary?.newthisweek || 0 }}</p>
+                    <p>{{ orderSummary()?.newthisweek || 0 }}</p>
                     <h3>New</h3>
                 </div>
             </div>
@@ -85,21 +86,21 @@
 
         <!-- RIGHT COLUMN: JOB ORDERS & SUMMARY -->
         <div class="right-column">
-            
+
             <!-- JOB ORDERS -->
             <div class="dashboard-section job-orders">
                 <div class="section-header">Job Orders This Week</div>
                 <div class="stats-grid">
                     <div class="card" (click)="goToJobOrderList('Custom',1)">
-                        <p>{{ jobOrderSummary?.due || 0 }}</p>
+                        <p>{{ jobOrderSummary()?.due || 0 }}</p>
                         <h3>Due</h3>
                     </div>
                     <div class="card alert" (click)="goToJobOrderList('Custom',2)">
-                        <p>{{ jobOrderSummary?.over_due || 0 }}</p>
+                        <p>{{ jobOrderSummary()?.over_due || 0 }}</p>
                         <h3>Overdue</h3>
                     </div>
                     <div class="card warning" (click)="goToJobOrderList('Custom',3)">
-                        <p>{{ jobOrderSummary?.urgent || 0 }}</p>
+                        <p>{{ jobOrderSummary()?.urgent || 0 }}</p>
                         <h3>Urgent</h3>
                     </div>
                 </div>
@@ -112,20 +113,20 @@
                     <div class="summary-card due">
                         <div class="summary-title">Due This Week</div>
                         <div class="summary-row">
-                            <span class="items">{{ dueOrderSummary.due_this_week?.count || 0 }} items</span>
-                            <span class="amount">₹{{ formatAmount(dueOrderSummary?.due_this_week?.amount) }}</span>
+                            <span class="items">{{ dueOrderSummary().due_this_week?.count || 0 }} items</span>
+                            <span class="amount">₹{{ formatAmount(dueOrderSummary()?.due_this_week?.amount) }}</span>
                         </div>
                     </div>
                     <div class="summary-card overdue">
                         <div class="summary-title">Overdue Amount</div>
                         <div class="summary-row">
-                            <span class="items">{{ dueOrderSummary?.overdue?.count || 0 }} items</span>
-                            <span class="amount">₹{{ formatAmount(dueOrderSummary?.overdue?.amount) }}</span>
+                            <span class="items">{{ dueOrderSummary()?.overdue?.count || 0 }} items</span>
+                            <span class="amount">₹{{ formatAmount(dueOrderSummary()?.overdue?.amount) }}</span>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
         </div>
 
     </div>

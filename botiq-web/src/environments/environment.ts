@@ -1,8 +1,8 @@
 
 export const environment = {
     production: false,
-    // apiUrl: 'http://192.168.94.124:8080/web',
-    apiUrl: 'http://localhost:8080/web',
+    apiUrl: 'http://192.168.94.166:8080/web',
+    // apiUrl: 'http://localhost:8080/web',
 
     firebase: {
         apiKey: "AIzaSyBG6ex3nTy7sMTq2rWiFR08Vs28dw6RPx4",

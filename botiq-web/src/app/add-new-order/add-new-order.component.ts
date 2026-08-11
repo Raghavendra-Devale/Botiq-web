@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, signal, computed } from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { OrderService } from '../order.service';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -9,9 +9,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { DrawingBoardDialogComponent } from '../shared/components/drawing-board-dialog/drawing-board-dialog.component';
 
 interface ImageData {
-  base64: string,
-  blobUrl: string,
-  temp_id?: number
+  base64: string;
+  blobUrl: string;
+  strokes?: any[];
+  temp_id?: number;
 }
 
 interface OrderModel {
@@ -21,9 +22,9 @@ interface OrderModel {
   place: string;
   dueDate: string | null;
   orderStatus: string | 'pending';
-  orderAmount: number;
+  // orderAmount: number;
   advanceAmount: number;
-  dueAmount: number;
+  // dueAmount: number;
   hasJobOrder: boolean;
   orderPriority: number;
   jobOrderDetails: string;
@@ -71,34 +72,81 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   duration = 0;
   audioProgress = 0;
 
+
+  updateOrder<K extends keyof OrderModel>(
+  key: K,
+  value: OrderModel[K]
+) {
+  this.newOrder.update(order => ({
+    ...order,
+    [key]: value
+  }));
+}
+
   calculateRowTotal(item: any): number {
     return (Number(item.price) || 0) * (Number(item.quantity) || 1);
   }
 
-  calculateTotal(): number {
-    return this.orderDetails.reduce((total, item) => {
-      return total + this.calculateRowTotal(item);
-    }, 0);
-  }
+  subtotal = computed(() => {
 
-  updateItemTotal(item: any) {
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.updateAddJobState();
-  }
+  return this.orderDetails().reduce((total, item) => {
+
+    return total + this.calculateRowTotal(item);
+
+  }, 0);
+
+});
+
+orderAmount = computed(() => this.subtotal());
+
+dueAmount = computed(() =>
+  this.orderAmount() - (this.newOrder().advanceAmount || 0)
+);
+
+
+  // updateItemTotal(item: any) {
+  //   // this.updateOrder('orderAmount', this.subtotal());
+  // }
 
   addOrderItem() {
-    this.orderDetails.push({
+    this.orderDetails.update(items => [...items, {
       itemName: '',
       quantity: 1,
       price: 0
-    });
-    this.updateAddJobState();
+    }]);
+    // this.updateAddJobState();
   }
 
   removeOrderItem(index: number) {
-    this.orderDetails.splice(index, 1);
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.updateAddJobState();
+    this.orderDetails.update(items => items.filter((_, i) => i !== index));
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
+  }
+
+  updateCartItemQuantity(index: number, quantity: any) {
+    const qty = Number(quantity) || 1;
+    this.orderDetails.update(items => {
+      const updated = [...items];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], quantity: qty };
+      }
+      return updated;
+    });
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
+  }
+
+  updateCartItemPrice(index: number, price: any) {
+    const prc = Number(price) || 0;
+    this.orderDetails.update(items => {
+      const updated = [...items];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], price: prc };
+      }
+      return updated;
+    });
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
   }
 
 
@@ -114,124 +162,191 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   audioBlob: Blob | null = null;
   audioUrl: string | null = null;
   audioBase64 = '';
+  isAudioLoading = false;
 
   recordingSeconds = 0;
   private timer: any;
 
 
 
-  workCategories: any[] = [];
+  workCategories = signal<any[]>([]);
   statusList: any[] = [];
 
 
-  orderDetails: any[] = [];
+  orderDetails = signal<any[]>([]);
 
   isEditMode = false;
-  isAddJobEnabled = false;
+  isAddJobEnabled = computed(()=> this.orderDetails().length > 0);
 
   // POS Custom Properties
-  searchTerm: string = '';
+  searchTerm = signal('');
   customItemName: string = '';
   customItemPrice: number | null = null;
 
-  get filteredCategories() {
-    if (!this.searchTerm.trim()) {
-      return this.workCategories;
+ filteredCategories = computed(() => {
+
+    const term = this.searchTerm().trim().toLowerCase();
+
+    const categories = this.workCategories();
+
+    if (!term) {
+        return categories;
     }
-    const term = this.searchTerm.toLowerCase();
-    return this.workCategories.filter(cat => 
-      (cat.displayName || '').toLowerCase().includes(term) || 
-      (cat.itemName || '').toLowerCase().includes(term)
+
+    return categories.filter(cat =>
+        (cat.displayName || '').toLowerCase().includes(term) ||
+        (cat.itemName || '').toLowerCase().includes(term)
     );
-  }
+
+});
 
   selectCategoryFromPos(category: any) {
-    category.selected = true;
-    const exists = this.orderDetails.find(
-      item => item.itemName.trim().toLowerCase() === category.itemName.trim().toLowerCase()
+    const itemNameLower = category.itemName.trim().toLowerCase();
+    const exists = this.orderDetails().find(
+      item => item.itemName.trim().toLowerCase() === itemNameLower
     );
+
     if (!exists) {
-      this.orderDetails.push({
+      this.orderDetails.update(items => [...items, {
         itemName: category.itemName,
         quantity: category.quantity || 1,
         price: category.price || 0
-      });
+      }]);
+      
+      this.workCategories.update(cats => cats.map(c => {
+        if (c.itemName.trim().toLowerCase() === itemNameLower) {
+          return { ...c, selected: true };
+        }
+        return c;
+      }));
     } else {
-      exists.quantity++;
-      category.quantity = exists.quantity;
+      const newQty = exists.quantity + 1;
+      this.orderDetails.update(items => items.map(item => {
+        if (item.itemName.trim().toLowerCase() === itemNameLower) {
+          return { ...item, quantity: newQty };
+        }
+        return item;
+      }));
+      
+      this.workCategories.update(cats => cats.map(c => {
+        if (c.itemName.trim().toLowerCase() === itemNameLower) {
+          return { ...c, selected: true, quantity: newQty };
+        }
+        return c;
+      }));
     }
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.updateAddJobState();
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
   }
 
   incrementCartItem(item: any) {
-    item.quantity++;
-    const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase());
-    if (cat) {
-      cat.quantity = item.quantity;
-    }
-    this.newOrder.orderAmount = this.calculateTotal();
+    const itemNameLower = item.itemName.trim().toLowerCase();
+    const newQty = item.quantity + 1;
+    
+    this.orderDetails.update(items => items.map(i => {
+      if (i.itemName.trim().toLowerCase() === itemNameLower) {
+        return { ...i, quantity: newQty };
+      }
+      return i;
+    }));
+    
+    this.workCategories.update(cats => cats.map(c => {
+      if (c.itemName.trim().toLowerCase() === itemNameLower) {
+        return { ...c, quantity: newQty };
+      }
+      return c;
+    }));
+    
+    // this.updateOrder('orderAmount', this.subtotal());
   }
 
   decrementCartItem(item: any) {
+    const itemNameLower = item.itemName.trim().toLowerCase();
     if (item.quantity > 1) {
-      item.quantity--;
-      const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase());
-      if (cat) {
-        cat.quantity = item.quantity;
-      }
+      const newQty = item.quantity - 1;
+      
+      this.orderDetails.update(items => items.map(i => {
+        if (i.itemName.trim().toLowerCase() === itemNameLower) {
+          return { ...i, quantity: newQty };
+        }
+        return i;
+      }));
+      
+      this.workCategories.update(cats => cats.map(c => {
+        if (c.itemName.trim().toLowerCase() === itemNameLower) {
+          return { ...c, quantity: newQty };
+        }
+        return c;
+      }));
     } else {
       this.removeCartItem(item);
     }
-    this.newOrder.orderAmount = this.calculateTotal();
+    // this.updateOrder('orderAmount', this.subtotal());
   }
 
   removeCartItem(item: any) {
-    this.orderDetails = this.orderDetails.filter(i => i !== item);
-    const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase());
-    if (cat) {
-      cat.selected = false;
-      cat.quantity = 1;
-    }
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.updateAddJobState();
+    const itemNameLower = item.itemName.trim().toLowerCase();
+    this.orderDetails.update(items => items.filter(i => i.itemName.trim().toLowerCase() !== itemNameLower));
+    
+    this.workCategories.update(cats => cats.map(c => {
+      if (c.itemName.trim().toLowerCase() === itemNameLower) {
+        return { ...c, selected: false, quantity: 1 };
+      }
+      return c;
+    }));
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
   }
 
   addCustomItem() {
     if (!this.customItemName.trim()) return;
     const name = this.customItemName.trim();
     const price = this.customItemPrice || 0;
-    
     const nameLower = name.toLowerCase();
-    const exists = this.orderDetails.find(
+    
+    const exists = this.orderDetails().find(
       item => item.itemName.trim().toLowerCase() === nameLower
     );
+    
     if (exists) {
-      exists.quantity++;
+      const newQty = exists.quantity + 1;
+      this.orderDetails.update(items => items.map(i => {
+        if (i.itemName.trim().toLowerCase() === nameLower) {
+          return { ...i, quantity: newQty };
+        }
+        return i;
+      }));
+      
+      this.workCategories.update(cats => cats.map(c => {
+        if (c.itemName.trim().toLowerCase() === nameLower) {
+          return { ...c, selected: true, price: price, quantity: newQty };
+        }
+        return c;
+      }));
     } else {
-      this.orderDetails.push({
+      this.orderDetails.update(items => [...items, {
         itemName: nameLower,
         quantity: 1,
         price: price
-      });
-    }
-    
-    const cat = this.workCategories.find(c => c.itemName.trim().toLowerCase() === nameLower);
-    if (cat) {
-      cat.selected = true;
-      cat.price = price;
-      cat.quantity = exists ? exists.quantity : 1;
+      }]);
+      
+      this.workCategories.update(cats => cats.map(c => {
+        if (c.itemName.trim().toLowerCase() === nameLower) {
+          return { ...c, selected: true, price: price, quantity: 1 };
+        }
+        return c;
+      }));
     }
     
     this.customItemName = '';
     this.customItemPrice = null;
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.updateAddJobState();
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
   }
 
   getCartQuantity(itemName: string): number {
     if (!this.orderDetails) return 0;
-    const found = this.orderDetails.find(
+    const found = this.orderDetails().find(
       item => item.itemName.trim().toLowerCase() === itemName.trim().toLowerCase()
     );
     return found ? found.quantity : 0;
@@ -249,16 +364,16 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
 
-  newOrder: OrderModel = {
+  newOrder = signal<OrderModel>( {
     customerId: null,
     mobile: '',
     name: '',
     place: '',
     dueDate: null,
     orderStatus: 'pending',
-    orderAmount: 0,
+    // orderAmount: 0,
     advanceAmount: 0,
-    dueAmount: 0,
+    // dueAmount: 0,
     hasJobOrder: false,
     orderPriority: 0,
     jobOrderDetails: '',
@@ -266,7 +381,7 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
     paymentStatus: 0,
     orderDate: new Date().toISOString(),
     deliveredDate: new Date().toISOString()
-  };
+  });
   orderId: any;
 
 
@@ -277,7 +392,8 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
     private orderState: OrderestateService,
     private route: ActivatedRoute,
     private notificationService: NotificationService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
 
   ) { }
 
@@ -309,13 +425,13 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
 
   loadMasterData() {
     this.orderService.getCategories().subscribe(res => {
-      this.workCategories = res.map((item: any) => ({
+      this.workCategories.set(res.map((item: any) => ({
         itemName: item.key_name?.trim().toLowerCase(),
         displayName: item.key_name,
         quantity: 1,
         price: 0,
         selected: false
-      }));
+      })));
 
       this.isCategoryLoaded = true;
       this.trySync();
@@ -342,7 +458,7 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
             return;
         }
 
-        let base64 = result;
+        let base64 = result.image;
         if (base64.startsWith('data:image')) {
           try {
             console.log(`Original note size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
@@ -356,6 +472,7 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
         const imageData: ImageData = {
           base64,
           blobUrl: this.convertBase64ToBlobUrl(base64),
+          strokes: result.strokes,
           temp_id: Date.now()
         };
         this.handwrittenNotes.push(imageData);
@@ -365,6 +482,45 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
     });
 
 }
+
+  editHandwrittenNote(note: ImageData, index: number) {
+    const dialogRef = this.dialog.open(DrawingBoardDialogComponent, {
+        width: '900px',
+        maxWidth: '95vw',
+        height: '700px',
+        disableClose: true,
+        data: {
+          strokes: note.strokes || [],
+          image: note.base64
+        }
+    });
+
+    dialogRef.afterClosed().subscribe(async result => {
+        if (!result) {
+            return;
+        }
+
+        let base64 = result.image;
+        if (base64.startsWith('data:image')) {
+          try {
+            console.log(`Original note size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
+            base64 = await this.compressImage(base64, 0.4, 600);
+            console.log(`Compressed note size: ${this.calculateBase64SizeInKB(base64).toFixed(2)} KB`);
+          } catch (err) {
+            console.error('Failed to compress handwritten note, using original', err);
+          }
+        }
+
+        this.handwrittenNotes[index] = {
+          ...this.handwrittenNotes[index],
+          base64: base64,
+          blobUrl: this.convertBase64ToBlobUrl(base64),
+          strokes: result.strokes
+        };
+
+        console.log("Updated handwritten note at index", index, this.handwrittenNotes[index]);
+    });
+  }
 
 
   loadOrder(orderId: number) {
@@ -378,31 +534,33 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   fillForm(res: any) {
-    this.newOrder.customerId = res.customer.customerId || res.customer.customer_id;
-    this.newOrder.name = res.customer.name || res.customer.customerName;
-    this.newOrder.mobile = res.customer.mobile || res.customer.contactNumber;
-    this.newOrder.place = res.customer.place || res.customer.customerAddress;
     this.orderId = res.order.order_id !== undefined ? res.order.order_id : res.order.orderId;
 
-    this.newOrder.orderStatus = res.order.order_status !== undefined ? res.order.order_status : res.order.orderStatus;
-    this.newOrder.dueDate = (res.order.due_date !== undefined ? res.order.due_date : res.order.dueDate)?.split('T')[0];
-    this.newOrder.orderAmount = res.order.order_amount !== undefined ? res.order.order_amount : res.order.orderAmount;
-    this.newOrder.advanceAmount = res.order.advance_amount !== undefined ? res.order.advance_amount : res.order.advanceAmount;
-    this.newOrder.dueAmount = res.order.due_amount !== undefined ? res.order.due_amount : res.order.dueAmount;
-
-    this.newOrder.urgent = (res.order.order_priority !== undefined ? res.order.order_priority : res.order.orderPriority) === 1;
-
-    this.newOrder.hasJobOrder = !!(res.order.has_job_order !== undefined ? res.order.has_job_order : res.order.hasJobOrder);
+    const updatedOrder: OrderModel = {
+      ...this.newOrder(),
+      customerId: res.customer.customerId !== undefined ? res.customer.customerId : (res.customer.customer_id !== undefined ? res.customer.customer_id : null),
+      name: res.customer.name || res.customer.customerName || '',
+      mobile: res.customer.mobile || res.customer.contactNumber || '',
+      place: res.customer.place || res.customer.customerAddress || '',
+      orderStatus: res.order.order_status !== undefined ? res.order.order_status : (res.order.orderStatus || 'pending'),
+      dueDate: (res.order.due_date !== undefined ? res.order.due_date : res.order.dueDate)?.split('T')[0] || null,
+      // orderAmount: res.order.order_amount !== undefined ? res.order.order_amount : (res.order.orderAmount || 0),
+      advanceAmount: res.order.advance_amount !== undefined ? res.order.advance_amount : (res.order.advanceAmount || 0),
+      // dueAmount: res.order.due_amount !== undefined ? res.order.due_amount : (res.order.dueAmount || 0),
+      urgent: (res.order.order_priority !== undefined ? res.order.order_priority : res.order.orderPriority) === 1,
+      hasJobOrder: !!(res.order.has_job_order !== undefined ? res.order.has_job_order : res.order.hasJobOrder)
+    };
+    this.newOrder.set(updatedOrder);
 
     // Support both root-level orderDetails (state payload) and nested orderDetails (API response)
     const rawDetails = res.orderDetails || res.order.order_details || res.order.orderDetails || [];
-    this.orderDetails = rawDetails.map((item: any) => ({
+    this.orderDetails.set(rawDetails.map((item: any) => ({
       itemName: (item.itemName || item.item_name || '')
         .trim()
         .toLowerCase(),
       quantity: item.quantity || 1,
       price: item.price || 0
-    }));
+    })));
 
     // Map attachments properly, preserving base64, temp_id, and reusing existing blob URLs
     const mapImage = (item: any) => {
@@ -421,10 +579,50 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
       };
     };
 
+    const mapHandwrittenNote = (item: any) => {
+      if (typeof item === 'string') {
+        let base64 = item;
+        let strokes: any[] = [];
+        if (item.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(item);
+            base64 = parsed.image || '';
+            strokes = parsed.strokes || [];
+          } catch (e) {
+            console.error('Failed to parse legacy JSON handwritten note:', e);
+          }
+        }
+        return {
+          base64,
+          blobUrl: this.convertBase64ToBlobUrl(base64),
+          strokes
+        };
+      }
+      const rawData = item.details_data || item.detailsData || item.base64 || '';
+      let base64 = rawData;
+      let strokes: any[] = [];
+      if (rawData.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(rawData);
+          base64 = parsed.image || '';
+          strokes = parsed.strokes || [];
+        } catch (e) {
+          console.error('Failed to parse JSON handwritten note:', e);
+        }
+      }
+      const blobUrl = item.blobUrl || (base64 ? this.convertBase64ToBlobUrl(base64) : '');
+      return {
+        base64,
+        blobUrl,
+        strokes,
+        temp_id: item.temp_id || item.details_id || item.detailsId
+      };
+    };
+
     this.measurementImages = (res.details?.measurements || []).map(mapImage).filter((img: any) => img.base64);
     this.patternImages = (res.details?.patterns || []).map(mapImage).filter((img: any) => img.base64);
     this.materialImages = (res.details?.materials || []).map(mapImage).filter((img: any) => img.base64);
-    this.handwrittenNotes = (res.details?.handwrittenNotes || []).map(mapImage).filter((img: any) => img.base64);
+    this.handwrittenNotes = (res.details?.handwrittenNotes || []).map(mapHandwrittenNote).filter((img: any) => img.base64);
 
     // Restore audio attachment details
     if (res.details?.audio?.length) {
@@ -467,21 +665,24 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   syncCategoriesWithOrder() {
-    this.workCategories.forEach(cat => {
-      const found = this.orderDetails.find(item =>
-        item.itemName?.trim().toLowerCase() ===
-        cat.itemName?.trim().toLowerCase()
+    const details = this.orderDetails();
+    this.workCategories.update(categories => categories.map(cat => {
+      const found = details.find(item =>
+        item.itemName?.trim().toLowerCase() === cat.itemName?.trim().toLowerCase()
       );
-
       if (found) {
-        cat.selected = true;
-        cat.quantity = found.quantity;
-        cat.price = found.price || 0;
+        return {
+          ...cat,
+          selected: true,
+          quantity: found.quantity,
+          price: found.price || 0
+        };
       }
-    });
-    console.log("ORDER DETAILS:", this.orderDetails);
-    console.log("CATEGORIES:", this.workCategories);
-    this.updateAddJobState();
+      return cat;
+    }));
+    console.log("ORDER DETAILS:", this.orderDetails());
+    console.log("CATEGORIES:", this.workCategories());
+    // this.updateAddJobState();
   }
 
 
@@ -492,18 +693,18 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   searchByPhoneNumber() {
-    this.orderService.searchCustomerByPhoneNumber(this.newOrder.mobile)
+    this.orderService.searchCustomerByPhoneNumber(this.newOrder().mobile)
       .subscribe(res => {
         if (res.length > 0) {
-          this.newOrder = {
-            ...this.newOrder,
+          this.newOrder.set({
+            ...this.newOrder(),
             customerId: res[0].customer_id,
             name: res[0].name,
             place: res[0].place
-          };
+          });
         }
       });
-    console.log("search ", this.newOrder);
+    console.log("search ", this.newOrder());
   }
 
   onFileSelected(event: any, type: string) {
@@ -544,14 +745,11 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   getOrderSummary() {
-    return this.orderDetails
+    return this.orderDetails()
       .map(item => `${item.itemName} (${item.quantity})`)
       .join(', ');
   }
 
-  updateAddJobState() {
-    this.isAddJobEnabled = this.orderDetails && this.orderDetails.length > 0;
-  }
 
   increment(category: any) {
     category.quantity++;
@@ -617,75 +815,90 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   toggleCategory(category: any) {
+    const itemNameLower = category.itemName.trim().toLowerCase();
 
     if (category.selected) {
-
-      const exists = this.orderDetails.find(
-        item => item.itemName === category.itemName
+      const exists = this.orderDetails().find(
+        item => item.itemName.trim().toLowerCase() === itemNameLower
       );
 
       if (!exists) {
-        this.orderDetails.push({
+        this.orderDetails.update(items => [...items, {
           itemName: category.itemName,
           quantity: category.quantity || 1,
           price: category.price || 0
-        });
+        }]);
       }
-
     } else {
-      this.orderDetails = this.orderDetails.filter(
-        item => item.itemName !== category.itemName
-      );
+      this.orderDetails.update(items => items.filter(
+        item => item.itemName.trim().toLowerCase() !== itemNameLower
+      ));
     }
 
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.updateAddJobState();
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
 
-
-    console.log("ORDER DETAILS:", this.orderDetails);
+    console.log("ORDER DETAILS:", this.orderDetails());
   }
 
 
 
   goToNextPage() {
-    console.log("new order ", this.newOrder);
-    this.newOrder.orderDate = this.newOrder.orderDate?.split('T')[0];
-    this.newOrder.dueDate = this.newOrder.dueDate || null;
-    this.newOrder.paymentStatus = Number(this.newOrder.paymentStatus) || 0;
-    this.newOrder.hasJobOrder = !!this.newOrder.hasJobOrder;
-    this.newOrder.orderPriority = this.newOrder.urgent ? 1 : 0;
-    this.newOrder.dueAmount = this.newOrder.orderAmount - (this.newOrder.advanceAmount || 0);
+    console.log("new order ", this.newOrder());
+    const orderDate = this.newOrder().orderDate?.split('T')[0];
+    const dueDate = this.newOrder().dueDate || null;
+    const paymentStatus = Number(this.newOrder().paymentStatus) || 0;
+    const hasJobOrder = !!this.newOrder().hasJobOrder;
+    const orderPriority = this.newOrder().urgent ? 1 : 0;
+    // const dueAmount = this.newOrder().orderAmount - (this.newOrder().advanceAmount || 0);
+
+    this.newOrder.update(order => ({
+      ...order,
+      orderDate,
+      dueDate,
+      paymentStatus,
+      hasJobOrder,
+      orderPriority,
+      // dueAmount
+    }));
 
     const payload = {
       customer: {
-        customerId: this.newOrder.customerId,
-        name: this.newOrder.name,
-        mobile: this.newOrder.mobile,
-        place: this.newOrder.place
+        customerId: this.newOrder().customerId,
+        name: this.newOrder().name,
+        mobile: this.newOrder().mobile,
+        place: this.newOrder().place
       },
 
       order: {
         orderId: this.orderId,
-        orderStatus: this.newOrder.orderStatus || 'pending',
-        paymentStatus: this.newOrder.paymentStatus || 0,
-        orderDate: this.newOrder.orderDate,
-        dueDate: this.newOrder.dueDate,
-
-        orderAmount: this.newOrder.orderAmount,
-        advanceAmount: this.newOrder.advanceAmount,
-        dueAmount: this.newOrder.dueAmount,
-        deliveredDate: this.formatDateOnly(this.newOrder.deliveredDate),
-        hasJobOrder: this.newOrder.hasJobOrder ? 1 : 0,
-        orderPriority: this.newOrder.orderPriority,
+        orderStatus: this.newOrder().orderStatus || 'pending',
+        paymentStatus: this.newOrder().paymentStatus || 0,
+        orderDate: this.newOrder().orderDate,
+        dueDate: this.newOrder().dueDate,
+        orderAmount: this.orderAmount(),
+        advanceAmount: this.newOrder().advanceAmount,
+        dueAmount: this.dueAmount(),
+        deliveredDate: this.formatDateOnly(this.newOrder().deliveredDate),
+        hasJobOrder: this.newOrder().hasJobOrder ? 1 : 0,
+        orderPriority: this.newOrder().orderPriority,
       },
 
-      orderDetails: this.orderDetails,
+      orderDetails: this.orderDetails(),
 
       details: {
         measurements: this.measurementImages,
         patterns: this.patternImages,
         materials: this.materialImages,
-        handwrittenNotes: this.handwrittenNotes,
+        handwrittenNotes: this.handwrittenNotes.map(note => {
+          const base64Value = note.strokes && note.strokes.length > 0
+            ? JSON.stringify({ image: note.base64, strokes: note.strokes })
+            : note.base64;
+          return {
+            ...note,
+            base64: base64Value
+          };
+        }),
         audio: this.audioBase64 ? [{
         base64: this.audioBase64
           }
@@ -702,17 +915,19 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
   }
 
   updateQuantity(category: any) {
-    const item = this.orderDetails.find(
-      i => i.itemName === category.itemName
-
-    );
-
-    if (item) {
-      item.quantity = category.quantity;
-      item.price = category.price || 0;
-      console.log("item", item);
-
-    }
+    const itemNameLower = category.itemName.trim().toLowerCase();
+    this.orderDetails.update(items => items.map(i => {
+      if (i.itemName.trim().toLowerCase() === itemNameLower) {
+        return {
+          ...i,
+          quantity: category.quantity,
+          price: category.price || 0
+        };
+      }
+      return i;
+    }));
+    // this.updateOrder('orderAmount', this.subtotal());
+    // this.updateAddJobState();
   }
 
   trySync() {
@@ -729,60 +944,77 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.newOrder.orderAmount = this.calculateTotal();
-    this.newOrder.dueAmount = this.newOrder.orderAmount - (this.newOrder.advanceAmount || 0);
-    this.newOrder.orderPriority = this.newOrder.urgent ? 1 : 0;
-    this.newOrder.hasJobOrder = !!this.newOrder.hasJobOrder;
+    
+
+    // const orderAmount = this.subtotal();
+    // const dueAmount = orderAmount - (this.newOrder().advanceAmount || 0);
+    const orderPriority = this.newOrder().urgent ? 1 : 0;
+    const hasJobOrder = !!this.newOrder().hasJobOrder;
+
+    // this.newOrder.update(order => ({
+    //   ...order,
+    //   dueAmount(),
+    //   orderPriority,
+    //   hasJobOrder
+    // }));
     const payload = {
       customer: {
-        customerId: this.newOrder.customerId,
-        name: this.newOrder.name,
-        mobile: this.newOrder.mobile,
-        place: this.newOrder.place
+        customerId: this.newOrder().customerId,
+        name: this.newOrder().name,
+        mobile: this.newOrder().mobile,
+        place: this.newOrder().place
       },
 
       order: {
         order_id: this.orderId,
-        orderStatus: this.newOrder.orderStatus || 'pending',
-        paymentStatus: this.newOrder.paymentStatus || 0,
-        orderDate: this.newOrder.orderDate,
-        dueDate: this.newOrder.dueDate,
+        orderStatus: this.newOrder().orderStatus || 'pending',
+        paymentStatus: this.newOrder().paymentStatus || 0,
+        orderDate: this.newOrder().orderDate,
+        dueDate: this.newOrder().dueDate,
 
-        orderAmount: this.newOrder.orderAmount,
-        advanceAmount: this.newOrder.advanceAmount,
-        dueAmount: this.newOrder.dueAmount,
+        orderAmount: this.orderAmount(),
+        advanceAmount: this.newOrder().advanceAmount,
+        dueAmount: this.dueAmount(),
 
-        hasJobOrder: this.newOrder.hasJobOrder ? 1 : 0,
-        orderPriority: this.newOrder.orderPriority || 0,
-        deliveredDate: this.newOrder.orderStatus === 'Delivered'
-          ? this.newOrder.deliveredDate
+        hasJobOrder: this.newOrder().hasJobOrder ? 1 : 0,
+        orderPriority: this.newOrder().orderPriority || 0,
+        deliveredDate: this.newOrder().orderStatus === 'Delivered'
+          ? this.newOrder().deliveredDate
           : null
       },
 
-      orderDetails: this.orderDetails,
+      orderDetails: this.orderDetails(),
 
 
       details: {
         measurements: this.measurementImages,
         patterns: this.patternImages,
         materials: this.materialImages,
-        handwrittenNotes: this.handwrittenNotes,
+        handwrittenNotes: this.handwrittenNotes.map(note => {
+          const base64Value = note.strokes && note.strokes.length > 0
+            ? JSON.stringify({ image: note.base64, strokes: note.strokes })
+            : note.base64;
+          return {
+            ...note,
+            base64: base64Value
+          };
+        }),
         audio: this.audioBase64? [{base64: this.audioBase64 }]: []
       }
     };
 
     console.log("FINAL PAYLOAD:", payload);
-    console.log("order details ", this.orderDetails);
+    console.log("order details ", this.orderDetails());
 
     if (this.isEditMode) {
       this.orderService.updateOrder(payload).subscribe({
         next: (res: any) => {
           console.log("Order updated:", res);
-          this.notificationService.createNotification({
-            messageType: 'INFO',
-            messageText: `Order #${this.orderId} updated successfully.`,
-            priority: 'LOW'
-          }).subscribe();
+          // this.notificationService.createNotification({
+          //   messageType: 'INFO',
+          //   messageText: `Order #${this.orderId} updated successfully.`,
+          //   priority: 'LOW'
+          // }).subscribe();
           this.router.navigate(['/order-list']);
         },
         error: (err: any) => {
@@ -860,6 +1092,8 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
     };
 
     this.mediaRecorder.onstop = () => {
+      this.isAudioLoading = true;
+      this.cdr.detectChanges();
 
       this.audioBlob = new Blob(this.audioChunks, {
         type: 'audio/webm'
@@ -882,6 +1116,7 @@ export class AddNewOrderComponent implements OnInit, OnDestroy {
 
     this.timer = setInterval(() => {
       this.recordingSeconds++;
+      this.cdr.detectChanges();
     }, 1000);
 
   } catch (err) {
@@ -914,6 +1149,8 @@ convertBlobToBase64(blob: Blob) {
     this.audioBase64 = reader.result as string;
 
     console.log(this.audioBase64);
+    this.isAudioLoading = false;
+    this.cdr.detectChanges();
 
   };
 
@@ -938,6 +1175,7 @@ deleteRecording() {
   this.hasAudio = false;
 
   this.initAudio();
+  this.cdr.detectChanges();
 
 }
 
@@ -1093,14 +1331,17 @@ initAudio() {
     this.audio.addEventListener('timeupdate', () => {
       this.currentTime = this.audio ? this.audio.currentTime : 0;
       this.audioProgress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
+      this.cdr.detectChanges();
     });
     this.audio.addEventListener('loadedmetadata', () => {
       this.duration = this.audio ? this.audio.duration : 0;
+      this.cdr.detectChanges();
     });
     this.audio.addEventListener('ended', () => {
       this.isPlaying = false;
       this.currentTime = 0;
       this.audioProgress = 0;
+      this.cdr.detectChanges();
     });
   }
 }

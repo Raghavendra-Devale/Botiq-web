@@ -1,7 +1,18 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
 .layout {
     display: flex;
     flex-direction: column;
+    flex: 1;
     height: 100%;
+    width: 100%;
     background: var(--bg-primary);
     overflow: hidden;
 }
@@ -9,9 +20,10 @@
 /* Content Area */
 .content {
     flex: 1;
-    overflow-y: auto;
-    padding-bottom: auto;
-    /* Space for absolute floating tabs */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
 }

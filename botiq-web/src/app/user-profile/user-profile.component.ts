@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DataService } from '../data.service';
+import { AuthService } from '../auth/auth.service';
 
 
 interface User {
@@ -66,7 +67,8 @@ export class UserProfileComponent {
   newJobCategory = '';
 
   constructor(private router: Router,
-    private dataService: DataService
+    private dataService: DataService,
+    private authService: AuthService
   ) {
   }
 
@@ -246,6 +248,9 @@ export class UserProfileComponent {
     this.dataService.getBasicData().subscribe({
       next: (res: any) => {
         console.log(res);
+        if (res) {
+          this.authService.setBasicDetails(res);
+        }
 
         let settings = {};
         try {

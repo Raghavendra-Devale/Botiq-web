@@ -1,6 +1,7 @@
 <div class="dialog-header">
   <h2 mat-dialog-title class="dialog-title-text">
-    <mat-icon>edit_note</mat-icon> Handwritten Note / Sketch
+    <mat-icon>{{ isStylusEnabled ? 'edit_note' : 'visibility' }}</mat-icon>
+    Handwritten Note / Sketch @if (!isStylusEnabled) { <span class="view-only-tag">(View Only)</span> }
   </h2>
   <button mat-icon-button (click)="cancel()" class="close-btn" title="Close">
     <mat-icon>close</mat-icon>
@@ -8,56 +9,86 @@
 </div>
 
 <mat-dialog-content class="dialog-content-custom">
-  <!-- Toolbar for Pen Options -->
-  <div class="canvas-toolbar">
-    <!-- Mode Selection (Pen vs Eraser) -->
-    <div class="toolbar-group">
-      <span class="group-label">Tool</span>
-      <button mat-icon-button [class.tool-active]="!isEraser" (click)="selectPen()" title="Draw Tool">
-        <mat-icon>brush</mat-icon>
-      </button>
-      <button mat-icon-button [class.tool-active]="isEraser" (click)="selectEraser()" title="Eraser Tool">
-        <mat-icon>auto_fix_normal</mat-icon>
-      </button>
-    </div>
+  @if (isStylusEnabled) {
+    <!-- Toolbar for Pen Options -->
+    <div class="canvas-toolbar">
+      <!-- Mode Selection (Pen vs Eraser) -->
+      <div class="toolbar-group">
+        <span class="group-label">Tool</span>
+        <button mat-icon-button [class.tool-active]="!isEraser" (click)="selectPen()" title="Draw Tool">
+          <mat-icon>brush</mat-icon>
+        </button>
+        <button mat-icon-button [class.tool-active]="isEraser" (click)="selectEraser()" title="Eraser Tool">
+          <mat-icon>auto_fix_normal</mat-icon>
+        </button>
+      </div>
 
-    <div class="toolbar-divider"></div>
+      <div class="toolbar-divider"></div>
 
-    <!-- Stroke Thickness -->
-    <div class="toolbar-group">
-      <span class="group-label">Thickness</span>
-      <div class="thickness-options">
-        @for (w of strokeWidths; track w) {
-          <button mat-icon-button
-            class="thickness-btn"
-            [class.width-active]="selectedWidth === w.value"
-            (click)="changeWidth(w.value)"
-            [title]="w.label">
+      <!-- Stroke Thickness -->
+      <div class="toolbar-group">
+        <span class="group-label">Thickness</span>
+        <div class="thickness-options">
+          @for (w of strokeWidths; track w) {
+          <button mat-icon-button class="thickness-btn" [class.width-active]="selectedWidth === w.value"
+            (click)="changeWidth(w.value)" [title]="w.label">
             <span class="dot-indicator" [style.width.px]="w.value" [style.height.px]="w.value"></span>
           </button>
-        }
+          }
+        </div>
       </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <span class="group-label">Color</span>
+
+        <div class="color-options">
+          @for (color of penColors; track color) {
+          <button mat-icon-button class="color-btn" [class.color-active]="selectedColor === color && !isEraser"
+            (click)="changeColor(color)" [title]="color">
+
+            <span class="color-circle" [style.background]="color">
+            </span>
+
+          </button>
+          }
+        </div>
+      </div>
+
     </div>
-  </div>
+  } @else {
+    <div class="view-only-banner">
+      <mat-icon>info</mat-icon>
+      <span>Stylus is disabled in settings. Canvas is in view-only mode.</span>
+    </div>
+  }
 
   <!-- Drawing Area -->
-  <div class="canvas-wrapper">
+  <div class="canvas-wrapper" [class.canvas-readonly]="!isStylusEnabled">
     <canvas #canvas></canvas>
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end" class="dialog-actions-custom">
-  <button mat-button class="action-btn-secondary" (click)="undo()" [disabled]="isCanvasEmpty()">
-    <mat-icon>undo</mat-icon> Undo
-  </button>
-  <button mat-button class="action-btn-secondary" (click)="clear()" [disabled]="isCanvasEmpty()">
-    <mat-icon>delete_outline</mat-icon> Clear All
-  </button>
-  <div class="spacer"></div>
-  <button mat-button class="action-btn-secondary" (click)="cancel()">
-    Cancel
-  </button>
-  <button mat-raised-button color="primary" class="save-btn" (click)="save()" [disabled]="isCanvasEmpty()">
-    <mat-icon>save</mat-icon> Save Note
-  </button>
+  @if (isStylusEnabled) {
+    <button mat-button class="action-btn-secondary" (click)="undo()" [disabled]="isCanvasEmpty()">
+      <mat-icon>undo</mat-icon> Undo
+    </button>
+    <button mat-button class="action-btn-secondary" (click)="clear()" [disabled]="isCanvasEmpty()">
+      <mat-icon>delete_outline</mat-icon> Clear All
+    </button>
+    <div class="spacer"></div>
+    <button mat-button class="action-btn-secondary" (click)="cancel()">
+      Cancel
+    </button>
+    <button mat-raised-button color="primary" class="save-btn" (click)="save()" [disabled]="isCanvasEmpty()">
+      <mat-icon>save</mat-icon> Save Note
+    </button>
+  } @else {
+    <div class="spacer"></div>
+    <button mat-raised-button color="primary" class="save-btn" (click)="cancel()">
+      Close
+    </button>
+  }
 </mat-dialog-actions>

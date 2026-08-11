@@ -1,0 +1,90 @@
+<div class="server-ip-container">
+  <div class="server-ip-card">
+    <div class="card-brand">
+      <div class="brand-logo">
+        <i class="fa-solid fa-server"></i>
+      </div>
+      <h2>Server Configuration</h2>
+      <p class="subtitle">Set your local backend server IP to connect BOTIQ</p>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (errorMessage) {
+      <div class="alert alert-error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+    }
+
+    @if (successMessage) {
+      <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>{{ successMessage }}</span>
+      </div>
+    }
+
+    <form (ngSubmit)="onSave()" #ipForm="ngForm" class="config-form">
+      <div class="form-group">
+        <label for="serverIp">Server IP Address</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-network-wired input-icon"></i>
+          <input
+            type="text"
+            id="serverIp"
+            name="serverIp"
+            [(ngModel)]="serverIp"
+            placeholder="e.g. 192.168.94.172"
+            required
+            autocomplete="off"
+            [disabled]="isSaving"
+          />
+        </div>
+        <span class="hint-text">
+          <i class="fa-solid fa-circle-info"></i> Enter your local server IP (e.g. 192.168.1.100)
+        </span>
+      </div>
+
+      @if (getFormattedPreview()) {
+        <div class="preview-box">
+          <span class="preview-label">Target API Endpoint:</span>
+          <code class="preview-url">{{ getFormattedPreview() }}</code>
+        </div>
+      }
+
+      <!-- Connection Test Indicator -->
+      @if (testStatus !== 'none') {
+        <div class="test-result" [class.test-success]="testStatus === 'success'" [class.test-error]="testStatus === 'error'">
+          <i class="fa-solid" [class.fa-check-circle]="testStatus === 'success'" [class.fa-times-circle]="testStatus === 'error'"></i>
+          <span>{{ testStatusText }}</span>
+        </div>
+      }
+
+      <div class="button-group">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="testConnection()"
+          [disabled]="isTesting || isSaving || !serverIp.trim()"
+        >
+          @if (isTesting) {
+            <i class="fa-solid fa-spinner fa-spin"></i> Testing...
+          } @else {
+            <i class="fa-solid fa-plug"></i> Test Connection
+          }
+        </button>
+
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="isSaving || !serverIp.trim()"
+        >
+          @if (isSaving) {
+            <i class="fa-solid fa-spinner fa-spin"></i> Saving...
+          } @else {
+            <i class="fa-solid fa-floppy-disk"></i> Save & Connect
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

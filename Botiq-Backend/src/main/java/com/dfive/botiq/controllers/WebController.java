@@ -187,6 +187,67 @@ public class WebController {
         }
     }
 
+    @PostMapping("/partnerJobOrders")
+    public ResponseEntity<?> partnerJobOrders(@RequestBody(required = false) Map<String, Object> payload,
+            HttpServletRequest request) {
+        try {
+            UserPrincipal principal = getUserPrincipal();
+            String uid = principal.getFirebaseUid();
+            Integer orgId = principal.getOrgId();
+
+            Integer partnerId = null;
+
+            if (payload != null && payload.get("partner_id") != null) {
+                partnerId = ((Number) payload.get("partner_id")).intValue();
+            } else if (payload != null && payload.get("partnerId") != null) {
+                partnerId = ((Number) payload.get("partnerId")).intValue();
+            }
+
+            if (partnerId == null) {
+                String userSql = "SELECT partner_id FROM org_user WHERE firebase_id = ?";
+                List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
+                if (!users.isEmpty() && users.get(0).get("partner_id") != null) {
+                    partnerId = ((Number) users.get(0).get("partner_id")).intValue();
+                }
+            }
+
+            if (partnerId == null) {
+                return ResponseEntity.badRequest().body("Partner ID is required");
+            }
+
+            String partnerJobsQuery = "SELECT o.*, " +
+                    "j.job_id, " +
+                    "j.partner_id, " +
+                    "j.job_order_details, " +
+                    "j.job_due_date, " +
+                    "j.job_priority, " +
+                    "j.job_order_status, " +
+                    "d.details_id, " +
+                    "d.details_type, " +
+                    "d.details_data " +
+                    "FROM botiq_order_w o " +
+                    "INNER JOIN botiq_job_order_w j " +
+                    "ON o.order_id = j.order_id " +
+                    "AND o.org_id = j.org_id " +
+                    "LEFT JOIN botiq_order_docs_w d " +
+                    "ON o.order_id = d.order_id " +
+                    "AND o.org_id = d.org_id " +
+                    "WHERE o.org_id = ? " +
+                    "AND j.partner_id = ? " +
+                    "ORDER BY o.order_id DESC";
+            List<Map<String, Object>> partnerJobs = jdbcTemplate.queryForList(
+                    partnerJobsQuery,
+                    orgId,
+                    partnerId);
+            return ResponseEntity.ok(partnerJobs);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error fetching partner job orders: " + e.getMessage());
+        }
+
+    }
+
     @PostMapping("/saveOrderDetails")
     public ResponseEntity<?> saveOrderDetails(
             @RequestBody Map<String, Object> payload,
@@ -273,6 +334,16 @@ public class WebController {
                         .intValue();
             }
 
+            String detailsJson = null;
+            if (jobOrder.get("jobOrderDetails") != null) {
+                Object detailsObj = jobOrder.get("jobOrderDetails");
+                if (detailsObj instanceof String) {
+                    detailsJson = (String) detailsObj;
+                } else {
+                    detailsJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(detailsObj);
+                }
+            }
+
             // UPDATE
             if (jobId != null && jobId > 0) {
 
@@ -297,7 +368,7 @@ public class WebController {
                         jobOrder.get("orderId"),
                         jobOrder.get("customerId"),
                         jobOrder.get("partnerId"),
-                        jobOrder.get("jobOrderDetails"),
+                        detailsJson,
                         sqlDueDate,
                         jobOrder.get("jobPriority"),
                         jobOrder.get("jobOrderStatus"),
@@ -350,7 +421,7 @@ public class WebController {
                     jobOrder.get("orderId"),
                     jobOrder.get("customerId"),
                     jobOrder.get("partnerId"),
-                    jobOrder.get("jobOrderDetails"),
+                    detailsJson,
                     sqlDueDate,
                     jobOrder.get("jobPriority"),
                     jobOrder.get("jobOrderStatus"),
@@ -1162,7 +1233,7 @@ public class WebController {
         }
     }
 
-    @PostMapping("/updateUserEmailVerified")
+    @PostMapping("/updateUser   EmailVerified")
     public ResponseEntity<?> updateUserEmailVerified(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
@@ -1823,25 +1894,25 @@ public class WebController {
             Integer orgId = principal.getOrgId();
 
             String sql = """
-                SELECT
-                    o.*,
-                    c.customer_name,
-                    c.contact_number,
-                    c.customer_address,
-                    d.details_data
-                FROM botiq_order_w o
-                LEFT JOIN botiq_customer_w c
-                    ON o.customer_id = c.customer_id
-                LEFT JOIN LATERAL (
-                    SELECT details_data
-                    FROM botiq_order_docs_w
-                    WHERE order_id = o.order_id
-                      AND details_type = 2
-                    ORDER BY details_id
-                    LIMIT 1
-                ) d ON true
-                WHERE o.org_id = ?
-                """;
+                    SELECT
+                        o.*,
+                        c.customer_name,
+                        c.contact_number,
+                        c.customer_address,
+                        d.details_data
+                    FROM botiq_order_w o
+                    LEFT JOIN botiq_customer_w c
+                        ON o.customer_id = c.customer_id
+                    LEFT JOIN LATERAL (
+                        SELECT details_data
+                        FROM botiq_order_docs_w
+                        WHERE order_id = o.order_id
+                          AND details_type = 2
+                        ORDER BY details_id
+                        LIMIT 1
+                    ) d ON true
+                    WHERE o.org_id = ?
+                    """;
 
             List<Map<String, Object>> orders = jdbcTemplate.queryForList(sql, orgId);
 
@@ -1911,7 +1982,6 @@ public class WebController {
     private String value(Object obj) {
         return obj == null ? "" : obj.toString();
     }
-
 
     @PostMapping("/saveOrUpdateCustomer")
     public ResponseEntity<?> saveOrUpdateCustomer(
@@ -2391,6 +2461,7 @@ public class WebController {
                             o.mobile_number,
                             u.email_id,
                             u.user_role AS userRole,
+                            u.partner_id AS partnerId,
                             o.referral_code AS referralCode,
                             s.org_logo AS orgLogo,
                             s.optional_settings AS optionalSettings,
@@ -2454,10 +2525,11 @@ public class WebController {
             response.put("org_logo", profile.get("orgLogo"));
             response.put("email_id", profile.get("email_id"));
             response.put("mobile_number", profile.get("mobile_number"));
-            response.put("expiry_date",profile.get("plan_end_date"));
-            response.put("plan_end_date",profile.get("plan_end_date"));
+            response.put("expiry_date", profile.get("plan_end_date"));
+            response.put("plan_end_date", profile.get("plan_end_date"));
             response.put("plan_type", profile.get("plan_type"));
             response.put("user_role", profile.get("userRole"));
+            response.put("partner_id", profile.get("partnerId"));
             response.put("optional_settings", profile.get("optionalSettings"));
             response.put("work_categories", workCategoriesStr);
             response.put("partner_categories", partnerCategoriesStr);
@@ -2475,7 +2547,7 @@ public class WebController {
         try {
             String authorizationHeader = request.getHeader("Authorization");
             String uid = FirebaseUtils.extractUidFromAuthorization(authorizationHeader);
-            System.out.println("ip addres "+ request.getRemoteAddr());
+            System.out.println("ip addres " + request.getRemoteAddr());
 
             String userSql = "SELECT org_id FROM org_user WHERE firebase_id = ?";
             List<Map<String, Object>> users = jdbcTemplate.queryForList(userSql, uid);
@@ -2488,9 +2560,10 @@ public class WebController {
             Integer usersCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM org_user WHERE org_id = ?",
                     Integer.class, users.get(0).get("org_id"));
 
-            String planType = jdbcTemplate.queryForObject("SELECT plan_type FROM organization where org_id = ?",String.class, users.get(0).get("org_id"));
+            String planType = jdbcTemplate.queryForObject("SELECT plan_type FROM organization where org_id = ?",
+                    String.class, users.get(0).get("org_id"));
 
-            System.out.println("users count : " + usersCount + " and user plane "+ planType);
+            System.out.println("users count : " + usersCount + " and user plane " + planType);
 
             if (usersCount >= 2 && planType.equalsIgnoreCase("FREE")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -2500,12 +2573,14 @@ public class WebController {
 
             if (usersCount >= 3 && planType.equalsIgnoreCase("STARTER")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("success", false, "message", "cannot add more that 3 users upgrade plan to add more"));
+                        .body(Map.of("success", false, "message",
+                                "cannot add more that 3 users upgrade plan to add more"));
             }
 
-            if (usersCount >= 10 && planType.equalsIgnoreCase("STANDARD")){
+            if (usersCount >= 10 && planType.equalsIgnoreCase("STANDARD")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("success", false, "message", "cannot add more than 10 users upgrade plan to add more"));
+                        .body(Map.of("success", false, "message",
+                                "cannot add more than 10 users upgrade plan to add more"));
             }
 
             String username = (String) payload.get("username");
@@ -2530,6 +2605,8 @@ public class WebController {
                         .body(Map.of("success", false, "message", "User with this phone number already exists"));
             }
 
+            Number partnerIdNum = payload.get("partner_id") != null ? (Number) payload.get("partner_id") : null;
+
             OrgUser newUser = new OrgUser();
             newUser.setOrgId(orgIdNum != null ? orgIdNum.intValue() : null);
             newUser.setFirstName(username);
@@ -2537,6 +2614,11 @@ public class WebController {
             newUser.setDeleted(false);
             newUser.setOrgName(orgName);
             newUser.setUserRole(userRole != null ? userRole : "APP_USER");
+            if ("PARTNER".equalsIgnoreCase(userRole) && partnerIdNum != null) {
+                newUser.setPartnerId(partnerIdNum.intValue());
+            } else {
+                newUser.setPartnerId(null);
+            }
             newUser.setEmailId(email);
             newUser.setMobileNumber(phoneNumber);
             newUser.setCreatedDate(new Timestamp(System.currentTimeMillis()));
@@ -2585,7 +2667,7 @@ public class WebController {
             Optional<OrgUser> userToEditOpt = orgUserRepository.findById(targetUserId);
             if (userToEditOpt.isEmpty() || userToEditOpt.get().getDeleted()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("success", false, "message", "User not found"));
+                        .body(Map.of("success", false, "mescsage", "User not found"));
             }
 
             OrgUser userToEdit = userToEditOpt.get();
@@ -2626,11 +2708,18 @@ public class WebController {
                 userToEdit.setDeviceId(null);
             }
 
+            Number partnerIdNum = payload.get("partner_id") != null ? (Number) payload.get("partner_id") : null;
+
             userToEdit.setFirstName(username);
             userToEdit.setEmailId(email);
             userToEdit.setMobileNumber(phoneNumber);
             if (userRole != null && !userRole.trim().isEmpty()) {
                 userToEdit.setUserRole(userRole);
+            }
+            if ("PARTNER".equalsIgnoreCase(userToEdit.getUserRole()) && partnerIdNum != null) {
+                userToEdit.setPartnerId(partnerIdNum.intValue());
+            } else if (!"PARTNER".equalsIgnoreCase(userToEdit.getUserRole())) {
+                userToEdit.setPartnerId(null);
             }
 
             orgUserRepository.save(userToEdit);
@@ -2659,7 +2748,8 @@ public class WebController {
 
             String query = """
                     SELECT user_id AS userId, org_id AS orgId, first_name AS firstName,
-                           mobile_number AS mobileNumber, email_id AS email, user_role AS userRole, enabled
+                           mobile_number AS mobileNumber, email_id AS email, user_role AS userRole,
+                           partner_id AS partnerId, enabled
                     FROM org_user
                     WHERE org_id = ? AND deleted = FALSE
                     ORDER BY user_id DESC
@@ -3230,7 +3320,7 @@ public class WebController {
                     orgName);
 
             if (orderId != null && orderId > 0) {
-                notifyOrderStatusUpdate(orgId, orderId, null, "CREATED", null);
+                // notifyOrderStatusUpdate(orgId, orderId, null, "CREATED", null);
 
                 try {
                     Map<String, Object> orderMap = (Map<String, Object>) payload.get("order");
@@ -3252,14 +3342,14 @@ public class WebController {
                         }
                     }
 
-                    Map<String, Object> ssePayload = new HashMap<>();
+                    // Map<String, Object> ssePayload = new HashMap<>();
                     // ssePayload.put("event", isUpdate ? "UPDATE_ORDER" : "CREATE_ORDER");
                     // ssePayload.put("orgId", orgId);
                     // ssePayload.put("orderId", orderId);
-                    if (orderStatus != null) {
-                        ssePayload.put("status", orderStatus);
-                    }
-                    sseService.sendToOrg(orgId, ssePayload);
+                    // if (orderStatus != null) {
+                    // ssePayload.put("status", orderStatus);
+                    // }
+                    // sseService.sendToOrg(orgId, ssePayload);
                 } catch (Exception ex) {
                     System.err.println("Failed to send SSE in saveOrder: " + ex.getMessage());
                 }

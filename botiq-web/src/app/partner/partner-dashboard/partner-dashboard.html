@@ -1,0 +1,222 @@
+<div class="page-container">
+  <!-- Header -->
+  <header class="app-header">
+    <h2 class="page-title">Partner Dashboard</h2>
+  </header>
+
+  <div class="scroll-content">
+    <!-- Main Card Component holding Table & Header Controls -->
+    <div class="table-card">
+      <!-- Table Action Header (Title + Tabs) -->
+      <div class="table-card-header">
+        <div class="title-area">
+          <h3 class="table-title">My Job Orders</h3>
+          <p class="table-subtitle">View and track your assigned job orders</p>
+        </div>
+
+        <div class="header-actions-row">
+          <!-- Segment Tabs -->
+          <div class="segments-wrapper">
+            <div class="segments">
+              @for (tab of ['All','Pending','Started','Completed']; track tab) {
+                <button
+                  [class.active]="selectedSegment === tab"
+                  (click)="onSegmentChange(tab)"
+                  class="segment-btn">
+                  {{ tab }} ({{ getTabCount(tab) }})
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Bar inside Card -->
+      <div class="table-search-container">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input class="search-input-card" [(ngModel)]="searchQuery" (input)="onSearchInput($event)"
+          placeholder="Search by order ID, job ID, customer ID, or status..." />
+        @if (searchQuery) {
+          <button class="clear-search-btn" (click)="onCancelSearch()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Responsive Table View -->
+      <div class="table-responsive">
+        <table class="logistics-table">
+          <thead>
+            <tr>
+              <th class="col-order-id" (click)="sort('order_id')">
+                <div class="th-inner">
+                  Order ID
+                  <span class="sort-indicator" [class.active]="sortColumn === 'order_id'">
+                    <svg class="sort-arrow" [class.desc]="sortColumn === 'order_id' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  </span>
+                </div>
+              </th>
+              <th class="col-job-id" (click)="sort('job_id')">
+                <div class="th-inner">
+                  Job ID
+                  <span class="sort-indicator" [class.active]="sortColumn === 'job_id'">
+                    <svg class="sort-arrow" [class.desc]="sortColumn === 'job_id' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  </span>
+                </div>
+              </th>
+              <th class="col-due-date" (click)="sort('job_due_date')">
+                <div class="th-inner">
+                  Due Date
+                  <span class="sort-indicator" [class.active]="sortColumn === 'job_due_date'">
+                    <svg class="sort-arrow" [class.desc]="sortColumn === 'job_due_date' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  </span>
+                </div>
+              </th>
+              <th class="col-customer-id" (click)="sort('customer_id')">
+                <div class="th-inner">
+                  Customer ID
+                  <span class="sort-indicator" [class.active]="sortColumn === 'customer_id'">
+                    <svg class="sort-arrow" [class.desc]="sortColumn === 'customer_id' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  </span>
+                </div>
+              </th>
+              <th class="col-status" (click)="sort('job_order_status')">
+                <div class="th-inner">
+                  Status
+                  <span class="sort-indicator" [class.active]="sortColumn === 'job_order_status'">
+                    <svg class="sort-arrow" [class.desc]="sortColumn === 'job_order_status' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  </span>
+                </div>
+              </th>
+              <th class="col-priority" (click)="sort('job_priority')">
+                <div class="th-inner">
+                  Priority
+                  <span class="sort-indicator" [class.active]="sortColumn === 'job_priority'">
+                    <svg class="sort-arrow" [class.desc]="sortColumn === 'job_priority' && sortDirection === 'desc'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                  </span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of paginatedOrders; track order) {
+              <tr class="table-row" (click)="viewJobDetails(order)">
+                <td class="col-order-id font-medium text-slate-800">
+                  <div class="order-id-wrapper">
+                    #{{ order.order_id }}
+                    @if (order.job_priority === 1) {
+                      <span class="priority-indicator urgent" title="Urgent Order">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                          <line x1="4" y1="22" x2="4" y2="15"></line>
+                        </svg>
+                      </span>
+                    }
+                  </div>
+                </td>
+                <td class="col-job-id font-medium text-slate-600">
+                  #{{ order.job_id }}
+                </td>
+                <td class="col-due-date font-medium text-slate-600" [class.overdue-text]="isOverdue(order)">
+                  <span class="mobile-label">Due Date: </span>
+                  <span class="due-date-text">{{ order.job_due_date ? (order.job_due_date | date:'dd MMM yyyy') : '—' }}</span>
+                </td>
+                <td class="col-customer-id text-slate-600">
+                  {{ order.customer_id }}
+                </td>
+                <td class="col-status">
+                  <span class="status-badge" [ngClass]="getStatusClass(order)">
+                    <span class="status-dot"></span>
+                    {{ getStatusLabel(order) }}
+                  </span>
+                </td>
+                <td class="col-priority">
+                  <span class="priority-chip" [class.high]="order.job_priority === 1">
+                    {{ order.job_priority === 1 ? 'High' : 'Normal' }}
+                  </span>
+                </td>
+              </tr>
+            }
+            <!-- Empty State -->
+            @if (paginatedOrders.length === 0) {
+              <tr>
+                <td colspan="6" class="empty-state-row">
+                  <div class="empty-state-container">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M8 15h8"></path>
+                      <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                      <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                    <p>No job orders found matching the filter criteria.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Card Footer (Showing X of Y & Pagination Controls) -->
+      @if (filteredOrders.length > 0) {
+        <div class="table-card-footer">
+          <div class="showing-records">
+            Showing <strong>{{ getShowingStart() }}</strong> to <strong>{{ getShowingEnd() }}</strong> of <strong>{{ filteredOrders.length }}</strong>
+          </div>
+          <div class="pagination-navigation">
+            <!-- Prev Button -->
+            <button class="btn-pagination-nav"
+              [disabled]="currentPage === 1"
+              (click)="onPageChange(currentPage - 1)"
+              title="Previous Page">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <!-- Mobile Page Indicator -->
+            <span class="mobile-page-indicator">Page {{ currentPage }} of {{ totalPages() }}</span>
+            <!-- Page Numbers -->
+            <div class="page-numbers-container">
+              @for (page of getPageNumbers(); track page) {
+                <button
+                  [class.active]="currentPage === page"
+                  (click)="onPageChange(page)"
+                  class="btn-page-num">
+                  {{ page }}
+                </button>
+              }
+            </div>
+            <!-- Next Button -->
+            <button class="btn-pagination-nav"
+              [disabled]="currentPage === totalPages()"
+              (click)="onPageChange(currentPage + 1)"
+              title="Next Page">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

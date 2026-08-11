@@ -87,4 +87,13 @@ export class OrderService {
     return this.http.post<any>(this.baseUrl + "/deleteOrder", payload);
   }
 
+  partnerJobOrders(partnerId?: any) {
+    const payload = partnerId ? { partner_id: partnerId } : {};
+    return this.http.post<any>(this.baseUrl + "/partnerJobOrders", payload);
+  }
+
+  saveOrUpdateJobOrder(payload: any) {
+    return this.http.post<any>(this.baseUrl + "/saveOrUpdateJobOrder", payload);
+  }
+
 }

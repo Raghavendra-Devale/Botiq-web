@@ -17,53 +17,76 @@ export const authGuard: CanActivateFn = () => {
   );
 };
 
+
 export const publicGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
   return authService.isAuthenticated().pipe(
     map(() => {
-      router.navigate(['/dashboard']);
+      const role = authService.getRole();
+
+      if (role === 'PARTNER') {
+        router.navigate(['/partner-dashboard']);
+      } else {
+        router.navigate(['/dashboard']);
+      }
+
       return false;
     }),
-    catchError(() => {
-      return of(true);
-    })
+    catchError(() => of(true))
   );
 };
 
-export const ownerGuard: CanActivateFn = () => {
+
+export const roleGuard: CanActivateFn = (route) => {
   const authService = inject(AuthService);
   const dataService = inject(DataService);
   const router = inject(Router);
 
-  const role = authService.getRole();
-  if (role === 'OWNER') {
-    return true;
-  }
+  const allowedRoles = route.data['roles'] as string[];
 
-  const details = authService.getBasicDetails();
-  if (details) {
-    if (details.user_role === 'OWNER') {
-      authService.setRole(details.user_role);
+  const checkRole = (role: string) => {
+    if (allowedRoles.includes(role)) {
       return true;
     }
-    router.navigate(['/dashboard']);
-    return false;
+
+    // Redirect based on actual user's role
+    if (role === 'PARTNER') {
+      return router.createUrlTree(['/partner-dashboard']);
+    }
+
+    return router.createUrlTree(['/dashboard']);
+  };
+
+
+  // 1. Check already cached role
+  const role = authService.getRole();
+
+  if (role) {
+    return checkRole(role);
   }
 
+
+  // 2. Check cached basic details
+  const details = authService.getBasicDetails();
+
+  if (details?.user_role) {
+    authService.setRole(details.user_role);
+    return checkRole(details.user_role);
+  }
+
+
+  // 3. Fetch from backend if not available
   return dataService.getBasicData().pipe(
     map((res: any) => {
       authService.setBasicDetails(res);
-      if (res.user_role === 'OWNER') {
-        return true;
-      }
-      router.navigate(['/dashboard']);
-      return false;
+      authService.setRole(res.user_role);
+
+      return checkRole(res.user_role);
     }),
     catchError(() => {
-      router.navigate(['/dashboard']);
-      return of(false);
+      return of(router.createUrlTree(['/login']));
     })
   );
 };

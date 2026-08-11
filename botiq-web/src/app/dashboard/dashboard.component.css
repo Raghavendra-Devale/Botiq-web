@@ -1,14 +1,18 @@
-/* dashboard.component.css Replacement */
+:host {
+    display: block;
+    width: 100%;
+}
+
 .dashboard {
-    padding: 10px 15px;
-    max-width: 1280px;
-    margin: 0 auto;
+    padding: 16px 24px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    box-sizing: border-box;
     animation: fadeIn 0.3s ease-out;
-    height: calc(100vh - 80px);
-    /* Adjust based on global header if any */
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    gap: 18px;
 }
 
 @keyframes fadeIn {
@@ -26,10 +30,10 @@
 /* COMPACT HEADER */
 .main-header {
     background: var(--primary-gradient, linear-gradient(135deg, #3b82f6, #8b5cf6));
-    border-radius: 12px;
-    padding: 12px 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 14px;
+    padding: 16px 28px;
+    margin-bottom: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -44,22 +48,22 @@
     position: absolute;
     top: -50%;
     right: -10%;
-    width: 200px;
-    height: 200px;
+    width: 240px;
+    height: 240px;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
     border-radius: 50%;
 }
 
 .header-title h2 {
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
 }
 
 .today-date {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     opacity: 0.95;
-    margin-top: 3px;
+    margin-top: 4px;
     font-weight: 500;
 }
 
@@ -71,12 +75,12 @@
 
 .metric-wrapper {
     display: flex;
-    gap: 20px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    padding: 8px 24px;
+    gap: 24px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 10px 24px;
     z-index: 1;
 }
 
@@ -86,13 +90,15 @@
 
 .metric-item p {
     margin: 0 0 2px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    opacity: 0.8;
+    opacity: 0.85;
+    font-weight: 600;
 }
 
 .metric-item b {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    font-weight: 800;
     margin: 0;
 }
 
@@ -101,45 +107,43 @@
     background: #fff;
     color: var(--primary-accent, #3b82f6);
     border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: 700;
-    font-size: 0.85rem;
+    padding: 10px 22px;
+    border-radius: 24px;
+    font-weight: 800;
+    font-size: 0.9rem;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     transition: all 0.2s;
 }
 
 .btn-new-order:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
 }
 
 /* MAIN CONTENT GRID */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    flex-grow: 1;
-    /* Takes up remaining height */
-    overflow: hidden;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 18px;
+    align-items: start;
 }
 
 .right-column {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 18px;
 }
 
 .dashboard-section {
     background: var(--bg-card-solid, #ffffff);
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
     border: 1px solid var(--border-light, #e5e7eb);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .customer-orders {
@@ -147,70 +151,73 @@
 }
 
 .section-header {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-secondary, #4b5563);
-    margin-bottom: 12px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-secondary, #334155);
+    margin-bottom: 16px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
+    flex-shrink: 0;
 }
 
 /* STATS GRID */
 .customer-orders .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    flex-grow: 1;
+    gap: 14px;
 }
 
 .job-orders .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    flex-grow: 1;
+    gap: 14px;
 }
 
 .card {
     background: #f8fafc;
-    border-radius: 8px;
-    padding: 15px 10px;
+    border-radius: 12px;
+    padding: 20px 14px;
+    min-height: 110px;
     text-align: center;
     border: 1px solid #e2e8f0;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    box-sizing: border-box;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
 }
 
 .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
     border-color: #cbd5e1;
 }
 
 .card p {
-    font-size: 1.8rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    font-weight: 800;
     margin: 0;
     color: var(--primary-accent, #3b82f6);
     line-height: 1;
 }
 
 .card h3 {
-    margin: 8px 0 0;
-    font-size: 0.85rem;
+    margin: 10px 0 0;
+    font-size: 0.9rem;
+    font-weight: 700;
     color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.7px;
 }
 
 /* Card variants */
 .card.alert {
     background: #fef2f2;
     border: 1px solid #fecaca;
-    border-left: 4px solid #ef4444;
+    border-left: 5px solid #ef4444;
 }
 
 .card.alert:hover {
@@ -235,18 +242,19 @@
 .summary-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    flex-grow: 1;
+    gap: 14px;
 }
 
 .summary-card {
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 20px 22px;
+    min-height: 110px;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    box-sizing: border-box;
 }
 
 .summary-card::before {
@@ -255,7 +263,7 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 5px;
 }
 
 .summary-card.due {
@@ -277,10 +285,10 @@
 }
 
 .summary-title {
-    font-size: 0.95rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #334155;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 
 .summary-row {
@@ -290,13 +298,13 @@
 }
 
 .summary-row .items {
-    font-size: 0.85rem;
+    font-size: 1rem;
     color: #64748b;
     font-weight: 600;
 }
 
 .summary-row .amount {
-    font-size: 1.4rem;
+    font-size: 2.2rem;
     font-weight: 800;
     color: #0f172a;
 }
@@ -369,6 +377,96 @@
 
     .job-orders .stats-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* LANDSCAPE ORIENTATION FOR MOBILE & SHORT VIEWPORTS */
+@media (orientation: landscape) and (max-height: 600px), (max-height: 500px) {
+    .dashboard {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .dashboard-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+        overflow: visible !important;
+    }
+
+    .main-header {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        padding: 8px 16px !important;
+        padding-left: max(64px, calc(50px + env(safe-area-inset-left, 0px))) !important;
+    }
+
+    .header-title h2 {
+        font-size: 1.1rem;
+    }
+
+    .today-date, .light-text {
+        font-size: 0.75rem;
+        margin-top: 1px;
+    }
+
+    .metric-wrapper {
+        width: auto !important;
+        padding: 4px 12px !important;
+        gap: 12px !important;
+        overflow-x: auto;
+    }
+
+    .metric-item p {
+        font-size: 0.65rem;
+    }
+
+    .metric-item b {
+        font-size: 1rem;
+    }
+
+    .customer-orders .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .job-orders .stats-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .summary-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    .summary-card {
+        padding: 10px 12px !important;
+    }
+
+    .summary-title {
+        font-size: 0.85rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    .summary-row .amount {
+        font-size: 1.1rem !important;
+    }
+
+    .card {
+        padding: 8px 6px !important;
+    }
+
+    .card p {
+        font-size: 1.3rem !important;
+    }
+
+    .card h3 {
+        font-size: 0.75rem !important;
+        margin-top: 4px !important;
     }
 }
 

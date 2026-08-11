@@ -925,3 +925,86 @@
         padding: 16px;
     }
 }
+
+/* =========================
+   LANDSCAPE VIEW FOR MOBILE
+========================= */
+@media (orientation: landscape) and (max-height: 600px), (max-height: 500px) {
+    .page-container {
+        padding-bottom: 60px !important;
+        min-height: auto !important;
+    }
+
+    .app-header {
+        position: relative !important;
+        top: auto !important;
+        padding: 8px 16px !important;
+        margin-bottom: 8px !important;
+        z-index: 10;
+        background: #ffffff !important;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+    }
+
+    .page-title {
+        font-size: 16px !important;
+    }
+
+    .scroll-content {
+        padding: 6px 12px !important;
+        gap: 8px !important;
+    }
+
+    .table-card {
+        margin-bottom: 12px !important;
+    }
+
+    .table-card-header {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+    }
+
+    .title-area {
+        min-width: auto !important;
+    }
+
+    .table-title {
+        font-size: 15px !important;
+        margin: 0 !important;
+    }
+
+    .table-subtitle {
+        display: none !important;
+    }
+
+    .header-actions-row {
+        width: auto !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+    }
+
+    .segments-wrapper {
+        width: auto !important;
+        order: initial !important;
+    }
+
+    .table-card-header .segment-btn {
+        padding: 4px 8px !important;
+        font-size: 11.5px !important;
+    }
+
+    .table-search-container {
+        padding: 6px 12px !important;
+    }
+
+    .search-input-card {
+        padding: 6px 10px 6px 30px !important;
+        font-size: 12.5px !important;
+    }
+
+    .table-search-container .search-icon {
+        left: 20px !important;
+    }
+}

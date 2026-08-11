@@ -89,7 +89,7 @@ export class MpinLoginComponent implements OnInit {
     this.platformAuthService.loginWithMpin(this.mpin)
       .then(() => {
         this.loading = false;
-        this.notificationService.initialize();
+        // this.notificationService.initialize();
         this.router.navigate(['/dashboard']);
       })
       .catch((err) => {

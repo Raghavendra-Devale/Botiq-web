@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DataService } from '../data.service';
+import { PartnerService } from '../partner.service';
 
 @Component({
     selector: 'app-add-new-user',
@@ -16,7 +17,8 @@ export class AddNewUserComponent implements OnInit {
     firstName: '',
     mobileNumber: '',
     email: '',
-    userType: ''
+    userType: '',
+    partnerId: ''
   };
 
   orgId: any = null;
@@ -25,6 +27,8 @@ export class AddNewUserComponent implements OnInit {
   showForm = false;
   usersList: any[] = [];
   searchQuery = '';
+
+  partnersList: any[] = [];
 
   get filteredUsers() {
     if (!this.usersList) return [];
@@ -54,7 +58,8 @@ export class AddNewUserComponent implements OnInit {
 
   constructor(
     public router: Router,
-    private dataService: DataService
+    private dataService: DataService,
+    private partnerService: PartnerService
   ) {}
 
   ngOnInit() {
@@ -82,6 +87,17 @@ export class AddNewUserComponent implements OnInit {
         console.error("Error fetching users list:", err);
       }
     });
+
+    this.partnerService.getPartners().subscribe({
+      next: (res: any) => {
+        this.partnersList = res;
+        console.log("Fetched partners list:", res);
+      },
+      error: (err: any) => {
+        console.error("Error fetching partners list:", err);
+      }
+    });
+    
   }
 
   addNewUser() {
@@ -89,7 +105,8 @@ export class AddNewUserComponent implements OnInit {
       firstName: '',
       mobileNumber: '',
       email: '',
-      userType: ''
+      userType: '',
+      partnerId: ''
     };
     this.isEditMode = false;
     this.editingUserId = null;
@@ -99,11 +116,23 @@ export class AddNewUserComponent implements OnInit {
   editUser(u: any) {
     this.isEditMode = true;
     this.editingUserId = u.userid;
+    let mappedRole = '';
+    if (u.userrole) {
+      const roleUpper = u.userrole.toUpperCase();
+      if (roleUpper === 'ADMIN' || roleUpper === 'OWNER') {
+        mappedRole = 'OWNER';
+      } else if (roleUpper === 'PARTNER') {
+        mappedRole = 'PARTNER';
+      } else {
+        mappedRole = 'APP_USER';
+      }
+    }
     this.user = {
       firstName: u.firstname || '',
       mobileNumber: u.mobilenumber || '',
       email: u.email || '',
-      userType: u.userrole === 'ADMIN' ? '2' : '1'
+      userType: mappedRole,
+      partnerId: u.partnerId || u.partner_id || u.partnerid || ''
     };
     this.showForm = true;
   }
@@ -223,6 +252,11 @@ export class AddNewUserComponent implements OnInit {
       return;
     }
 
+    if (this.user.userType === 'PARTNER' && !this.user.partnerId) {
+      this.showWarning('Please select a partner code.');
+      return;
+    }
+
     this.loading = true;
 
     const payload: any = {
@@ -231,7 +265,8 @@ export class AddNewUserComponent implements OnInit {
       email: email,
       org_name: this.orgName,
       org_id: this.orgId,
-      user_role: this.user.userType === '2' ? 'ADMIN' : 'APP_USER'
+      user_role: this.user.userType,
+      partner_id: this.user.userType === 'PARTNER' && this.user.partnerId ? Number(this.user.partnerId) : null
     };
 
     if (this.isEditMode) {
@@ -244,7 +279,7 @@ export class AddNewUserComponent implements OnInit {
           this.loading = false;
           if (res.success) {
             this.showSuccess(`User "${firstName}" has been updated successfully!`, () => {
-              this.user = { firstName: '', mobileNumber: '', email: '', userType: '' };
+              this.user = { firstName: '', mobileNumber: '', email: '', userType: '', partnerId: '' };
               this.fetchUsers();
               this.showForm = false;
             });
@@ -266,7 +301,7 @@ export class AddNewUserComponent implements OnInit {
           this.loading = false;
           if (res.success) {
             this.showSuccess(`User "${firstName}" has been added successfully!`, () => {
-              this.user = { firstName: '', mobileNumber: '', email: '', userType: '' };
+              this.user = { firstName: '', mobileNumber: '', email: '', userType: '', partnerId: '' };
               this.fetchUsers();
               this.showForm = false;
             });

@@ -31,6 +31,7 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain chain)
+
             throws ServletException, IOException {
 
         System.out.println("FIREBASE FILTER HIT");

@@ -14,10 +14,10 @@
     <!-- ===================== -->
     <div class="card accordion-card">
       <div class="accordion-header" (click)="isOrgSectionOpen = !isOrgSectionOpen">
-        <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
           <h3 class="section-title" style="margin: 0;">🏢 Organization</h3>
           @if (user.businessName || user.ownerName) {
-            <span style="font-size: 13px; color: #64748b;">
+            <span style="font-size: 13px; color: #64748b; word-break: break-word;">
               {{ user.businessName }} 💠 {{ user.ownerName}} 💠 {{ user.phoneNumber }}
             </span>
           }

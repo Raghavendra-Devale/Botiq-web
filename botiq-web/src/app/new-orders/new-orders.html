@@ -1,0 +1,629 @@
+<form #orderForm="ngForm" (ngSubmit)="onSubmit(orderForm)" class="workspace-container">
+
+    <!-- ================= HEADER SECTION: UNIFIED SINGLE HEADER CARD ================= -->
+    <div class="top-header-row">
+        <div class="workspace-header single-row-header">
+            <div class="header-brand">
+                <h2 class="page-title-text">{{ isEditMode ? 'Edit Order' : 'New Order' }}</h2>
+                <div class="header-main-actions">
+                    <button type="button" class="btn-workspace-cancel icon-only-btn" routerLink="/order-list"
+                        title="Cancel">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <button type="submit" class="btn-workspace-primary label-btn" [disabled]="!orderForm.valid">
+                        <i class="fa-solid fa-circle-check"></i> <span class="btn-txt">{{ isEditMode ? 'UPDATE' :
+                            'SAVE'
+                            }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="customer-fields-row">
+                <div class="customer-field phone-field">
+                    <input type="tel" name="mobile" [(ngModel)]="newOrder.mobile" [maxLength]="10"
+                        (ngModelChange)="onMobileChange($event)" placeholder="Mobile" required />
+                </div>
+
+                <div class="customer-field name-field">
+                    <input type="text" name="name" [(ngModel)]="newOrder.name" placeholder="Customer Name" required />
+                </div>
+
+                <div class="customer-field place-field">
+                    <input type="text" name="place" [(ngModel)]="newOrder.place" placeholder="Place/City" />
+                </div>
+            </div>
+
+            <div class="header-right-actions">
+                <button type="button" class="btn-workspace-secondary label-btn" (click)="toggleRightPanel()"
+                    title="Order Attachments">
+                    <i class="fa-solid fa-paperclip"></i> <span class="btn-txt">Attachments ({{
+                        getAttachmentsCount() }})</span>
+                </button>
+
+                <button type="button" class="btn-workspace-secondary label-btn" (click)="goToNextPage()"
+                    [disabled]="!isAddJobEnabled()" [title]="!isPartnersAvailable ? 'Job Order disabled: No active partners available' : 'Job Order / Save Order'">
+                    <i class="fa-solid fa-file-invoice"></i> <span class="btn-txt">Job Order</span>
+                </button>
+
+                <button type="button" class="btn-workspace-secondary icon-only-btn" [disabled]="!isAddJobEnabled()"
+                    title="Print Bill">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN WORKSPACE BODY & MAT-DRAWER CONTAINER ================= -->
+    <mat-drawer-container class="workspace-body drawer-workspace-container" [hasBackdrop]="false">
+
+        <!-- ═══════ MAIN WORKSPACE PANE ═══════ -->
+        <mat-drawer-content class="left-workspace-pane" [class.has-right-sidebar]="!isRightPanelOpen">
+            <!-- Work Categories Card -->
+            <div class="workspace-card categories-card">
+                <div class="catalog-chips-wrap">
+                    <span class="card-title"><i class="fa-solid fa-scissors"></i> Work Items</span>
+                    @for (cat of filteredCategories; track cat) {
+                    <div class="catalog-chip" [class.chip-active]="getCartQuantity(cat.itemName) > 0"
+                        (click)="selectCategoryFromPos(cat)">
+                        <span class="chip-name">{{ cat.displayName }}</span>
+                    </div>
+                    }
+                    <button type="button" class="catalog-chip" [class.chip-active]="showCustomGarmentBox"
+                        (click)="toggleCustomGarmentBox()">Others</button>
+                </div>
+
+                <!-- Add Custom Garment (hidden by default, opens on Others click, closes on Add click) -->
+                @if (showCustomGarmentBox) {
+                <div class="custom-garment-box inline-custom">
+                    <div class="custom-fields">
+                        <input type="text" [(ngModel)]="customItemName" name="customItemName"
+                            placeholder="Add Custom Garment (e.g. Saree Hemming)" class="custom-name" />
+                        <input type="number" [(ngModel)]="customItemPrice" name="customItemPrice" placeholder="Price"
+                            class="custom-price" />
+                        <button type="button" class="add-custom-btn" (click)="addCustomItem()"
+                            [disabled]="!customItemName.trim()">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <!-- Order Cart Card -->
+            <div class="workspace-card cart-card">
+                <!-- Right-edge floating category image sidebar strip (matches cart-card height) -->
+                @if (!isRightPanelOpen) {
+                <div class="drawer-category-sidebar full-height-sidebar" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+                    <!-- Main Header / Toggle Button -->
+                    <button type="button" class="category-sidebar-btn main-attach-btn" (click)="toggleRightPanel()"
+                        title="All Attachments ({{ getAttachmentsCount() }})">
+                        <i class="fa-solid fa-paperclip cat-icon"></i>
+                        @if (getAttachmentsCount() > 0) {
+                        <span class="cat-badge main-badge">{{ getAttachmentsCount() }}</span>
+                        }
+                    </button>
+                    <div class="sidebar-cat-divider"></div>
+
+                    <div class="sidebar-scroll-items">
+                        <!-- 1. MEASUREMENTS -->
+                        <button type="button" class="category-sidebar-tile" [class.has-image]="measurementImages.length > 0"
+                            [class.active-cat]="activeRightTab === 'measurements'" (click)="openRightTab('measurements')"
+                            title="Measurements ({{ measurementImages.length }})">
+                            @if (measurementImages.length > 0) {
+                            <img [src]="measurementImages[0].blobUrl" alt="Measurement" class="cat-thumb-img" />
+                            <span class="cat-tile-overlay-lbl">Measurements</span>
+                            <span class="cat-badge">{{ measurementImages.length }}</span>
+                            } @else {
+                            <div class="empty-tile-icon"><i class="fa-solid fa-ruler-combined"></i></div>
+                            <span class="cat-tile-lbl">Meas</span>
+                            }
+                        </button>
+
+                        <!-- 2. PATTERNS -->
+                        <button type="button" class="category-sidebar-tile" [class.has-image]="patternImages.length > 0"
+                            [class.active-cat]="activeRightTab === 'patterns'" (click)="openRightTab('patterns')"
+                            title="Pattern ({{ patternImages.length }})">
+                            @if (patternImages.length > 0) {
+                            <img [src]="patternImages[0].blobUrl" alt="Pattern" class="cat-thumb-img" />
+                            <span class="cat-tile-overlay-lbl">Pattern</span>
+                            <span class="cat-badge">{{ patternImages.length }}</span>
+                            } @else {
+                            <div class="empty-tile-icon"><i class="fa-solid fa-swatchbook"></i></div>
+                            <span class="cat-tile-lbl">Pattern</span>
+                            }
+                        </button>
+
+                        <!-- 3. MATERIALS -->
+                        <button type="button" class="category-sidebar-tile" [class.has-image]="materialImages.length > 0"
+                            [class.active-cat]="activeRightTab === 'materials'" (click)="openRightTab('materials')"
+                            title="Material ({{ materialImages.length }})">
+                            @if (materialImages.length > 0) {
+                            <img [src]="materialImages[0].blobUrl" alt="Material" class="cat-thumb-img" />
+                            <span class="cat-tile-overlay-lbl">Material</span>
+                            <span class="cat-badge">{{ materialImages.length }}</span>
+                            } @else {
+                            <div class="empty-tile-icon"><i class="fa-solid fa-scissors"></i></div>
+                            <span class="cat-tile-lbl">Material</span>
+                            }
+                        </button>
+
+                        <!-- 4. DRAW / SKETCHES -->
+                        <button type="button" class="category-sidebar-tile" [class.has-image]="handwrittenNotes.length > 0"
+                            [class.active-cat]="activeRightTab === 'draw'" (click)="openRightTab('draw')"
+                            title="Draw / Sketches ({{ handwrittenNotes.length }})">
+                            @if (handwrittenNotes.length > 0) {
+                            <img [src]="handwrittenNotes[0].blobUrl" alt="Sketch" class="cat-thumb-img" />
+                            <span class="cat-tile-overlay-lbl">Sketch</span>
+                            <span class="cat-badge">{{ handwrittenNotes.length }}</span>
+                            } @else {
+                            <div class="empty-tile-icon"><i class="fa-solid fa-pen-nib"></i></div>
+                            <span class="cat-tile-lbl">Sketch</span>
+                            }
+                        </button>
+
+                        <!-- 5. VOICE NOTE -->
+                        <button type="button" class="category-sidebar-tile" [class.has-image]="audioUrl"
+                            [class.active-cat]="activeRightTab === 'voice'" (click)="openRightTab('voice')"
+                            title="Voice Note">
+                            <div class="empty-tile-icon voice-tile-icon"><i class="fa-solid fa-microphone"></i></div>
+                            <span class="cat-tile-lbl">Voice</span>
+                            @if (audioUrl) {
+                            <span class="cat-badge">1</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+                }
+
+                <div class="card-header">
+                    <!-- <span class="card-title"><i class="fa-solid fa-receipt"></i> Current Order</span> -->
+                    <span class="items-badge">{{ orderDetails.length }} items</span>
+                </div>
+
+                <div class="order-table-wrapper">
+                    @if (orderDetails.length === 0) {
+                    <div class="workspace-empty">
+                        <i class="fa-solid fa-cart-plus empty-icon"></i>
+                        <h3>No Items Yet</h3>
+                        <p>Select garments above to add items to your cart.</p>
+                    </div>
+                    } @else {
+                    <table class="order-table">
+                        <thead>
+                            <tr>
+                                <th class="th-sno">#</th>
+                                <th class="th-item">Item</th>
+                                <th class="th-qty">Qty</th>
+                                <th class="th-rate">Rate (₹)</th>
+                                <th class="th-total">Total</th>
+                                <th class="th-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (item of orderDetails; track item; let idx = $index) {
+                            <tr class="order-row" [class.row-active]="idx === activeItemIndex"
+                                [class.row-editing]="editingNotesIndex === idx" (click)="setActiveItem(idx)">
+                                <td class="td-sno">{{ idx + 1 }}</td>
+                                <td class="td-item">
+                                    <div class="item-name-cell">
+                                        <i class="fa-solid item-icon" [ngClass]="getCategoryIcon(item.itemName)"></i>
+                                        <span>{{ item.itemName | titlecase }}</span>
+                                    </div>
+                                </td>
+                                <td class="td-qty">
+                                    <div class="inline-qty-control">
+                                        <button type="button" class="inline-qty-btn"
+                                            (click)="decrementCartItem(item); $event.stopPropagation()">
+                                            <i class="fa-solid fa-minus"></i>
+                                        </button>
+                                        <input type="number" class="inline-qty-input" [(ngModel)]="item.quantity"
+                                            [name]="'qty_' + idx"
+                                            (ngModelChange)="newOrder.orderAmount = calculateTotal()" min="1"
+                                            (click)="$event.stopPropagation()" />
+                                        <button type="button" class="inline-qty-btn"
+                                            (click)="incrementCartItem(item); $event.stopPropagation()">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="td-rate">
+                                    <input type="number" class="inline-price-input" [(ngModel)]="item.price"
+                                        [name]="'price_' + idx"
+                                        (ngModelChange)="newOrder.orderAmount = calculateTotal()" placeholder="0"
+                                        (click)="$event.stopPropagation()" />
+                                </td>
+                                <td class="td-total">
+                                    <span class="row-total-value">₹{{ calculateRowTotal(item) }}</span>
+                                </td>
+                                <td class="td-actions">
+                                    <!-- <button type="button" class="action-icon-btn notes-btn"
+                                        [class.has-notes]="item.notes && item.notes.trim()"
+                                        (click)="toggleNotes(idx); $event.stopPropagation()" title="Add Notes">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button> -->
+                                    <button type="button" class="action-icon-btn delete-btn"
+                                        (click)="removeCartItem(item); $event.stopPropagation()" title="Remove">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Expandable Notes Row -->
+                            @if (editingNotesIndex === idx) {
+                            <tr class="notes-expand-row">
+                                <td colspan="6">
+                                    <div class="inline-notes-box">
+                                        <textarea class="inline-notes-textarea" [(ngModel)]="item.notes"
+                                            [name]="'notes_' + idx"
+                                            placeholder="Measurements, sleeve style, collar type, buttons, custom instructions..."
+                                            rows="2"></textarea>
+                                    </div>
+                                </td>
+                            </tr>
+                            }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="order-table-total-row">
+                                <td colspan="4" class="total-label-cell">Total:</td>
+                                <td class="total-value-cell">₹{{ calculateTotal() }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    }
+                </div>
+
+                <div class="cart-total-bar">
+                    <div class="total-bar-item">
+                        <span class="total-label">Due:</span>
+                        <input type="date" name="dueDate" [(ngModel)]="newOrder.dueDate" class="bar-input-date" />
+                    </div>
+
+                    <div class="total-bar-divider"></div>
+
+                    <div class="total-bar-item">
+                        <span class="total-label">Status:</span>
+                        <select name="status" [(ngModel)]="newOrder.orderStatus"
+                            (ngModelChange)="onStatusChange($event)" class="bar-select-status">
+                            <option value="">Status</option>
+                            @for (s of statusList; track s) {
+                            <option [value]="s.key_name">{{ s.key_name }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    @if (isDeliveredStatus()) {
+                    <div class="total-bar-divider"></div>
+
+                    <div class="total-bar-item delivered-date-item">
+                        <span class="total-label">Delivered:</span>
+                        <input type="date" name="deliveredDate" [(ngModel)]="newOrder.deliveredDate"
+                            class="bar-input-date" />
+                    </div>
+                    }
+
+                    <div class="total-bar-divider"></div>
+
+                    <div class="total-bar-item">
+                        <label class="urgent-toggle bar-urgent-toggle">
+                            <input type="checkbox" [(ngModel)]="newOrder.urgent" name="urgent" />
+                            <span class="urgent-indicator compact-urgent" [class.urgent-active]="newOrder.urgent">
+                                <i class="fa-solid fa-fire"></i> Urgent
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="total-bar-divider"></div>
+
+                    <div class="total-bar-item editable-item">
+                        <span class="total-label">Advance:</span>
+                        <div class="bill-input-wrap"
+                            [class.compact-gap]="(('' + (newOrder.advanceAmount || '')).length >= 5)">
+                            <span class="bill-currency">₹</span>
+                            <input type="number" name="advanceFooter" [(ngModel)]="newOrder.advanceAmount"
+                                (ngModelChange)="updateItemTotal(null)" class="advance-paid-input" />
+                        </div>
+                    </div>
+
+                    <div class="total-bar-divider"></div>
+
+                    <div class="total-bar-item balance-item">
+                        <span class="total-label">Balance:</span>
+                        <span class="balance-value-text"
+                            [class.balance-danger]="(calculateTotal() - (newOrder.advanceAmount || 0)) > 0">
+                            ₹{{ calculateTotal() - (newOrder.advanceAmount || 0) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </mat-drawer-content>
+
+        <!-- ═══════ MAT DRAWER: SIDE SWIPE DRAWER (SHRINKS LEFT PANE, NO OVERLAP) ═══════ -->
+        <mat-drawer #rightDrawer position="end" mode="side" [opened]="isRightPanelOpen" (closed)="closeRightPanel()"
+            class="right-slide-drawer" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+            <div class="right-slide-panel panel-open">
+                <!-- ── Drawer Header ── -->
+                <div class="slide-panel-header">
+                    <span class="panel-header-title"><i class="fa-solid fa-paperclip"></i> Order Attachments</span>
+                    <button type="button" class="slide-panel-close" (click)="closeRightPanel()" title="Close panel">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- ── Drawer Scrollable Body: All categories displayed vertically ── -->
+                <div class="all-attachments-scroll-body">
+
+                    <!-- 1. MEASUREMENTS -->
+                    <div class="category-block" id="category-block-measurements">
+                        <div class="category-block-header">
+                            <span class="category-title"><i class="fa-solid fa-ruler-combined"></i> Measurements
+                                ({{ measurementImages.length }})</span>
+                            <div class="category-actions">
+                                <input type="file" multiple (change)="onFileSelected($event, 'measurements')"
+                                    id="meas-block-upload" class="file-input-hide" />
+                                <label for="meas-block-upload" class="mini-action-btn"><i
+                                        class="fa-solid fa-upload"></i> Upload</label>
+                            </div>
+                        </div>
+                        @if (measurementImages.length > 0) {
+                        <div class="slide-thumb-grid">
+                            @for (img of measurementImages; track img; let i = $index) {
+                            <div class="slide-thumb-item" (click)="openPreview(img.blobUrl)">
+                                <img [src]="img.blobUrl" alt="Measurement" />
+                                <button type="button" class="thumb-delete-btn"
+                                    (click)="removeImage('measurements', i); $event.stopPropagation()">✕</button>
+                            </div>
+                            }
+                        </div>
+                        } @else {
+                        <div class="empty-category-hint">No measurement images added</div>
+                        }
+                        <input #measurementsCamera type="file" accept="image/*" capture="environment"
+                            class="file-input-hide" (change)="onFileSelected($event, 'measurements')" />
+                    </div>
+
+                    <!-- 2. PATTERNS -->
+                    <div class="category-block" id="category-block-patterns">
+                        <div class="category-block-header">
+                            <span class="category-title"><i class="fa-solid fa-swatchbook"></i> Pattern ({{
+                                patternImages.length }})</span>
+                            <div class="category-actions">
+                                <input type="file" multiple (change)="onFileSelected($event, 'patterns')"
+                                    id="pat-block-upload" class="file-input-hide" />
+                                <label for="pat-block-upload" class="mini-action-btn"><i class="fa-solid fa-upload"></i>
+                                    Upload</label>
+                            </div>
+                        </div>
+                        @if (patternImages.length > 0) {
+                        <div class="slide-thumb-grid">
+                            @for (img of patternImages; track img; let i = $index) {
+                            <div class="slide-thumb-item" (click)="openPreview(img.blobUrl)">
+                                <img [src]="img.blobUrl" alt="Pattern" />
+                                <button type="button" class="thumb-delete-btn"
+                                    (click)="removeImage('patterns', i); $event.stopPropagation()">✕</button>
+                            </div>
+                            }
+                        </div>
+                        } @else {
+                        <div class="empty-category-hint">No pattern images added</div>
+                        }
+                        <input #patternsCamera type="file" accept="image/*" capture="environment"
+                            class="file-input-hide" (change)="onFileSelected($event, 'patterns')" />
+                    </div>
+
+                    <!-- 3. MATERIALS -->
+                    <div class="category-block" id="category-block-materials">
+                        <div class="category-block-header">
+                            <span class="category-title"><i class="fa-solid fa-scissors"></i> Material ({{
+                                materialImages.length }})</span>
+                            <div class="category-actions">
+                                <input type="file" multiple (change)="onFileSelected($event, 'materials')"
+                                    id="mat-block-upload" class="file-input-hide" />
+                                <label for="mat-block-upload" class="mini-action-btn"><i class="fa-solid fa-upload"></i>
+                                    Upload</label>
+                            </div>
+                        </div>
+                        @if (materialImages.length > 0) {
+                        <div class="slide-thumb-grid">
+                            @for (img of materialImages; track img; let i = $index) {
+                            <div class="slide-thumb-item" (click)="openPreview(img.blobUrl)">
+                                <img [src]="img.blobUrl" alt="Material" />
+                                <button type="button" class="thumb-delete-btn"
+                                    (click)="removeImage('materials', i); $event.stopPropagation()">✕</button>
+                            </div>
+                            }
+                        </div>
+                        } @else {
+                        <div class="empty-category-hint">No material images added</div>
+                        }
+                        <input #materialsCamera type="file" accept="image/*" capture="environment"
+                            class="file-input-hide" (change)="onFileSelected($event, 'materials')" />
+                    </div>
+
+                    <!-- 4. DRAW / SKETCHES -->
+                    <div class="category-block" id="category-block-draw">
+                        <div class="category-block-header">
+                            <span class="category-title"><i class="fa-solid fa-pen-nib"></i> Draw / Sketches ({{
+                                handwrittenNotes.length }})</span>
+                            <div class="category-actions">
+                                <button type="button" class="mini-action-btn draw-action-btn"
+                                    (click)="addHandwrittenNote()"><i class="fa-solid fa-plus"></i> New
+                                    Sketch</button>
+                            </div>
+                        </div>
+                        @if (handwrittenNotes.length > 0) {
+                        <div class="slide-thumb-grid">
+                            @for (note of handwrittenNotes; track note; let i = $index) {
+                            <div class="slide-thumb-item" (click)="editHandwrittenNote(note, i)">
+                                <img [src]="note.blobUrl" alt="Sketch" />
+                                <button type="button" class="thumb-delete-btn"
+                                    (click)="removeImage('handwritten', i); $event.stopPropagation()">✕</button>
+                            </div>
+                            }
+                        </div>
+                        } @else {
+                        <div class="empty-category-hint">No sketches added</div>
+                        }
+                    </div>
+
+                    <!-- 5. VOICE NOTE -->
+                    <div class="category-block voice-block" id="category-block-voice">
+                        <div class="category-block-header">
+                            <span class="category-title"><i class="fa-solid fa-microphone"></i> Voice Note</span>
+                        </div>
+                        <div class="voice-section-content">
+                            <div class="voice-waveform-wrap" [class.waveform-active]="isRecording">
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                            </div>
+
+                            @if (!isRecording && !audioUrl && !isAudioLoading) {
+                            <button type="button" class="voice-big-btn record-btn" (click)="startRecording()">
+                                <i class="fa-solid fa-microphone"></i>
+                                <span>Tap to Record</span>
+                            </button>
+                            }
+                            @if (isRecording) {
+                            <button type="button" class="voice-big-btn stop-btn" (click)="stopRecording()">
+                                <span class="recording-pulse"></span>
+                                <span>Stop — {{ recordingSeconds }}s</span>
+                            </button>
+                            }
+                            @if (isAudioLoading) {
+                            <div class="voice-loading-label">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Processing…
+                            </div>
+                            }
+                            @if (audioUrl && !isRecording && !isAudioLoading) {
+                            <div class="voice-player-row">
+                                <button type="button" class="voice-play-pause" (click)="togglePlay()">
+                                    <i class="fa-solid" [class.fa-play]="!isPlaying" [class.fa-pause]="isPlaying"></i>
+                                </button>
+                                <span class="voice-time">{{ formatTime(currentTime) }} / {{ formatTime(duration)
+                                    }}</span>
+                                <button type="button" class="voice-delete-btn" (click)="deleteRecording()"
+                                    title="Delete">
+                                    <i class="fa-regular fa-trash-can"></i>
+                                </button>
+                            </div>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </mat-drawer>
+
+    </mat-drawer-container>
+
+</form>
+
+<!-- GALLERY POPUP MODAL (ALL IMAGES OF TYPE) -->
+@if (activeGalleryType) {
+<div class="image-modal gallery-modal-window attachments-modal">
+    <div class="overlay" (click)="closeGalleryModal()"></div>
+    <div class="modal-content gallery-modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-images"></i> {{ getGalleryTitle() }} ({{ getGalleryImages().length }})</h3>
+            <button type="button" class="close-modal-btn" (click)="closeGalleryModal()">✕</button>
+        </div>
+
+        <div class="modal-body gallery-modal-body">
+            <div class="gallery-modal-grid">
+                @for (img of getGalleryImages(); track img; let i = $index) {
+                <div class="gallery-modal-item">
+                    <img [src]="img.blobUrl" [alt]="activeGalleryType"
+                        (click)="activeGalleryType === 'handwritten' ? editHandwrittenNote(img, i) : openPreview(img.blobUrl)" />
+                    <button type="button" class="thumb-delete-btn"
+                        (click)="removeImage(activeGalleryType!, i); $event.stopPropagation()">✕</button>
+                </div>
+                }
+            </div>
+        </div>
+
+        <div class="modal-footer gallery-modal-footer">
+            <button type="button" class="btn-workspace-secondary label-btn" (click)="closeGalleryModal()">Close</button>
+        </div>
+    </div>
+</div>
+}
+
+<!-- IMAGE FULL PREVIEW MODAL -->
+@if (previewImage) {
+<div class="image-modal preview-modal">
+    <div class="overlay" (click)="closePreview()"></div>
+    <div class="modal-content">
+        <img [src]="previewImage" alt="Preview Image" />
+        <button class="close-btn" (click)="closePreview()">✕</button>
+    </div>
+</div>
+}
+
+<!-- CAMERA MODAL -->
+@if (showCameraModal) {
+<div class="image-modal camera-modal">
+    <div class="overlay" (click)="closeCamera()"></div>
+    <div class="modal-content camera-modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-camera"></i> Capture {{ cameraType | titlecase }}</h3>
+            <button type="button" class="close-modal-btn" (click)="closeCamera()">✕</button>
+        </div>
+
+        <div class="modal-body camera-modal-body">
+            @if (cameraError) {
+            <div class="camera-error-message">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>{{ cameraError }}</p>
+                <button type="button" class="retry-btn" (click)="startCamera()">Retry</button>
+            </div>
+            } @else {
+            <div class="camera-viewport-wrapper">
+                <video #cameraVideo autoplay playsinline muted [style.display]="capturedImage ? 'none' : 'block'"
+                    class="camera-video-feed"></video>
+                @if (capturedImage) {
+                <img [src]="capturedImage" alt="Captured Preview" class="camera-captured-preview" />
+                }
+            </div>
+            }
+        </div>
+
+        <div class="modal-footer camera-modal-footer">
+            <div class="camera-controls">
+                @if (!capturedImage && !cameraError) {
+                <button type="button" class="camera-action-btn switch-btn" (click)="switchCamera()"
+                    [disabled]="videoDevices.length <= 1" title="Switch Camera">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                </button>
+                <button type="button" class="camera-shutter-btn" (click)="capturePhoto()" title="Capture Photo">
+                    <span class="shutter-inner"></span>
+                </button>
+                <button type="button" class="camera-action-btn cancel-btn" (click)="closeCamera()" title="Cancel">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                } @else if (capturedImage) {
+                <button type="button" class="camera-preview-action-btn retake-btn" (click)="retakePhoto()">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Retake
+                </button>
+                <button type="button" class="camera-preview-action-btn confirm-btn" (click)="confirmPhoto()">
+                    <i class="fa-solid fa-check"></i> Use Photo
+                </button>
+                } @else {
+                <button type="button" class="modal-close-action" (click)="closeCamera()">Close</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+}

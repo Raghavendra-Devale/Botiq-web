@@ -707,6 +707,7 @@
 .assets-inline-row {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .asset-upload-box {
@@ -951,12 +952,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    white-space: nowrap;
+    flex-wrap: nowrap;
 }
 
 .billing-label {
     font-size: 12.5px;
     font-weight: 600;
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
 .billing-val {
@@ -967,6 +971,8 @@
 
 .editable-billing-row {
     align-items: center;
+    white-space: nowrap;
+    flex-wrap: nowrap;
 }
 
 .advance-input-wrap {
@@ -985,7 +991,7 @@
 }
 
 .advance-input {
-    width: 110px;
+    width: 90px;
     height: 30px;
     padding: 0 6px 0 18px;
     border: 1px solid var(--border-strong);
@@ -1018,12 +1024,15 @@
 
 .balance-row {
     margin-top: 2px;
+    white-space: nowrap;
+    flex-wrap: nowrap;
 }
 
 .billing-label-bold {
     font-size: 13px;
     font-weight: 700;
     color: var(--text-primary);
+    white-space: nowrap;
 }
 
 .balance-value {
@@ -1424,7 +1433,8 @@
     }
 }
 
-@media (max-width: 960px) {
+/* --- MOBILE PORTRAIT VIEW --- */
+@media (max-width: 960px) and (orientation: portrait) {
     .pos-container {
         height: auto;
         max-height: none;
@@ -1450,11 +1460,13 @@
     }
 
     .catalog-chips-wrap {
-        max-height: none;
+        max-height: 75px;
+        overflow-y: auto;
     }
 
     .cart-compact-list {
-        max-height: 300px;
+        max-height: 180px;
+        overflow-y: auto;
     }
 
     .fields-grid-3 {
@@ -1462,7 +1474,7 @@
     }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 600px) and (orientation: portrait) {
     .pos-container {
         padding: 8px;
     }
@@ -1472,9 +1484,12 @@
         align-items: flex-start;
     }
 
-    .fields-grid-3,
-    .fields-grid-2 {
+    .fields-grid-3 {
         grid-template-columns: 1fr;
+    }
+
+    .fields-grid-2 {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .pos-input-group.span-2 {
@@ -1486,7 +1501,397 @@
     }
 
     .secondary-actions {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* --- MOBILE LANDSCAPE VIEW (Optimized for short vertical screens) --- */
+@media (orientation: landscape) and (max-height: 600px) {
+    .pos-container {
+        height: 100%;
+        max-height: 100vh;
+        overflow: hidden;
+        padding: 2px 6px 3px;
+        gap: 3px;
+    }
+
+    .pos-header {
+        padding-bottom: 3px;
+        gap: 4px;
+    }
+
+    .pos-main-title {
+        font-size: 13px;
+    }
+
+    .pos-live-date,
+    .pos-urgent-banner {
+        font-size: 10px;
+        padding: 1px 5px;
+    }
+
+    .pos-body {
+        flex-direction: row !important;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden !important;
+        gap: 5px;
+    }
+
+    .pos-left-panel {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important;
+        gap: 3px;
+    }
+
+    .pos-left-panel .pos-panel-card:first-child {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important;
+        padding: 4px 6px;
+        max-height: none;
+    }
+
+    .catalog-search-bar {
+        margin-bottom: 3px;
+    }
+
+    .catalog-search-input {
+        height: 22px;
+        font-size: 10.5px;
+        padding: 0 22px 0 20px;
+    }
+
+    .search-icon {
+        font-size: 10px;
+        left: 6px;
+    }
+
+    .clear-search-btn {
+        font-size: 11px;
+        right: 5px;
+    }
+
+    .catalog-chips-wrap {
+        max-height: 42px !important;
+        overflow-y: auto !important;
+        flex-shrink: 0;
+        gap: 2px;
+        padding: 1px;
+    }
+
+    .catalog-chip {
+        padding: 1px 4px;
+    }
+
+    .chip-name {
+        font-size: 10px;
+    }
+
+    .chip-price {
+        font-size: 9px;
+    }
+
+    .cart-section {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important;
+        padding-top: 3px;
+        margin-top: 3px;
+    }
+
+    .cart-section-header {
+        margin-bottom: 2px;
+    }
+
+    .cart-compact-list {
+        max-height: 56px !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
+
+    .cart-compact-row {
+        padding: 1.5px 0;
+    }
+
+    .cc-name {
+        font-size: 10.5px;
+    }
+
+    .cc-qty-ctrl {
+        height: 18px;
+    }
+
+    .qty-btn {
+        width: 15px;
+        font-size: 7px;
+    }
+
+    .qty-input {
+        width: 18px;
+        font-size: 9.5px;
+    }
+
+    .cart-price-input {
+        width: 52px;
+        height: 18px;
+        font-size: 9.5px;
+        padding: 0 2px 0 10px;
+    }
+
+    .cc-currency {
+        font-size: 9px;
+        left: 3px;
+    }
+
+    .cc-total {
+        font-size: 10.5px;
+        min-width: 40px;
+    }
+
+    .custom-item-bar {
+        padding-top: 3px;
+        margin-top: 3px;
+        gap: 3px;
+    }
+
+    .custom-item-label {
+        font-size: 9.5px;
+    }
+
+    .pos-input {
+        height: 20px;
+        font-size: 10px;
+        padding: 0 4px;
+    }
+
+    .custom-price-input {
+        width: 52px;
+        padding-left: 12px;
+    }
+
+    .currency-label {
+        font-size: 9.5px;
+        left: 4px;
+    }
+
+    .add-custom-btn {
+        height: 20px;
+        padding: 0 6px;
+        font-size: 9.5px;
+    }
+
+    .attachments-strip {
+        padding: 3px 5px;
+        flex-shrink: 0;
+    }
+
+    .attachments-header {
+        margin-bottom: 2px;
+    }
+
+    .assets-inline-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        gap: 3px;
+    }
+
+    .asset-upload-actions-wrapper,
+    .asset-upload-label,
+    .audio-player-pill,
+    .audio-loading-pill {
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .asset-upload-label-split {
+        font-size: 9.5px;
+        padding: 0 3px;
+    }
+
+    .asset-camera-btn-split {
+        width: 22px;
+    }
+
+    /* Compact Right Panel */
+    .pos-right-panel {
+        width: 250px !important;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        overflow-y: auto !important;
+        min-height: 0;
+        max-height: 100%;
+    }
+
+    .pos-panel-card {
+        padding: 4px 6px;
+    }
+
+    .panel-card-header {
+        margin-bottom: 2px;
+        padding-bottom: 1px;
+    }
+
+    .panel-card-title {
+        font-size: 10.5px;
+        gap: 3px;
+    }
+
+    .fields-grid-3 {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 3px;
+    }
+
+    .fields-grid-2 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 3px;
+    }
+
+    .pos-label {
+        font-size: 8.5px;
+        letter-spacing: 0.1px;
+    }
+
+    .pos-input-wrapper input,
+    .pos-input-wrapper select {
+        height: 22px;
+        font-size: 10.5px;
+        padding: 0 4px;
+    }
+
+    .pos-input-wrapper.icon-left input {
+        padding-left: 18px;
+    }
+
+    .input-icon {
+        left: 4px;
+        font-size: 9px;
+    }
+
+    .urgent-toggle-row {
+        margin-top: 2px;
+        padding-top: 2px;
+        gap: 4px;
+    }
+
+    .urgent-switch {
+        width: 26px;
+        height: 13px;
+    }
+
+    .switch-slider:before {
+        height: 7px;
+        width: 7px;
+        left: 3px;
+        bottom: 3px;
+    }
+
+    .urgent-switch input:checked+.switch-slider:before {
+        transform: translateX(11px);
+    }
+
+    .urgent-switch-label {
+        font-size: 9.5px;
+    }
+
+    .billing-card {
+        padding: 4px 6px;
+    }
+
+    .billing-rows {
+        gap: 2px;
+    }
+
+    .billing-row {
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    .billing-label {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .billing-val {
+        font-size: 10.5px;
+    }
+
+    .editable-billing-row {
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    .advance-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .advance-input {
+        height: 20px;
+        width: 65px !important;
+        font-size: 10.5px;
+        padding: 0 3px 0 12px;
+    }
+
+    .adv-currency {
+        font-size: 9.5px;
+        left: 3px;
+    }
+
+    .billing-divider {
+        margin: 1px 0;
+    }
+
+    .balance-row {
+        margin-top: 1px;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    .billing-label-bold {
+        font-size: 10.5px;
+        white-space: nowrap;
+    }
+
+    .balance-value {
+        font-size: 13px;
+    }
+
+    .actions-card {
+        padding: 4px 6px;
+        gap: 3px;
+    }
+
+    .primary-actions {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3px;
+    }
+
+    .secondary-actions {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3px;
+    }
+
+    .pos-btn-submit,
+    .pos-btn-cancel {
+        height: 26px;
+        font-size: 10px;
+    }
+
+    .pos-btn-secondary {
+        height: 22px;
+        font-size: 9.5px;
     }
 }
 
@@ -1912,4 +2317,29 @@ button.asset-upload-label {
 .camera-preview-action-btn.confirm-btn:hover {
     filter: brightness(1.06);
     box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.asset-upload-box.audio-box.has-audio {
+    flex: 0 0 100%;
+    margin-top: 4px;
+}
+
+.audio-loading-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 34px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--border-radius-sm);
+    background: #f8fafc;
+    padding: 0 8px;
+    box-sizing: border-box;
+    width: 100%;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.audio-loading-pill i {
+    color: var(--primary-accent);
 }

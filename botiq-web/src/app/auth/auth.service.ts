@@ -30,14 +30,24 @@ export class AuthService {
   private basicDetailsSubject = new BehaviorSubject<any>(null);
   public basicDetails$ = this.basicDetailsSubject.asObservable();
   private userRole: string = '';
+  partnerId: number | null = null;
 
   setBasicDetails(details: any) {
     this.basicDetailsSubject.next(details);
     if (details) {
-      this.userRole = details.user_role || '';
+      console.log("basic details ", details);
+      this.userRole = details.user_role || details.userRole || '';
+      this.partnerId = details.partner_id || details.partnerId || null;
     } else {
       this.userRole = '';
+      this.partnerId = null;
     }
+  }
+
+  getPartnerId(): number | null {
+    if (this.partnerId) return this.partnerId;
+    const details = this.getBasicDetails();
+    return details ? (details.partner_id || details.partnerId || null) : null;
   }
 
   getBasicDetails() {

@@ -200,28 +200,18 @@ public class AuthController {
                 UserDevice device;
 
                 try {
-
-                        device = deviceService.findCurrentDevice(
-                                        request);
+                        device = deviceService.findCurrentDevice(request);
 
                 } catch (Exception e) {
 
                         return ResponseEntity.status(401)
-                                        .body(
-                                                        Map.of(
-                                                                        "message",
-                                                                        "Device not recognized"));
+                                        .body(Map.of("message", "Device not recognized"));
                 }
 
                 if (device.getStatus() == DeviceStatus.LOCKED) {
 
                         return ResponseEntity.badRequest()
-                                        .body(
-                                                        Map.of(
-                                                                        "message",
-                                                                        "Device locked. Login with OTP.",
-                                                                        "remainingAttempts",
-                                                                        0));
+                                        .body(Map.of("message", "Device locked. Login with OTP.", "remainingAttempts", 0));
                 }
 
                 boolean valid = passwordEncoder.matches(
@@ -373,7 +363,7 @@ public class AuthController {
                                 .secure(false)
                                 .path("/")
                                 .maxAge(Duration.ofDays(180))
-                                .sameSite("Strict")
+                                .sameSite("Lax")
                                 .build();
 
                 response.addHeader(
@@ -514,7 +504,7 @@ public class AuthController {
                                                 .secure(false)
                                                 .path("/")
                                                 .maxAge(0)
-                                                .sameSite("Strict")
+                                                .sameSite("Lax")
                                                 .build();
                                 response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
                         }

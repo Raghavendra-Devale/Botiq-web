@@ -119,7 +119,7 @@
     background: #ffffff;
     overflow: hidden;
     position: relative;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 canvas {
@@ -152,4 +152,62 @@ canvas {
 
 .save-btn {
     font-weight: 600;
+}
+
+.color-options {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.color-btn {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0;
+}
+
+.color-circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    display: block;
+}
+
+.color-active {
+    background: rgba(59, 130, 246, .15) !important;
+    border-radius: 50%;
+}
+
+.view-only-tag {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    margin-left: 4px;
+}
+
+.view-only-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.view-only-banner mat-icon {
+    color: #3b82f6;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.canvas-wrapper.canvas-readonly canvas {
+    pointer-events: none;
+    touch-action: none;
+    cursor: default;
 }

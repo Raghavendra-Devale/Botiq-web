@@ -1,0 +1,480 @@
+<div class="reports-container">
+  <!-- PAGE HEADER & ACTION CONTROLS -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Reports</h1>
+      <p class="page-subtitle">Track, analyze, and review operational business metrics</p>
+    </div>
+
+    <div class="header-actions">
+      <!-- Export buttons group -->
+      <div class="export-group">
+        <button class="btn-export" [class.loading]="exportingFormat === 'Excel'" (click)="triggerExport('Excel')"
+          title="Export to Excel">
+          <i class="fa-solid fa-file-excel"></i>
+          <span>Excel</span>
+        </button>
+        <button class="btn-export" [class.loading]="exportingFormat === 'PDF'" (click)="triggerExport('PDF')"
+          title="Export as PDF">
+          <i class="fa-solid fa-file-pdf"></i>
+          <span>PDF</span>
+        </button>
+        <button class="btn-export" [class.loading]="exportingFormat === 'CSV'" (click)="triggerExport('CSV')"
+          title="Export to CSV">
+          <i class="fa-solid fa-file-csv"></i>
+          <span>CSV</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER CONTROLS BAR -->
+  <div class="filter-bar glass-panel">
+    <div class="report-type-selector">
+      <button *ngFor="let type of reportTypes" class="pill-btn" [class.active]="selectedReportType === type"
+        (click)="selectedReportType = type; updateReportData()">
+        <span class="dot"></span>
+        <span class="label">{{ type | titlecase }}</span>
+      </button>
+    </div>
+
+    <!-- Custom Date Inputs (only visible when custom range is active) -->
+    <div class="custom-date-panel" *ngIf="selectedReportType === 'custom'">
+      <div class="input-field">
+        <label for="startDate">From</label>
+        <input id="startDate" type="date" [(ngModel)]="customStartDate" (change)="onCustomDatesChanged()" />
+      </div>
+      <div class="input-field">
+        <label for="endDate">To</label>
+        <input id="endDate" type="date" [(ngModel)]="customEndDate" (change)="onCustomDatesChanged()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- OPERATIONAL SUMMARY CARDS GRID -->
+  <div class="summary-grid">
+    <!-- Card 1: Order Summary -->
+    <div class="kpi-card total-orders glass-panel">
+      <div class="kpi-icon-wrapper">
+        <i class="fa-solid fa-cart-shopping"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Order Summary</span>
+        <h3 class="kpi-value">{{ summary.totalOrders }} Orders</h3>
+        <span class="kpi-detail-label">Completed: {{ summary.completedOrders }}</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Payment Summary -->
+    <div class="kpi-card revenue glass-panel">
+      <div class="kpi-icon-wrapper">
+        <i class="fa-solid fa-indian-rupee-sign"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Payment Summary</span>
+        <h3 class="kpi-value">₹{{ summary.revenue | number }}</h3>
+        <span class="kpi-detail-label text-success">Total Gross Revenue</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Overdue Orders -->
+    <div class="kpi-card pending glass-panel">
+      <div class="kpi-icon-wrapper">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Overdue Deliveries</span>
+        <h3 class="kpi-value text-danger">{{ summary.overdueOrders }} Active</h3>
+        <span class="kpi-detail-label text-danger">Past delivery due date</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Pending Payments -->
+    <div class="kpi-card completed glass-panel">
+      <div class="kpi-icon-wrapper">
+        <i class="fa-solid fa-wallet"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Pending Payments</span>
+        <h3 class="kpi-value text-warning">₹{{ summary.pendingPayments | number }}</h3>
+        <span class="kpi-detail-label text-warning">Outstanding amounts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DYNAMIC OPERATIONAL TRENDS CHART -->
+  <div class="chart-container-wrapper glass-panel">
+    <div class="chart-header">
+      <h3 class="chart-title">
+        <i class="fa-solid fa-chart-column"></i>
+        <span>Operational Trend Analysis</span>
+      </h3>
+      <span class="chart-subtitle">Order volume & revenue comparisons over the selected period</span>
+    </div>
+    <div id="operationalTrendChart" class="echart-box"></div>
+  </div>
+
+  <!-- OPERATIONAL TABBED BAR CONTAINER -->
+  <div class="tabs-container-wrapper">
+    <div class="reports-tabs">
+      <button class="tab-link" [class.active]="activeTab === 'order-status'" (click)="switchTab('order-status')">
+        <i class="fa-solid fa-box"></i>
+        <span>Order Status Report</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'partner-workload'"
+        (click)="switchTab('partner-workload')">
+        <i class="fa-solid fa-handshake"></i>
+        <span>Partner Workload</span>
+      </button>
+      <button class="tab-link" [class.active]="activeTab === 'category-summary'"
+        (click)="switchTab('category-summary')">
+        <i class="fa-solid fa-tags"></i>
+        <span>Work Category Summary</span>
+      </button>
+      <button class="tab-link alert-tab-link" [class.active]="activeTab === 'alerts'" (click)="switchTab('alerts')">
+        <i class="fa-solid fa-bell"></i>
+        <span>Urgent Alerts</span>
+        <span class="alert-count-badge" *ngIf="summary.overdueOrders > 0">!</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB VIEW CONTENT PANEL -->
+  <div class="tab-content-panel">
+
+    <!-- TAB 1: ORDER STATUS REPORT -->
+    <div class="tab-view" *ngIf="activeTab === 'order-status'">
+      <div class="table-card glass-panel">
+        <div class="table-card-header">
+          <div class="title-section">
+            <h4>Order Status & Customer Summary</h4>
+            <span class="subtitle">Search, filter, and track statuses of individual orders</span>
+          </div>
+
+          <!-- Filters & Search inputs -->
+          <div class="table-filters">
+            <!-- <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input 
+                type="text" 
+                [(ngModel)]="searchQuery" 
+                (ngModelChange)="currentPage = 1"
+                placeholder="Search ID, customer, category..." />
+            </div> -->
+
+            <div class="filter-dropdowns">
+              <!-- Order Status Filter -->
+              <!-- <div class="status-select-wrapper">
+                <select [(ngModel)]="statusFilter" (ngModelChange)="currentPage = 1">
+                  <option value="All">All Statuses</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div> -->
+
+              <!-- Payment Status Filter -->
+              <!-- <div class="status-select-wrapper">
+                <select [(ngModel)]="paymentFilter" (ngModelChange)="currentPage = 1">
+                  <option value="All">All Payments</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Unpaid">Unpaid</option>
+                  <option value="Partial">Partial</option>
+                </select>
+              </div> -->
+            </div>
+          </div>
+        </div>
+
+        <div class="table-scroll-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th (click)="setSort('orderId')">
+                  Order ID
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'orderId' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'orderId' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'orderId'"></i>
+                </th>
+                <th (click)="setSort('date')">
+                  Date
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'date' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'date' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'date'"></i>
+                </th>
+                <th (click)="setSort('customerName')">
+                  Customer
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'customerName' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'customerName' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'customerName'"></i>
+                </th>
+                <th (click)="setSort('category')">
+                  Category
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'category' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'category' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'category'"></i>
+                </th>
+                <th (click)="setSort('partner')">
+                  Partner
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'partner' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'partner' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'partner'"></i>
+                </th>
+                <th (click)="setSort('dueDate')">
+                  Due Date
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'dueDate' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'dueDate' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'dueDate'"></i>
+                </th>
+                <th (click)="setSort('status')">
+                  Status
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'status' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'status' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'status'"></i>
+                </th>
+                <th (click)="setSort('amount')">
+                  Amount
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'amount' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'amount' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'amount'"></i>
+                </th>
+                <!-- <th (click)="setSort('paymentStatus')">
+                  Payment
+                  <i class="fa-solid" [class.fa-sort-up]="tableSortColumn === 'paymentStatus' && tableSortAscending"
+                    [class.fa-sort-down]="tableSortColumn === 'paymentStatus' && !tableSortAscending"
+                    [class.fa-sort]="tableSortColumn !== 'paymentStatus'"></i>
+                </th> -->
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let record of getPaginatedData()">
+                <td class="order-id">{{ record.orderId }}</td>
+                <td class="order-date">{{ record.date | date:'MMM d, y, h:mm a' }}</td>
+                <td class="customer-name">{{ record.customerName }}</td>
+                <td>{{ record.category }}</td>
+                <td><span class="partner-badge">{{ record.partner }}</span></td>
+                <td class="due-date">{{ record.dueDate | date:'mediumDate' }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="record.status.toLowerCase().replace(' ', '-')">
+                    <span class="pulse-dot"></span>
+                    {{ record.status }}
+                  </span>
+                </td>
+                <td class="amount-cell">₹{{ record.amount | number }}</td>
+                <!-- <td>
+                  <span class="payment-badge" [ngClass]="record.paymentStatus.toLowerCase()">
+                    {{ record.paymentStatus }}
+                  </span>
+                </td> -->
+              </tr>
+              <tr *ngIf="getFilteredData().length === 0">
+                <td colspan="9" class="empty-state">
+                  <i class="fa-solid fa-inbox"></i>
+                  <p>No matching orders found.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Pagination -->
+        <div class="table-pagination" *ngIf="getFilteredData().length > 0">
+          <span class="pagination-info">
+            Showing {{ (currentPage - 1) * pageSize + 1 }} to
+            {{ (currentPage * pageSize) < getFilteredData().length ? (currentPage * pageSize) : getFilteredData().length
+              }} of {{ getFilteredData().length }} orders </span>
+
+              <div class="pagination-buttons">
+                <button class="pag-btn" [disabled]="currentPage === 1" (click)="prevPage()">
+                  <i class="fa-solid fa-angle-left"></i>
+                </button>
+                <span class="page-indicator">Page {{ currentPage }} of {{ getTotalPages() }}</span>
+                <button class="pag-btn" [disabled]="currentPage === getTotalPages()" (click)="nextPage()">
+                  <i class="fa-solid fa-angle-right"></i>
+                </button>
+              </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: PARTNER WORKLOAD -->
+    <div class="tab-view" *ngIf="activeTab === 'partner-workload'">
+      <div class="table-card glass-panel">
+        <div class="table-card-header">
+          <div class="title-section">
+            <h4>Partner Workload Report</h4>
+            <span class="subtitle">Logistics load share and delivery performance metric summaries</span>
+          </div>
+        </div>
+
+        <div class="table-scroll-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Partner Name</th>
+                <th>Assigned Orders</th>
+                <th>Active Workload</th>
+                <th>Delivered Orders</th>
+                <th>Success Rate</th>
+                <th>Revenue Handled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of partnerWorkload">
+                <td class="customer-name">{{ p.partnerName }}</td>
+                <td class="amount-cell">{{ p.totalOrders }}</td>
+                <td>
+                  <span class="status-badge in-progress">
+                    <span class="pulse-dot"></span>
+                    {{ p.activeOrders }} Active
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge completed">
+                    <span class="pulse-dot"></span>
+                    {{ p.completedOrders }} Done
+                  </span>
+                </td>
+                <td class="success-rate-cell">
+                  <div class="success-progress-bar">
+                    <div class="progress-fill" [style.width.%]="p.successRate"></div>
+                  </div>
+                  <span class="rate-num">{{ p.successRate }}%</span>
+                </td>
+                <td class="amount-cell">₹{{ p.revenueHandled | number }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: WORK CATEGORY SUMMARY -->
+    <div class="tab-view" *ngIf="activeTab === 'category-summary'">
+      <div class="category-grid">
+        <div class="category-summary-card glass-panel" *ngFor="let c of categorySummary">
+          <div class="card-top">
+            <h4 class="cat-title">{{ c.categoryName }}</h4>
+            <span class="cat-share">{{ c.percentage }}% share</span>
+          </div>
+          <div class="card-middle">
+            <div class="metric-row">
+              <span class="label">Total Orders:</span>
+              <span class="val">{{ c.totalOrders }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="label">Total Value:</span>
+              <span class="val text-success">₹{{ c.totalValue | number }}</span>
+            </div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="c.percentage"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: URGENT ALERTS -->
+    <div class="tab-view" *ngIf="activeTab === 'alerts'">
+      <div class="alerts-split-grid">
+
+        <!-- Left: Overdue Deliveries -->
+        <div class="alert-section-card glass-panel">
+          <div class="section-header overdue-header">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <h4>Overdue Orders</h4>
+          </div>
+          <div class="section-body">
+            <div class="table-scroll-wrapper">
+              <table class="audit-table mini-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Due Date</th>
+                    <th>Delay</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ov of overdueOrdersList">
+                    <td class="order-id">{{ ov.orderId }}</td>
+                    <td>{{ ov.customerName }}</td>
+                    <td class="text-danger">{{ ov.dueDate | date:'mediumDate' }}</td>
+                    <td>
+                      <span class="delay-badge">{{ ov.delayDays }} Days</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="overdueOrdersList.length === 0">
+                    <td colspan="4" class="empty-state">
+                      <i class="fa-solid fa-check-circle text-success"></i>
+                      <p>All active orders are on schedule.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Pending Payments -->
+        <div class="alert-section-card glass-panel">
+          <div class="section-header payments-header">
+            <i class="fa-solid fa-wallet"></i>
+            <h4>Pending Payments</h4>
+          </div>
+          <div class="section-body">
+            <div class="table-scroll-wrapper">
+              <table class="audit-table mini-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Pending Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let pp of pendingPaymentsList">
+                    <td class="order-id">{{ pp.orderId }}</td>
+                    <td>{{ pp.customerName }}</td>
+                    <td class="amount-cell text-warning">₹{{ pp.pendingAmount | number }}</td>
+                    <td>
+                      <span class="payment-badge" [ngClass]="pp.paymentStatus.toLowerCase()">
+                        {{ pp.paymentStatus }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="pendingPaymentsList.length === 0">
+                    <td colspan="4" class="empty-state">
+                      <i class="fa-solid fa-circle-check text-success"></i>
+                      <p>No outstanding payments recorded.</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FLOATING PORTAL FOR SYSTEM TOAST ALERTS -->
+<div class="toast-portal" id="reports-toast-portal">
+  <div class="toast-item" *ngFor="let toast of toasts" [ngClass]="toast.type" (click)="closeToast(toast.id)">
+    <div class="toast-indicator"></div>
+    <div class="toast-content">
+      <i class="toast-icon fa-solid" [class.fa-circle-check]="toast.type === 'success'"
+        [class.fa-triangle-exclamation]="toast.type === 'warning'" [class.fa-circle-info]="toast.type === 'info'"
+        [class.fa-circle-xmark]="toast.type === 'danger'"></i>
+      <span class="toast-msg">{{ toast.message }}</span>
+    </div>
+    <button class="toast-close-btn" (click)="$event.stopPropagation(); closeToast(toast.id)">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+</div>
