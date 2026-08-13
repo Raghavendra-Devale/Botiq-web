@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+
 @Component({
     selector: 'app-order-list',
     imports: [CommonModule, FormsModule],
@@ -148,6 +149,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
       next: (res: any[]) => {
         const fetchedOrders = res || [];
         
+        console.log("fetched ", fetchedOrders);
         // Transform the orders when fetched
         const transformedOrders = fetchedOrders.map(order => this.transformOrder(order));
         

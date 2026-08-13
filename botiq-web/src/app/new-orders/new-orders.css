@@ -2295,6 +2295,17 @@ form {
     color: #94a3b8;
 }
 
+.sno-cell-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.sno-num {
+    min-width: 14px;
+}
+
 .td-item {}
 
 .item-name-cell {
@@ -2431,6 +2442,7 @@ form {
 /* Action Icon Buttons */
 .td-actions {
     text-align: center;
+    white-space: nowrap;
 }
 
 .action-icon-btn {
@@ -2468,6 +2480,107 @@ form {
 .delete-btn:hover {
     color: #dc2626;
     background: #fef2f2;
+}
+
+.edit-btn {
+    color: #3b82f6;
+}
+
+.edit-btn:hover {
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.edit-btn.active {
+    color: #16a34a;
+    background: #f0fdf4;
+}
+
+.more-options-btn {
+    color: #64748b;
+}
+
+.more-options-btn:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+
+.inline-qty-btn:disabled,
+.inline-qty-input:disabled,
+.inline-price-input:disabled,
+.action-icon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Item Status Pill */
+.item-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-left: 6px;
+    letter-spacing: 0.2px;
+    text-transform: capitalize;
+    line-height: 1.2;
+}
+
+.item-status-pill.status-pending {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.item-status-pill.status-hold {
+    background: #ffedd5;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.item-status-pill.status-delivered {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+/* More Options Menu Styling */
+::ng-deep .item-more-options-menu {
+    min-width: 150px !important;
+}
+
+.menu-header {
+    padding: 6px 12px 4px 12px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+}
+
+.menu-icon {
+    margin-right: 8px;
+    font-size: 12px;
+}
+
+.menu-icon.icon-pending {
+    color: #d97706;
+}
+
+.menu-icon.icon-hold {
+    color: #ea580c;
+}
+
+.menu-icon.icon-delivered {
+    color: #16a34a;
+}
+
+.menu-check {
+    margin-left: auto;
+    font-size: 11px;
+    color: #2563eb;
 }
 
 /* Expandable Notes Row */

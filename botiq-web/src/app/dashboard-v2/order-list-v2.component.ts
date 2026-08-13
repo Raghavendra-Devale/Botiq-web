@@ -148,6 +148,7 @@ export class DashboardV2Component implements OnInit, OnDestroy {
       next: (res: any[]) => {
         const fetchedOrders = res || [];
         
+        console.log("fetched ", fetchedOrders);
         // Transform the orders when fetched
         const transformedOrders = fetchedOrders.map(order => this.transformOrder(order));
         

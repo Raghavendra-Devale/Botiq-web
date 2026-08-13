@@ -34,6 +34,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.math.BigDecimal;
 import java.util.*;
 
 import java.time.LocalDate;
@@ -589,10 +590,32 @@ public class WebController {
 
             StringBuilder sql = new StringBuilder("""
                     SELECT
-                        o.*,
+                        o.order_id,
+                        o.org_id,
+                        o.customer_id,
+                        o.order_status,
+                        o.payment_status,
+                        o.order_amount,
+                        o.advance_amount,
+                        o.due_amount,
+                        o.order_date,
+                        o.due_date,
+                        o.delivered_date,
+                        o.has_job_order,
+                        o.order_priority,
+                        o.created_date,
+                        o.updated_date,
                         c.customer_name,
                         c.contact_number,
                         c.customer_address,
+                        (
+                            SELECT od.details_id
+                            FROM botiq_order_docs_w od
+                            WHERE od.order_id = o.order_id
+                              AND od.details_type = 2
+                            ORDER BY od.details_id
+                            LIMIT 1
+                        ) AS details_id,
                         (
                             SELECT od.details_data
                             FROM botiq_order_docs_w od
@@ -600,7 +623,54 @@ public class WebController {
                               AND od.details_type = 2
                             ORDER BY od.details_id
                             LIMIT 1
-                        ) AS details_data
+                        ) AS details_data,
+                        (
+                            SELECT COALESCE(
+                                json_agg(
+                                    json_build_object(
+                                        'details_id', od.details_id,
+                                        'detailsId', od.details_id,
+                                        'details_type', od.details_type,
+                                        'detailsType', od.details_type,
+                                        'details_data', od.details_data,
+                                        'detailsData', od.details_data
+                                    )
+                                    ORDER BY od.details_id
+                                ),
+                                '[]'::json
+                            )
+                            FROM botiq_order_docs_w od
+                            WHERE od.order_id = o.order_id
+                        ) AS documents,
+                        (
+                            SELECT COALESCE(
+                                json_agg(
+                                    json_build_object(
+                                        'itemId', i.item_id,
+                                        'item_id', i.item_id,
+                                        'orderId', i.order_id,
+                                        'orgId', i.org_id,
+                                        'customerId', i.customer_id,
+                                        'itemName', i.item_name,
+                                        'item_name', i.item_name,
+                                        'quantity', i.quantity,
+                                        'price', i.price,
+                                        'notes', i.notes,
+                                        'orderStatus', i.order_status,
+                                        'status', i.order_status
+                                    )
+                                    ORDER BY i.item_id
+                                ),
+                                CASE 
+                                    WHEN o.order_details IS NULL OR o.order_details = '' THEN '[]'::json
+                                    WHEN json_typeof(o.order_details::json) = 'array' THEN o.order_details::json
+                                    ELSE '[]'::json
+                                END
+                            )
+                            FROM botiq_order_item_w i
+                            WHERE i.order_id = o.order_id
+                              AND i.org_id = o.org_id
+                        ) AS order_details
                     FROM botiq_order_w o
                     LEFT JOIN botiq_customer_w c
                         ON o.customer_id = c.customer_id
@@ -3479,14 +3549,23 @@ public class WebController {
                 }
             }
 
-            String orderDetailsStr = (String) order.get("order_details");
+            String itemsSql = "SELECT item_id AS \"itemId\", item_id, item_name AS \"itemName\", item_name, quantity, price, notes, order_status AS \"orderStatus\", order_status AS status FROM botiq_order_item_w WHERE order_id = ? AND org_id = ? ORDER BY item_id";
+            List<Map<String, Object>> items = jdbcTemplate.queryForList(itemsSql, id, orgId);
 
-            if (orderDetailsStr != null && !orderDetailsStr.isEmpty()) {
-                try {
-                    Object parsed = mapper.readValue(orderDetailsStr, Object.class);
-                    order.put("order_details", parsed);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            if (items != null && !items.isEmpty()) {
+                order.put("order_details", items);
+                response.put("orderDetails", items);
+            } else {
+                String orderDetailsStr = (String) order.get("order_details");
+
+                if (orderDetailsStr != null && !orderDetailsStr.isEmpty()) {
+                    try {
+                        Object parsed = mapper.readValue(orderDetailsStr, Object.class);
+                        order.put("order_details", parsed);
+                        response.put("orderDetails", parsed);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -3518,11 +3597,9 @@ public class WebController {
     public ResponseEntity<?> updateOrder(@RequestBody Map<String, Object> payload,
             HttpServletRequest request) {
         try {
-            System.out.println("update order");
-            System.out.println("👉 orderDetails from payload: " + payload.get("orderDetails"));
+            System.out.println("LOG [updateOrder]: Received updateOrder request");
 
             UserPrincipal principal = getUserPrincipal();
-            String uid = principal.getFirebaseUid();
             Integer orgId = principal.getOrgId();
             String orgName = principal.getOrgName();
 
@@ -3535,8 +3612,17 @@ public class WebController {
                 return ResponseEntity.badRequest().body("Invalid payload");
             }
 
-            Integer customerId = (Integer) customer.get("customerId");
-            Integer orderId = (Integer) order.get("order_id");
+            Integer customerId = customer.get("customerId") != null
+                    ? ((Number) customer.get("customerId")).intValue()
+                    : customer.get("customer_id") != null
+                    ? ((Number) customer.get("customer_id")).intValue()
+                    : null;
+
+            Integer orderId = order.get("orderId") != null
+                    ? ((Number) order.get("orderId")).intValue()
+                    : order.get("order_id") != null
+                    ? ((Number) order.get("order_id")).intValue()
+                    : null;
 
             if (customerId == null || orderId == null) {
                 return ResponseEntity.badRequest().body("Missing IDs for update");
@@ -3563,7 +3649,7 @@ public class WebController {
                     ? orderDateRaw.split("T")[0]
                     : orderDateRaw;
 
-            // 🔁 Boolean handling (robust)
+            // 🔁 Boolean handling
             boolean hasJobOrder = false;
             Object value = order.get("hasJobOrder");
 
@@ -3573,26 +3659,26 @@ public class WebController {
                 hasJobOrder = ((Integer) value) == 1;
             }
 
-            // 🧠 Convert orderDetails → JSON
+            // 🧠 Convert orderDetails -> JSON string for botiq_order_w
             String orderDetailsJson = "[]";
             if (orderDetails != null) {
                 orderDetailsJson = mapper.writeValueAsString(orderDetails);
             }
 
-            // ================= CUSTOMER UPDATE =================
+            // ================= 1. CUSTOMER UPDATE =================
             String updateCustomerSql = """
-                        UPDATE botiq_customer_w
-                        SET
-                          customer_name = ?,
-                          contact_number = ?,
-                          customer_address = ?,
-                          org_id = ?,
-                          org_name = ?,
-                          enabled = ?,
-                          deleted = ?,
-                          updated_date = NOW()
-                        WHERE customer_id = ?
-                    """;
+                UPDATE botiq_customer_w
+                SET
+                  customer_name = ?,
+                  contact_number = ?,
+                  customer_address = ?,
+                  org_id = ?,
+                  org_name = ?,
+                  enabled = true,
+                  deleted = false,
+                  updated_date = NOW()
+                WHERE customer_id = ?
+            """;
 
             jdbcTemplate.update(updateCustomerSql,
                     customerName,
@@ -3600,35 +3686,32 @@ public class WebController {
                     address,
                     orgId,
                     orgName,
-                    true,
-                    false,
                     customerId);
 
-            // ================= ORDER UPDATE =================
+            // ================= 2. ORDER UPDATE =================
             String updateOrderSql = """
-                        UPDATE botiq_order_w
-                        SET
-                          org_id = ?,
-                          customer_id = ?,
-                          order_details = ?,
-                          order_status = ?,
-                          payment_status = ?,
-                          order_amount = ?,
-                          advance_amount = ?,
-                          due_amount = ?,
-                          order_date = ?::date,
-                          due_date = ?::date,
-                          has_job_order = ?,
-                          order_priority = ?,
-                          delivered_date = CASE
-                            WHEN ? = 'Delivered' THEN COALESCE(delivered_date, CURRENT_DATE)
-                            ELSE NULL
-                          END,
-                          updated_date = NOW()
-                        WHERE order_id = ? AND org_id = ?
-                    """;
-            System.out.println("👉 JSON: " + orderDetailsJson);
-            System.out.println("👉 Updating order with ID: " + orderId);
+                UPDATE botiq_order_w
+                SET
+                  org_id = ?,
+                  customer_id = ?,
+                  order_details = ?,
+                  order_status = ?,
+                  payment_status = ?,
+                  order_amount = ?,
+                  advance_amount = ?,
+                  due_amount = ?,
+                  order_date = ?::date,
+                  due_date = ?::date,
+                  has_job_order = ?,
+                  order_priority = ?,
+                  delivered_date = CASE
+                    WHEN ? = 'Delivered' THEN COALESCE(delivered_date, CURRENT_DATE)
+                    ELSE NULL
+                  END,
+                  updated_date = NOW()
+                WHERE order_id = ? AND org_id = ?
+            """;
+
             jdbcTemplate.update(updateOrderSql,
                     orgId,
                     customerId,
@@ -3646,65 +3729,166 @@ public class WebController {
                     orderId,
                     orgId);
 
-            // ================= UPDATE/SAVE DETAILS (DOCUMENTS) =================
-            try {
-                jdbcTemplate.update("DELETE FROM botiq_order_docs_w WHERE order_id = ? AND org_id = ?", orderId, orgId);
+            // ================= 3. UPDATE ORDER ITEMS (botiq_order_item_w) =================
+            String updateItemSql = """
+                UPDATE botiq_order_item_w
+                SET
+                    customer_id = ?,
+                    item_name = ?,
+                    quantity = ?,
+                    price = ?,
+                    notes = ?,
+                    order_status = ?
+                WHERE item_id = ?
+                  AND order_id = ?
+                  AND org_id = ?
+            """;
 
+            String insertItemSql = """
+                INSERT INTO botiq_order_item_w (
+                    order_id,
+                    org_id,
+                    customer_id,
+                    item_name,
+                    quantity,
+                    price,
+                    notes,
+                    order_status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
+            if (orderDetails != null) {
+                for (Object itemObj : orderDetails) {
+                    Map<String, Object> item = (Map<String, Object>) itemObj;
+
+                    Object itemIdObj = item.get("itemId") != null ? item.get("itemId")
+                                     : item.get("item_id") != null ? item.get("item_id")
+                                     : null;
+
+                    Long itemId = (itemIdObj != null && ((Number) itemIdObj).longValue() > 0)
+                                ? ((Number) itemIdObj).longValue()
+                                : null;
+
+                    boolean isDeleted = Boolean.TRUE.equals(item.get("deleted"))
+                                     || Boolean.TRUE.equals(item.get("isDeleted"))
+                                     || "true".equalsIgnoreCase(String.valueOf(item.get("deleted")))
+                                     || "true".equalsIgnoreCase(String.valueOf(item.get("isDeleted")));
+
+                    if (isDeleted) {
+                        if (itemId != null) {
+                            jdbcTemplate.update("DELETE FROM botiq_order_item_w WHERE item_id = ? AND order_id = ? AND org_id = ?", itemId, orderId, orgId);
+                            System.out.println("LOG [updateOrder]: Deleted item_id=" + itemId);
+                        }
+                        continue;
+                    }
+
+                    String itemName = item.get("itemName") != null ? item.get("itemName").toString()
+                                    : item.get("item_name") != null ? item.get("item_name").toString()
+                                    : "";
+
+                    Integer quantity = item.get("quantity") != null
+                            ? ((Number) item.get("quantity")).intValue()
+                            : 0;
+
+                    BigDecimal price = item.get("price") != null
+                            ? new BigDecimal(item.get("price").toString())
+                            : BigDecimal.ZERO;
+
+                    String notes = item.get("notes") != null ? item.get("notes").toString() : "";
+                    String itemStatus = item.get("status") != null ? item.get("status").toString()
+                                      : item.get("orderStatus") != null ? item.get("orderStatus").toString()
+                                      : status;
+
+                    if (itemId != null) {
+                        jdbcTemplate.update(
+                                updateItemSql,
+                                customerId,
+                                itemName,
+                                quantity,
+                                price,
+                                notes,
+                                itemStatus,
+                                itemId,
+                                orderId,
+                                orgId
+                        );
+                        System.out.println("LOG [updateOrder]: Updated item_id=" + itemId);
+                    } else {
+                        jdbcTemplate.update(
+                                insertItemSql,
+                                orderId,
+                                orgId,
+                                customerId,
+                                itemName,
+                                quantity,
+                                price,
+                                notes,
+                                itemStatus
+                        );
+                        System.out.println("LOG [updateOrder]: Saved new item: " + itemName);
+                    }
+                }
+            }
+
+            // ================= 4. UPDATE ORDER DOCUMENTS (botiq_order_docs_w) =================
+            // Rule: Existing documents with details_id are preserved untouched.
+            // New documents without details_id are inserted.
+            // Documents with deleted=true and details_id are deleted.
+            try {
                 Map<String, Object> details = (Map<String, Object>) payload.get("details");
                 if (details != null) {
+                    Map<Integer, List<Map<String, Object>>> typeMap = new LinkedHashMap<>();
+                    typeMap.put(1, (List<Map<String, Object>>) details.get("measurements"));
+                    typeMap.put(2, (List<Map<String, Object>>) details.get("materials"));
+                    typeMap.put(3, (List<Map<String, Object>>) details.get("patterns"));
+                    typeMap.put(4, (List<Map<String, Object>>) details.get("audio"));
+                    typeMap.put(5, (List<Map<String, Object>>) details.get("handwrittenNotes"));
+
                     String insertDocSql = "INSERT INTO botiq_order_docs_w (order_id, org_id, details_type, details_data, updated_date) VALUES (?, ?, ?, ?, NOW())";
 
-                    // Measurements (Type 1)
-                    List<Map<String, Object>> measurements = (List<Map<String, Object>>) details.get("measurements");
-                    if (measurements != null) {
-                        for (Map<String, Object> doc : measurements) {
-                            String data = (String) doc.get("base64");
-                            if (data != null && !data.isEmpty()) {
-                                jdbcTemplate.update(insertDocSql, orderId, orgId, 1, data);
-                            }
-                        }
-                    }
+                    for (Map.Entry<Integer, List<Map<String, Object>>> entry : typeMap.entrySet()) {
+                        int type = entry.getKey();
+                        List<Map<String, Object>> docs = entry.getValue();
+                        if (docs == null) continue;
 
-                    // Materials (Type 2)
-                    List<Map<String, Object>> materials = (List<Map<String, Object>>) details.get("materials");
-                    if (materials != null) {
-                        for (Map<String, Object> doc : materials) {
-                            String data = (String) doc.get("base64");
-                            if (data != null && !data.isEmpty()) {
-                                jdbcTemplate.update(insertDocSql, orderId, orgId, 2, data);
-                            }
-                        }
-                    }
+                        for (Map<String, Object> doc : docs) {
+                            Object dIdObj = doc.get("details_id") != null ? doc.get("details_id")
+                                          : doc.get("detailsId") != null ? doc.get("detailsId")
+                                          : null;
 
-                    // Patterns (Type 3)
-                    List<Map<String, Object>> patterns = (List<Map<String, Object>>) details.get("patterns");
-                    if (patterns != null) {
-                        for (Map<String, Object> doc : patterns) {
-                            String data = (String) doc.get("base64");
-                            if (data != null && !data.isEmpty()) {
-                                jdbcTemplate.update(insertDocSql, orderId, orgId, 3, data);
-                            }
-                        }
-                    }
+                            Long detailsId = (dIdObj != null && ((Number) dIdObj).longValue() > 0)
+                                           ? ((Number) dIdObj).longValue()
+                                           : null;
 
-                    // Audio (Type 4)
-                    List<Map<String, Object>> audioList = (List<Map<String, Object>>) details.get("audio");
-                    if (audioList != null) {
-                        for (Map<String, Object> doc : audioList) {
-                            String data = (String) doc.get("base64");
-                            if (data != null && !data.isEmpty()) {
-                                jdbcTemplate.update(insertDocSql, orderId, orgId, 4, data);
-                            }
-                        }
-                    }
+                            boolean isDeleted = Boolean.TRUE.equals(doc.get("deleted"))
+                                             || Boolean.TRUE.equals(doc.get("isDeleted"))
+                                             || "true".equalsIgnoreCase(String.valueOf(doc.get("deleted")))
+                                             || "true".equalsIgnoreCase(String.valueOf(doc.get("isDeleted")));
 
-                    // Handwritten Notes (Type 5)
-                    List<Map<String, Object>> handwritten = (List<Map<String, Object>>) details.get("handwrittenNotes");
-                    if (handwritten != null) {
-                        for (Map<String, Object> doc : handwritten) {
-                            String data = (String) doc.get("base64");
-                            if (data != null && !data.isEmpty()) {
-                                jdbcTemplate.update(insertDocSql, orderId, orgId, 5, data);
+                            if (isDeleted) {
+                                if (detailsId != null) {
+                                    jdbcTemplate.update("DELETE FROM botiq_order_docs_w WHERE details_id = ? AND order_id = ? AND org_id = ?", detailsId, orderId, orgId);
+                                    System.out.println("LOG [updateOrder]: Deleted document details_id=" + detailsId);
+                                }
+                                continue;
+                            }
+
+                            // Preserves existing document untouched so details_id NEVER changes
+                            if (detailsId != null) {
+                                System.out.println("LOG [updateOrder]: Preserved existing document details_id=" + detailsId + " (unchanged in DB)");
+                                continue;
+                            }
+
+                            // Inserts new document only when details_id is null
+                            String data = doc.get("base64") != null ? doc.get("base64").toString()
+                                        : doc.get("details_data") != null ? doc.get("details_data").toString()
+                                        : doc.get("detailsData") != null ? doc.get("detailsData").toString()
+                                        : null;
+
+                            if (data != null && !data.trim().isEmpty()) {
+                                jdbcTemplate.update(insertDocSql, orderId, orgId, type, data);
+                                System.out.println("LOG [updateOrder]: Saved new document without ID (type=" + type + ")");
                             }
                         }
                     }
@@ -3714,26 +3898,7 @@ public class WebController {
                 ex.printStackTrace();
             }
 
-            String action = ("Delivered".equalsIgnoreCase(status) || "Completed".equalsIgnoreCase(status)) ? "COMPLETED"
-                    : "UPDATED";
-            notifyOrderStatusUpdate(orgId, orderId, status, action, null);
-
-            try {
-                Map<String, Object> ssePayload = new HashMap<>();
-                ssePayload.put("event", "UPDATE_ORDER");
-                ssePayload.put("orgId", orgId);
-                ssePayload.put("orderId", orderId);
-                if (status != null) {
-                    ssePayload.put("status", status);
-                }
-                sseService.sendToOrg(orgId, ssePayload);
-            } catch (Exception ex) {
-                System.err.println("Failed to send SSE in updateOrder: " + ex.getMessage());
-            }
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "orderId", orderId));
+            return ResponseEntity.ok(Map.of("status", "success", "orderId", orderId));
 
         } catch (Exception e) {
             e.printStackTrace();

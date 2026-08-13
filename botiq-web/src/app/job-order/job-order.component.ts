@@ -54,7 +54,6 @@ export class JobOrderComponent implements OnInit {
       };
     }).filter((img: any) => img.base64);
 
-    // ✅ Map backend jobOrders → UI model (supporting both snake_case and camelCase)
     this.jobOrders = (this.orderData.jobOrders || []).map((job: any) => ({
       selectedPartner: null, // will map after partners load
       partnerId: job.partner_id || job.partnerId || null,
@@ -157,42 +156,106 @@ export class JobOrderComponent implements OnInit {
     }
   }
 
+  // saveAllJobOrders() {
+
+  //   const validJobs = this.jobOrders.filter(job =>
+  //     job.selectedPartner &&
+  //     job.dueDate &&
+  //     job.status
+  //   );
+
+  //   const payload = {
+  //     ...this.orderData,
+
+  //     jobOrders: validJobs.map(job => ({
+  //       partnerId: job.selectedPartner.partner_id,
+  //       dueDate: job.dueDate,
+  //       status: job.status,
+  //       priority: this.mapPriority(job.priority),
+
+  //       jobOrderDetails: {
+  //         jobDetails: job.selectedJobDetails || [],
+  //         images: (job.selectedImages || []).map((img: any) => img.base64)
+  //       }
+  //     }))
+  //   };
+
+  //   console.log("FINAL PAYLOAD:", payload);
+
+  //   this.orderService.saveFullOrder(payload).subscribe({
+  //     next: (res) => {
+  //       console.log("Saved:", res);
+  //       this.router.navigate(['/dashboard-v2']);
+  //     },
+  //     error: (err) => {
+  //       console.error("Save failed:", err);
+  //     }
+  //   });
+  // }
+
+
   saveAllJobOrders() {
 
-    const validJobs = this.jobOrders.filter(job =>
-      job.selectedPartner &&
-      job.dueDate &&
-      job.status
-    );
+  const validJobs = this.jobOrders.filter(job =>
+    job.selectedPartner &&
+    job.dueDate &&
+    job.status
+  );
 
-    const payload = {
-      ...this.orderData,
+  // Normalize order ID from either backend format
+  const orderId =
+    this.orderData.order?.orderId ??
+    this.orderData.order?.order_id ??
+    0;
 
-      jobOrders: validJobs.map(job => ({
-        partnerId: job.selectedPartner.partner_id,
-        dueDate: job.dueDate,
-        status: job.status,
-        priority: this.mapPriority(job.priority),
+  const payload = {
+    ...this.orderData,
 
-        jobOrderDetails: {
-          jobDetails: job.selectedJobDetails || [],
-          images: (job.selectedImages || []).map((img: any) => img.base64)
-        }
-      }))
-    };
+    order: {
+      ...this.orderData.order,
 
-    console.log("FINAL PAYLOAD:", payload);
+      // IMPORTANT:
+      // PostgreSQL save_order() expects orderId
+      orderId: orderId
+    },
 
-    this.orderService.saveFullOrder(payload).subscribe({
-      next: (res) => {
-        console.log("Saved:", res);
-        this.router.navigate(['/dashboard-v2']);
-      },
-      error: (err) => {
-        console.error("Save failed:", err);
+    // Keep the items exactly as they are
+    orderDetails: this.orderData.orderDetails || [],
+
+    jobOrders: validJobs.map(job => ({
+      partnerId:
+        job.selectedPartner?.partner_id ??
+        job.selectedPartner?.partnerId,
+
+      dueDate: job.dueDate,
+      status: job.status,
+      priority: this.mapPriority(job.priority),
+
+      jobOrderDetails: {
+        jobDetails: job.selectedJobDetails || [],
+
+        images: (job.selectedImages || [])
+          .map((img: any) => img.base64)
+          .filter((img: any) => img)
       }
-    });
-  }
+    }))
+  };
+
+  console.log("FINAL PAYLOAD TO SAVE:", payload);
+  console.log("ORDER ID:", payload.order.orderId);
+  console.log("ORDER DETAILS:", payload.orderDetails);
+  console.log("JOB ORDERS:", payload.jobOrders);
+
+  this.orderService.saveFullOrder(payload).subscribe({
+    next: (res) => {
+      console.log("Saved:", res);
+      this.router.navigate(['/dashboard-v2']);
+    },
+    error: (err) => {
+      console.error("Save failed:", err);
+    }
+  });
+}
 
   backToOrderList() {
 

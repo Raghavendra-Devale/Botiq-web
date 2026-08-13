@@ -41,7 +41,8 @@
                 </button>
 
                 <button type="button" class="btn-workspace-secondary label-btn" (click)="goToNextPage()"
-                    [disabled]="!isAddJobEnabled()" [title]="!isPartnersAvailable ? 'Job Order disabled: No active partners available' : 'Job Order / Save Order'">
+                    [disabled]="!isAddJobEnabled()"
+                    [title]="!isPartnersAvailable ? 'Job Order disabled: No active partners available' : 'Job Order / Save Order'">
                     <i class="fa-solid fa-file-invoice"></i> <span class="btn-txt">Job Order</span>
                 </button>
 
@@ -93,7 +94,8 @@
             <div class="workspace-card cart-card">
                 <!-- Right-edge floating category image sidebar strip (matches cart-card height) -->
                 @if (!isRightPanelOpen) {
-                <div class="drawer-category-sidebar full-height-sidebar" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
+                <div class="drawer-category-sidebar full-height-sidebar" (touchstart)="onTouchStart($event)"
+                    (touchend)="onTouchEnd($event)">
                     <!-- Main Header / Toggle Button -->
                     <button type="button" class="category-sidebar-btn main-attach-btn" (click)="toggleRightPanel()"
                         title="All Attachments ({{ getAttachmentsCount() }})">
@@ -106,8 +108,10 @@
 
                     <div class="sidebar-scroll-items">
                         <!-- 1. MEASUREMENTS -->
-                        <button type="button" class="category-sidebar-tile" [class.has-image]="measurementImages.length > 0"
-                            [class.active-cat]="activeRightTab === 'measurements'" (click)="openRightTab('measurements')"
+                        <button type="button" class="category-sidebar-tile"
+                            [class.has-image]="measurementImages.length > 0"
+                            [class.active-cat]="activeRightTab === 'measurements'"
+                            (click)="openRightTab('measurements')"
                             title="Measurements ({{ measurementImages.length }})">
                             @if (measurementImages.length > 0) {
                             <img [src]="measurementImages[0].blobUrl" alt="Measurement" class="cat-thumb-img" />
@@ -134,7 +138,8 @@
                         </button>
 
                         <!-- 3. MATERIALS -->
-                        <button type="button" class="category-sidebar-tile" [class.has-image]="materialImages.length > 0"
+                        <button type="button" class="category-sidebar-tile"
+                            [class.has-image]="materialImages.length > 0"
                             [class.active-cat]="activeRightTab === 'materials'" (click)="openRightTab('materials')"
                             title="Material ({{ materialImages.length }})">
                             @if (materialImages.length > 0) {
@@ -148,7 +153,8 @@
                         </button>
 
                         <!-- 4. DRAW / SKETCHES -->
-                        <button type="button" class="category-sidebar-tile" [class.has-image]="handwrittenNotes.length > 0"
+                        <button type="button" class="category-sidebar-tile"
+                            [class.has-image]="handwrittenNotes.length > 0"
                             [class.active-cat]="activeRightTab === 'draw'" (click)="openRightTab('draw')"
                             title="Draw / Sketches ({{ handwrittenNotes.length }})">
                             @if (handwrittenNotes.length > 0) {
@@ -202,25 +208,47 @@
                         <tbody>
                             @for (item of orderDetails; track item; let idx = $index) {
                             <tr class="order-row" [class.row-active]="idx === activeItemIndex"
-                                [class.row-editing]="editingNotesIndex === idx" (click)="setActiveItem(idx)">
-                                <td class="td-sno">{{ idx + 1 }}</td>
+                                [class.row-editing]="editingNotesIndex === idx || (isEditMode && editingRowIndex === idx)"
+                                (click)="setActiveItem(idx)">
+                                <td class="td-sno">
+                                    <div class="sno-cell-wrap">
+                                        <span class="sno-num">{{ idx + 1 }}</span>
+                                        @if (isEditMode) {
+                                        <button type="button" class="action-icon-btn edit-btn"
+                                            [class.active]="editingRowIndex === idx"
+                                            (click)="toggleEditRow(idx); $event.stopPropagation()"
+                                            [title]="editingRowIndex === idx ? 'Done Editing' : 'Edit Item'">
+                                            <i class="fa-solid" [class.fa-pen-to-square]="editingRowIndex !== idx"
+                                                [class.fa-check]="editingRowIndex === idx"></i>
+                                        </button>
+                                        }
+                                    </div>
+                                </td>
                                 <td class="td-item">
                                     <div class="item-name-cell">
                                         <i class="fa-solid item-icon" [ngClass]="getCategoryIcon(item.itemName)"></i>
-                                        <span>{{ item.itemName | titlecase }}</span>
+                                        <span class="item-name-text">{{ item.itemName | titlecase }}</span>
+                                        <span class="item-status-pill"
+                                            [class.status-pending]="(item.status || 'Pending') === 'Pending'"
+                                            [class.status-hold]="item.status === 'Hold'"
+                                            [class.status-delivered]="item.status === 'Delivered'">
+                                            {{ item.status || 'Pending' }}
+                                        </span>
                                     </div>
                                 </td>
                                 <td class="td-qty">
                                     <div class="inline-qty-control">
                                         <button type="button" class="inline-qty-btn"
+                                            [disabled]="isEditMode && editingRowIndex !== idx"
                                             (click)="decrementCartItem(item); $event.stopPropagation()">
                                             <i class="fa-solid fa-minus"></i>
                                         </button>
                                         <input type="number" class="inline-qty-input" [(ngModel)]="item.quantity"
-                                            [name]="'qty_' + idx"
+                                            [name]="'qty_' + idx" [disabled]="isEditMode && editingRowIndex !== idx"
                                             (ngModelChange)="newOrder.orderAmount = calculateTotal()" min="1"
                                             (click)="$event.stopPropagation()" />
                                         <button type="button" class="inline-qty-btn"
+                                            [disabled]="isEditMode && editingRowIndex !== idx"
                                             (click)="incrementCartItem(item); $event.stopPropagation()">
                                             <i class="fa-solid fa-plus"></i>
                                         </button>
@@ -228,7 +256,7 @@
                                 </td>
                                 <td class="td-rate">
                                     <input type="number" class="inline-price-input" [(ngModel)]="item.price"
-                                        [name]="'price_' + idx"
+                                        [name]="'price_' + idx" [disabled]="isEditMode && editingRowIndex !== idx"
                                         (ngModelChange)="newOrder.orderAmount = calculateTotal()" placeholder="0"
                                         (click)="$event.stopPropagation()" />
                                 </td>
@@ -236,12 +264,40 @@
                                     <span class="row-total-value">₹{{ calculateRowTotal(item) }}</span>
                                 </td>
                                 <td class="td-actions">
-                                    <!-- <button type="button" class="action-icon-btn notes-btn"
-                                        [class.has-notes]="item.notes && item.notes.trim()"
-                                        (click)="toggleNotes(idx); $event.stopPropagation()" title="Add Notes">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </button> -->
+                                    <button type="button" class="action-icon-btn more-options-btn"
+                                        [matMenuTriggerFor]="itemMenu"
+                                        [disabled]="isEditMode && editingRowIndex !== idx"
+                                        (click)="$event.stopPropagation()" title="More Options">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                    </button>
+
+                                    <mat-menu #itemMenu="matMenu" class="item-more-options-menu">
+                                        <div class="menu-header">Status</div>
+                                        <button mat-menu-item (click)="setItemStatus(item, 'Pending')">
+                                            <i class="fa-solid fa-clock menu-icon icon-pending"></i>
+                                            <span>Pending</span>
+                                            @if (!item.status || item.status === 'Pending') {
+                                            <i class="fa-solid fa-check menu-check"></i>
+                                            }
+                                        </button>
+                                        <button mat-menu-item (click)="setItemStatus(item, 'Hold')">
+                                            <i class="fa-solid fa-pause menu-icon icon-hold"></i>
+                                            <span>Hold</span>
+                                            @if (item.status === 'Hold') {
+                                            <i class="fa-solid fa-check menu-check"></i>
+                                            }
+                                        </button>
+                                        <button mat-menu-item (click)="setItemStatus(item, 'Delivered')">
+                                            <i class="fa-solid fa-circle-check menu-icon icon-delivered"></i>
+                                            <span>Delivered</span>
+                                            @if (item.status === 'Delivered') {
+                                            <i class="fa-solid fa-check menu-check"></i>
+                                            }
+                                        </button>
+                                    </mat-menu>
+
                                     <button type="button" class="action-icon-btn delete-btn"
+                                        [disabled]="isEditMode && editingRowIndex !== idx"
                                         (click)="removeCartItem(item); $event.stopPropagation()" title="Remove">
                                         <i class="fa-regular fa-trash-can"></i>
                                     </button>
@@ -253,7 +309,7 @@
                                 <td colspan="6">
                                     <div class="inline-notes-box">
                                         <textarea class="inline-notes-textarea" [(ngModel)]="item.notes"
-                                            [name]="'notes_' + idx"
+                                            [name]="'notes_' + idx" [disabled]="isEditMode && editingRowIndex !== idx"
                                             placeholder="Measurements, sleeve style, collar type, buttons, custom instructions..."
                                             rows="2"></textarea>
                                     </div>

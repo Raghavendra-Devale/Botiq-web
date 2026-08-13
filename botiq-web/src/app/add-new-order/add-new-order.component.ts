@@ -13,6 +13,9 @@ interface ImageData {
   blobUrl: string;
   strokes?: any[];
   temp_id?: number;
+  details_id?: number;
+  detailsId?: number;
+  deleted?: boolean;
 }
 
 interface OrderModel {
@@ -552,17 +555,33 @@ dueAmount = computed(() =>
     };
     this.newOrder.set(updatedOrder);
 
-    // Support both root-level orderDetails (state payload) and nested orderDetails (API response)
-    const rawDetails = res.orderDetails || res.order.order_details || res.order.orderDetails || [];
-    this.orderDetails.set(rawDetails.map((item: any) => ({
-      itemName: (item.itemName || item.item_name || '')
-        .trim()
-        .toLowerCase(),
-      quantity: item.quantity || 1,
-      price: item.price || 0
-    })));
+    // Support root-level orderDetails (state payload), nested orderDetails (API response), and items array
+    let rawDetails = res.orderDetails || res.order?.order_details || res.order?.orderDetails || res.items || [];
+    if (typeof rawDetails === 'string' && rawDetails.trim() !== '') {
+      try {
+        rawDetails = JSON.parse(rawDetails);
+      } catch (e) {
+        console.error('Failed to parse order_details JSON string:', e);
+        rawDetails = [];
+      }
+    }
+    if (!Array.isArray(rawDetails)) {
+      rawDetails = [];
+    }
+    this.orderDetails.set(rawDetails.map((item: any) => {
+      const itemId = item.itemId || item.item_id || item.id;
+      return {
+        itemId: itemId,
+        item_id: itemId,
+        itemName: (item.itemName || item.item_name || '')
+          .trim()
+          .toLowerCase(),
+        quantity: item.quantity || 1,
+        price: item.price || 0
+      };
+    }));
 
-    // Map attachments properly, preserving base64, temp_id, and reusing existing blob URLs
+    // Map attachments properly, preserving base64, details_id, temp_id, and reusing existing blob URLs
     const mapImage = (item: any) => {
       if (typeof item === 'string') {
         return {
@@ -572,10 +591,13 @@ dueAmount = computed(() =>
       }
       const base64 = item.details_data || item.detailsData || item.base64 || '';
       const blobUrl = item.blobUrl || (base64 ? this.convertBase64ToBlobUrl(base64) : '');
+      const detailsId = item.details_id || item.detailsId;
       return {
         base64,
         blobUrl,
-        temp_id: item.temp_id
+        temp_id: item.temp_id || detailsId,
+        details_id: detailsId,
+        detailsId: detailsId
       };
     };
 
@@ -611,11 +633,14 @@ dueAmount = computed(() =>
         }
       }
       const blobUrl = item.blobUrl || (base64 ? this.convertBase64ToBlobUrl(base64) : '');
+      const detailsId = item.details_id || item.detailsId;
       return {
         base64,
         blobUrl,
         strokes,
-        temp_id: item.temp_id || item.details_id || item.detailsId
+        temp_id: item.temp_id || detailsId,
+        details_id: detailsId,
+        detailsId: detailsId
       };
     };
 

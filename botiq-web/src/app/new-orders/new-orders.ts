@@ -9,6 +9,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DrawingBoardDialogComponent } from '../shared/components/drawing-board-dialog/drawing-board-dialog.component';
 
 import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatMenuModule } from '@angular/material/menu';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PartnerService } from '../partner.service';
 
@@ -17,6 +18,9 @@ interface ImageData {
   blobUrl: string;
   strokes?: any[];
   temp_id?: number;
+  details_id?: number;
+  detailsId?: number;
+  deleted?: boolean;
 }
 
 interface OrderModel {
@@ -40,7 +44,7 @@ interface OrderModel {
 
 @Component({
   selector: 'new-orders',
-  imports: [FormsModule, CommonModule, RouterModule, MatSidenavModule, DragDropModule],
+  imports: [FormsModule, CommonModule, RouterModule, MatSidenavModule, DragDropModule, MatMenuModule],
   templateUrl: './new-orders.html',
   styleUrl: './new-orders.css'
 })
@@ -200,12 +204,36 @@ export class NewOrders implements OnInit, OnDestroy {
     this.orderDetails.push({
       itemName: '',
       quantity: 1,
-      price: 0
+      price: 0,
+      notes: '',
+      status: 'Pending'
     });
     this.updateAddJobState();
   }
 
+  deletedOrderDetails: any[] = [];
+  deletedDetails: {
+    measurements: any[];
+    patterns: any[];
+    materials: any[];
+    handwrittenNotes: any[];
+    audio: any[];
+  } = {
+    measurements: [],
+    patterns: [],
+    materials: [],
+    handwrittenNotes: [],
+    audio: []
+  };
+
   removeOrderItem(index: number) {
+    const removed = this.orderDetails[index];
+    if (removed && (removed.itemId || removed.item_id)) {
+      this.deletedOrderDetails.push({
+        ...removed,
+        deleted: true
+      });
+    }
     this.orderDetails.splice(index, 1);
     this.newOrder.orderAmount = this.calculateTotal();
     this.updateAddJobState();
@@ -240,6 +268,7 @@ export class NewOrders implements OnInit, OnDestroy {
   isEditMode = false;
   activeItemIndex: number | null = null;
   editingNotesIndex: number | null = null;
+  editingRowIndex: number | null = null;
   showAttachmentsModal: boolean = false;
 
   expandedSections: { [key: string]: boolean } = {
@@ -287,7 +316,8 @@ export class NewOrders implements OnInit, OnDestroy {
         itemName: category.itemName,
         quantity: category.quantity || 1,
         price: category.price || 0,
-        notes: ''
+        notes: '',
+        status: 'Pending'
       });
       this.activeItemIndex = this.orderDetails.length - 1;
     } else {
@@ -320,6 +350,12 @@ export class NewOrders implements OnInit, OnDestroy {
   }
 
   removeCartItem(item: any) {
+    if (item && (item.itemId || item.item_id)) {
+      this.deletedOrderDetails.push({
+        ...item,
+        deleted: true
+      });
+    }
     const isRemovingActive = this.activeItemIndex !== null && this.orderDetails[this.activeItemIndex] === item;
     
     this.orderDetails = this.orderDetails.filter(i => i !== item);
@@ -360,6 +396,18 @@ export class NewOrders implements OnInit, OnDestroy {
     this.editingNotesIndex = this.editingNotesIndex === index ? null : index;
   }
 
+  toggleEditRow(index: number) {
+    if (this.editingRowIndex === index) {
+      this.editingRowIndex = null;
+    } else {
+      this.editingRowIndex = index;
+    }
+  }
+
+  setItemStatus(item: any, status: string) {
+    item.status = status;
+  }
+
 
 
   addCustomItem() {
@@ -379,7 +427,8 @@ export class NewOrders implements OnInit, OnDestroy {
         itemName: nameLower,
         quantity: 1,
         price: price,
-        notes: ''
+        notes: '',
+        status: 'Pending'
       });
       this.activeItemIndex = this.orderDetails.length - 1;
     }
@@ -623,6 +672,14 @@ export class NewOrders implements OnInit, OnDestroy {
   }
 
   fillForm(res: any) {
+    this.deletedOrderDetails = [];
+    this.deletedDetails = {
+      measurements: [],
+      patterns: [],
+      materials: [],
+      handwrittenNotes: [],
+      audio: []
+    };
     this.newOrder.customerId = res.customer.customerId || res.customer.customer_id;
     this.newOrder.name = res.customer.name || res.customer.customerName;
     this.newOrder.mobile = res.customer.mobile || res.customer.contactNumber;
@@ -649,16 +706,33 @@ export class NewOrders implements OnInit, OnDestroy {
 
     this.newOrder.hasJobOrder = !!(res.order.has_job_order !== undefined ? res.order.has_job_order : res.order.hasJobOrder);
 
-    // Support both root-level orderDetails (state payload) and nested orderDetails (API response)
-    const rawDetails = res.orderDetails || res.order.order_details || res.order.orderDetails || [];
-    this.orderDetails = rawDetails.map((item: any) => ({
-      itemName: (item.itemName || item.item_name || '')
-        .trim()
-        .toLowerCase(),
-      quantity: item.quantity || 1,
-      price: item.price || 0,
-      notes: item.notes || ''
-    }));
+    // Support root-level orderDetails (state payload), nested orderDetails (API response), and items array (paginated orders)
+    let rawDetails = res.orderDetails || res.order?.order_details || res.order?.orderDetails || res.items || [];
+    if (typeof rawDetails === 'string' && rawDetails.trim() !== '') {
+      try {
+        rawDetails = JSON.parse(rawDetails);
+      } catch (e) {
+        console.error('Failed to parse order_details JSON string:', e);
+        rawDetails = [];
+      }
+    }
+    if (!Array.isArray(rawDetails)) {
+      rawDetails = [];
+    }
+    this.orderDetails = rawDetails.map((item: any) => {
+      const itemId = item.itemId || item.item_id || item.id;
+      return {
+        itemId: itemId,
+        item_id: itemId,
+        itemName: (item.itemName || item.item_name || '')
+          .trim()
+          .toLowerCase(),
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        notes: item.notes || '',
+        status: item.status || item.item_status || item.itemStatus || 'Pending'
+      };
+    });
 
     if (this.orderDetails.length > 0) {
       this.activeItemIndex = 0;
@@ -666,7 +740,7 @@ export class NewOrders implements OnInit, OnDestroy {
       this.activeItemIndex = null;
     }
 
-    // Map attachments properly, preserving base64, temp_id, and reusing existing blob URLs
+    // Map attachments properly, preserving base64, details_id, temp_id, and reusing existing blob URLs
     const mapImage = (item: any) => {
       if (typeof item === 'string') {
         return {
@@ -676,10 +750,13 @@ export class NewOrders implements OnInit, OnDestroy {
       }
       const base64 = item.details_data || item.detailsData || item.base64 || '';
       const blobUrl = item.blobUrl || (base64 ? this.convertBase64ToBlobUrl(base64) : '');
+      const detailsId = item.details_id || item.detailsId;
       return {
         base64,
         blobUrl,
-        temp_id: item.temp_id
+        temp_id: item.temp_id || detailsId,
+        details_id: detailsId,
+        detailsId: detailsId
       };
     };
 
@@ -715,11 +792,14 @@ export class NewOrders implements OnInit, OnDestroy {
         }
       }
       const blobUrl = item.blobUrl || (base64 ? this.convertBase64ToBlobUrl(base64) : '');
+      const detailsId = item.details_id || item.detailsId;
       return {
         base64,
         blobUrl,
         strokes,
-        temp_id: item.temp_id || item.details_id || item.detailsId
+        temp_id: item.temp_id || detailsId,
+        details_id: detailsId,
+        detailsId: detailsId
       };
     };
 
@@ -879,6 +959,26 @@ export class NewOrders implements OnInit, OnDestroy {
   }
 
   removeImage(type: string, index: number) {
+    let targetArray: any[] | null = null;
+    if (type === 'measurements') targetArray = this.measurementImages;
+    else if (type === 'patterns') targetArray = this.patternImages;
+    else if (type === 'materials') targetArray = this.materialImages;
+    else if (type === 'handwritten') targetArray = this.handwrittenNotes;
+
+    if (targetArray && targetArray[index]) {
+      const removed = targetArray[index];
+      const detailsId = removed.details_id || removed.detailsId;
+      if (detailsId) {
+        const key = (type === 'handwritten' ? 'handwrittenNotes' : type) as keyof typeof this.deletedDetails;
+        this.deletedDetails[key].push({
+          ...removed,
+          details_id: detailsId,
+          detailsId: detailsId,
+          deleted: true
+        });
+      }
+    }
+
     if (type === 'measurements') {
       this.measurementImages.splice(index, 1);
       if (this.measurementImages.length === 0 && this.activeGalleryType === 'measurements') {
@@ -998,25 +1098,32 @@ export class NewOrders implements OnInit, OnDestroy {
         orderPriority: this.newOrder.orderPriority,
       },
 
-      orderDetails: this.orderDetails,
+      orderDetails: [...this.orderDetails, ...this.deletedOrderDetails],
 
       details: {
-        measurements: this.measurementImages,
-        patterns: this.patternImages,
-        materials: this.materialImages,
-        handwrittenNotes: this.handwrittenNotes.map(note => {
-          const base64Value = note.strokes && note.strokes.length > 0
-            ? JSON.stringify({ image: note.base64, strokes: note.strokes })
-            : note.base64;
-          return {
-            ...note,
-            base64: base64Value
-          };
-        }),
-        audio: this.audioBase64 ? [{
-        base64: this.audioBase64
-          }
-        ] : []
+        measurements: [...this.measurementImages, ...this.deletedDetails.measurements],
+        patterns: [...this.patternImages, ...this.deletedDetails.patterns],
+        materials: [...this.materialImages, ...this.deletedDetails.materials],
+        handwrittenNotes: [
+          ...this.handwrittenNotes.map(note => {
+            const base64Value = note.strokes && note.strokes.length > 0
+              ? JSON.stringify({ image: note.base64, strokes: note.strokes })
+              : note.base64;
+            const detailsId = note.details_id || note.detailsId;
+            return {
+              ...note,
+              base64: base64Value,
+              details_id: detailsId,
+              detailsId: detailsId
+            };
+          }),
+          ...this.deletedDetails.handwrittenNotes
+        ],
+        audio: (this.audioBase64 ? [{
+          base64: this.audioBase64,
+          details_id: this.audioDetailsId,
+          detailsId: this.audioDetailsId
+        }] : []).concat(this.deletedDetails.audio)
       },
 
       jobOrders: this.jobOrders
@@ -1075,7 +1182,7 @@ export class NewOrders implements OnInit, OnDestroy {
       },
 
       order: {
-        order_id: this.orderId,
+        orderId: this.orderId,
         orderStatus: this.newOrder.orderStatus || 'pending',
         paymentStatus: this.newOrder.paymentStatus || 0,
         orderDate: this.newOrder.orderDate,
@@ -1087,28 +1194,38 @@ export class NewOrders implements OnInit, OnDestroy {
 
         hasJobOrder: this.newOrder.hasJobOrder ? 1 : 0,
         orderPriority: this.newOrder.orderPriority || 0,
+
         deliveredDate: this.isDeliveredStatus()
           ? this.newOrder.deliveredDate
           : null
       },
 
-      orderDetails: this.orderDetails,
-
+      orderDetails: [...this.orderDetails, ...this.deletedOrderDetails],
 
       details: {
-        measurements: this.measurementImages,
-        patterns: this.patternImages,
-        materials: this.materialImages,
-        handwrittenNotes: this.handwrittenNotes.map(note => {
-          const base64Value = note.strokes && note.strokes.length > 0
-            ? JSON.stringify({ image: note.base64, strokes: note.strokes })
-            : note.base64;
-          return {
-            ...note,
-            base64: base64Value
-          };
-        }),
-        audio: this.audioBase64? [{base64: this.audioBase64 }]: []
+        measurements: [...this.measurementImages, ...this.deletedDetails.measurements],
+        patterns: [...this.patternImages, ...this.deletedDetails.patterns],
+        materials: [...this.materialImages, ...this.deletedDetails.materials],
+        handwrittenNotes: [
+          ...this.handwrittenNotes.map(note => {
+            const base64Value = note.strokes && note.strokes.length > 0
+              ? JSON.stringify({ image: note.base64, strokes: note.strokes })
+              : note.base64;
+            const detailsId = note.details_id || note.detailsId;
+            return {
+              ...note,
+              base64: base64Value,
+              details_id: detailsId,
+              detailsId: detailsId
+            };
+          }),
+          ...this.deletedDetails.handwrittenNotes
+        ],
+        audio: (this.audioBase64 ? [{
+          base64: this.audioBase64,
+          details_id: this.audioDetailsId,
+          detailsId: this.audioDetailsId
+        }] : []).concat(this.deletedDetails.audio)
       }
     };
 
@@ -1292,6 +1409,14 @@ convertBlobToBase64(blob: Blob) {
 }
 
 deleteRecording() {
+
+  if (this.audioDetailsId) {
+    this.deletedDetails.audio.push({
+      details_id: this.audioDetailsId,
+      detailsId: this.audioDetailsId,
+      deleted: true
+    });
+  }
 
   this.audioBlob = null;
 
