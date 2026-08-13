@@ -466,7 +466,7 @@ export class DashboardV2Component implements OnInit, OnDestroy {
     try {
       const parsed = typeof details === 'string' ? JSON.parse(details) : details;
       if (!Array.isArray(parsed) || parsed.length === 0) return '';
-      const items = parsed.map((item: any) => `${item.itemName || item.name || 'Item'} x${item.quantity || 1}`);
+      const items = parsed.map((item: any) => `${item.itemName || item.name || 'Item'} x${item.quantity ?? 1}`);
       if (items.length <= maxItems) {
         return items.join(', ');
       }
@@ -480,7 +480,7 @@ export class DashboardV2Component implements OnInit, OnDestroy {
     try {
       const parsed = typeof details === 'string' ? JSON.parse(details) : details;
       if (!Array.isArray(parsed) || parsed.length === 0) return '';
-      return parsed.map((item: any) => `${item.itemName || item.name || 'Item'} x${item.quantity || 1}`).join(', ');
+      return parsed.map((item: any) => `${item.itemName || item.name || 'Item'} x${item.quantity ?? 1}`).join(', ');
     } catch {
       return '';
     }

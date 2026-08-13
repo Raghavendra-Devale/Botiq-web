@@ -243,15 +243,16 @@
                     </div>
 
                     <!-- Second Line: Items List -->
-                    <div class="card-row items-row">
-                      <span class="items-text" [title]="formatFullOrderDetails(order.order_details)">{{ formatOrderDetails(order.order_details) || 'No items listed' }}</span>
-                    </div>
+                    <!-- <div class="card-row items-row">
+                      <span class="items-text" [title]="formatFullOrderDetails(order.order_details)">{{
+                        formatOrderDetails(order.order_details) || 'No items listed' }}</span>
+                    </div> -->
 
                     <!-- Third Line: Due Date & 5 Status Dots -->
                     <div class="card-row due-dots-row">
                       <span class="due-label">Due: <span class="due-val">{{ order.due_date ? (order.due_date |
                           date:'dd/MM/yyyy') : '—' }}</span></span>
-                      <div class="status-dots-container" title="Status: {{ order.order_status }}">
+                      <!-- <div class="status-dots-container" title="Status: {{ order.order_status }}">
                         <span class="status-dot dot-yellow"
                           [class.dot-active]="isStatusStepActive(order.order_status, 1)"></span>
                         <span class="status-dot dot-orange"
@@ -262,7 +263,7 @@
                           [class.dot-active]="isStatusStepActive(order.order_status, 4)"></span>
                         <span class="status-dot dot-lightgreen"
                           [class.dot-active]="isStatusStepActive(order.order_status, 5)"></span>
-                      </div>
+                      </div> -->
                     </div>
 
                     <!-- Fourth Line: Price -->

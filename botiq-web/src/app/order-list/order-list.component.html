@@ -227,11 +227,11 @@
                   }
                 </div>
               </td>
-              <td class="col-details">
+              <!-- <td class="col-details">
                 <span class="details-text" [title]="formatOrderDetails(order.order_details)">
                   {{ formatOrderDetails(order.order_details) || 'No items listed' }}
                 </span>
-              </td>
+              </td> -->
               <td class="col-due-date font-medium text-slate-600">
                 <span class="mobile-label">Due Date: </span>
                 <span class="due-date-text">{{ order.due_date ? (order.due_date | date:'dd MMM yyyy') : '—' }}</span>

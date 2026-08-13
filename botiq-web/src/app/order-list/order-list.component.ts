@@ -466,7 +466,8 @@ export class OrderListComponent implements OnInit, OnDestroy {
   formatOrderDetails(details: any): string {
     try {
       const parsed = typeof details === 'string' ? JSON.parse(details) : details;
-      return parsed.map((item: any) => `${item.itemName} x${item.quantity}`).join(', ');
+      if (!Array.isArray(parsed) || parsed.length === 0) return '';
+      return parsed.map((item: any) => `${item.itemName || item.name || 'Item'} x${item.quantity ?? 1}`).join(', ');
     } catch {
       return '';
     }
