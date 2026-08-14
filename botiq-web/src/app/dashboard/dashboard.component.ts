@@ -1,11 +1,11 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import { Router } from '@angular/router';
-import { DashboardService } from '../dashboard.service';
-import { SseService } from '../sse-service.service';
+import { DashboardService } from '../services/dashboard.service';
+import { SseService } from '../services/sse.service';
 import { AuthService } from '../auth/auth.service';
 import { Subscription } from 'rxjs';
-import { ReportsService } from '../reports.service';
+import { ReportsService } from '../services/reports.service';
 
 export interface CurrentPlan {
   plan_type: string;
@@ -70,7 +70,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     
     this.reportsService.getDailyReport(Date.now()).subscribe({
       next: (res: any) => {
-        console.log("reports data ", res);
+        // Reports data loaded
       },
       error: (err) => {
         console.error('Error fetching basic details:', err);
@@ -84,8 +84,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.sseService.messages$.subscribe({
       next: (msg) => {
-        console.log('SSE Event => ', msg);
-        alert(JSON.stringify(msg));
         if (msg && (msg.event === 'CREATE_ORDER' || msg.event === 'UPDATE_ORDER')) {
           this.loadDashboardData();
         }
@@ -138,7 +136,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async loadDashboardData() {
     const data = await this.dashboardService.getFullDashboard();
-    console.log("dashboard data ", data);
     this.monthLabels.set(this.getMonthLabels());
 
     this.orderSummary.set( {
@@ -154,22 +151,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.jobOrderSummary.set(data?.job_order_summary || {});
     this.dueOrderSummary.set(data?.due_order_summary || {});
-    console.log("monthlyDueSummary", this.monthlyDueSummary);
 
   }
 
 
   goToOrderList(segment: string, tabId: number) {
-    console.log("going to order list", segment, tabId);
-
     this.router.navigate(['/order-list'],
       {
         queryParams: { segment, tabId }
       });
   }
   goToJobOrderList(jobSegment: string, tabId: number) {
-
-    console.log("going to job order list", jobSegment, tabId);
     this.router.navigate(['/job-order-list'],
       {
         queryParams: { jobSegment, tabId }

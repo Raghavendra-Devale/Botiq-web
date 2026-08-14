@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { ReportsService } from '../reports.service';
+import { ReportsService } from '../services/reports.service';
 import * as echarts from 'echarts';
 
 interface OrderRecord {

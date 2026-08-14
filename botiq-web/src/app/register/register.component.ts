@@ -2,7 +2,7 @@
 import { Component, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { OrderService } from '../order.service';
+import { OrderService } from '../services/order.service';
 import { AuthService } from '../auth/auth.service';
 
 @Component({

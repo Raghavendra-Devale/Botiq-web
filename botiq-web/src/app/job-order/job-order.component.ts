@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { OrderService } from '../order.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { OrderService } from '../services/order.service';
+import { NotificationService } from '../services/notification.service';
+import { OrderestateService } from '../services/orderestate.service';
 
 import { FormsModule } from '@angular/forms';
-import { OrderestateService } from '../orderestate.service';
 
 @Component({
     selector: 'app-job-order',
@@ -32,7 +33,6 @@ export class JobOrderComponent implements OnInit {
     this.orderData = this.orderStateService.getOrderData();
 
     if (!this.orderData) {
-      console.error("No order data found");
       this.router.navigate(['/add-new-order']);
       return;
     }
@@ -241,15 +241,10 @@ export class JobOrderComponent implements OnInit {
     }))
   };
 
-  console.log("FINAL PAYLOAD TO SAVE:", payload);
-  console.log("ORDER ID:", payload.order.orderId);
-  console.log("ORDER DETAILS:", payload.orderDetails);
-  console.log("JOB ORDERS:", payload.jobOrders);
 
-  this.orderService.saveFullOrder(payload).subscribe({
+  this.orderService.saveOrder(payload).subscribe({
     next: (res) => {
-      console.log("Saved:", res);
-      this.router.navigate(['/dashboard-v2']);
+      this.router.navigate(['/order-list']);
     },
     error: (err) => {
       console.error("Save failed:", err);

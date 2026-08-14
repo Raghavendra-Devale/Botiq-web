@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { DataService } from '../data.service';
+import { DataService } from '../services/data.service';
 import { CommonModule } from '@angular/common';
 
 declare var Razorpay: any;
@@ -40,7 +40,6 @@ export class PlanPageComponent implements OnInit {
         this.ownerName = res.owner_name;
         this.emailId = res.email_id;
         this.mobileNumber = res.mobile_number;
-        console.log("Prefill details loaded:", res);
       },
       error: (err) => {
         console.error("Error fetching user details", err);
@@ -54,9 +53,6 @@ export class PlanPageComponent implements OnInit {
         plan.plan_type?.toLowerCase() !== 'free'
       );
       this.currentPlan = res.current_plan;
-
-      console.log("planMaster", this.planMaster);
-      console.log("currentPlan", this.currentPlan);
     });
   }
 
@@ -68,7 +64,6 @@ export class PlanPageComponent implements OnInit {
 
   async getCurrentPlan() {
     await this.dataService.getCurrentPlan(this.orgId).subscribe((res: any) => {
-      console.log(res);
       this.currentPlan = res;
     });
     
@@ -97,7 +92,6 @@ export class PlanPageComponent implements OnInit {
 
     this.dataService.createPaymentOrder(planTypeId, isUpgrade).subscribe({
       next: (orderData: any) => {
-        console.log("Razorpay order created:", orderData);
         this.openRazorpay(orderData);
       },
       error: (err) => {
@@ -118,7 +112,6 @@ export class PlanPageComponent implements OnInit {
       description: `Purchase ${orderData.plan_type} Plan`,
       order_id: orderData.order_id,
       handler: (response: any) => {
-        console.log("Razorpay response received:", response);
         this.verifyPayment(response);
       },
       prefill: {
@@ -144,7 +137,6 @@ export class PlanPageComponent implements OnInit {
 
     this.dataService.verifyPayment(payload).subscribe({
       next: (res: any) => {
-        console.log("Payment verification response:", res);
         if (res.success) {
           alert("Payment successful! Your new plan is now active.");
           this.currentPlan = res.plan_info || this.currentPlan;
@@ -173,7 +165,6 @@ export class PlanPageComponent implements OnInit {
 
     this.dataService.requestCallback(payload).subscribe({
       next: (res: any) => {
-        console.log("Callback requested:", res);
         alert(res.message || "Callback request submitted successfully. Our team will contact you soon.");
       },
       error: (err) => {

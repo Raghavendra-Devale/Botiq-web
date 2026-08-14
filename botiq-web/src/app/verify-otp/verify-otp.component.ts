@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../auth/auth.service';
 import { Router, RouterLink } from '@angular/router';
-import { NotificationMessagingService } from '../notification_essaging.service';
+import { NotificationMessagingService } from '../services/notification-messaging.service';
 
 @Component({
     selector: 'app-verify-otp',
@@ -76,12 +76,10 @@ export class VerifyOtpComponent implements OnInit {
       await this.authService.verifyOTP(code);
 
     const token = await result.user.getIdToken();
-    console.log("first time user ", this.authService.isFirstTimeUser());
     if (this.authService.isFirstTimeUser()) {
       try {
         await this.authService.linkFirebase(token).toPromise();
         this.authService.setFirstTimeUser(false);
-        console.log("first time user ", this.authService.isFirstTimeUser());
       } catch (linkErr) {
         console.error('Failed to link Firebase account:', linkErr);
         alert('Failed to link Firebase account. Please contact administrator.');
@@ -98,19 +96,9 @@ export class VerifyOtpComponent implements OnInit {
     this.authService.getDeviceStatus().subscribe({
 
         next: (response: any) => {
-
-          console.log('DEVICE STATUS', response);
-
           if (response.knownDevice) {
-
-            console.log('Known Device -> Dashboard');
-
             this.router.navigate(['/setup-mpin']);
-
           } else {
-
-            console.log('New Device -> Setup MPIN');
-
             this.router.navigate(['/setup-mpin']);
           }
         },

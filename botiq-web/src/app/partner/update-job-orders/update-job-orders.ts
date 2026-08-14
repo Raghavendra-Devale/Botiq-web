@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { OrderService } from '../../order.service';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-update-job-orders',

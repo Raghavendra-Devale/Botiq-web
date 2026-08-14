@@ -3,8 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
-import { NotificationMessagingService } from '../../../notification_essaging.service';
-import { PlatformAuthService } from '../../../platform-auth-service';
+import { NotificationMessagingService } from '../../../services/notification-messaging.service';
+import { PlatformAuthService } from '../../../services/platform-auth-service';
 
 
 @Component({
@@ -31,7 +31,6 @@ export class MpinLoginComponent implements OnInit {
   async ngOnInit() {
     try {
       this.hasStoredMpin = await this.platformAuthService.hasStoredMpin();
-      console.log("[MpinLoginComponent] hasStoredMpin check:", this.hasStoredMpin);
       if (this.hasStoredMpin) {
         const alreadyAttempted = sessionStorage.getItem('auto_login_attempted') === 'true';
         if (!alreadyAttempted) {
@@ -48,10 +47,8 @@ export class MpinLoginComponent implements OnInit {
     this.loading = true;
     this.error = '';
     try {
-      console.log("[MpinLoginComponent] Triggering biometric login");
       const res = await this.platformAuthService.loginWithStoredMpin();
       this.loading = false;
-      console.log("[MpinLoginComponent] Stored MPIN login result:", res);
       
       if (res && res.message === 'MPIN login successful') {
         this.authService.clearSession();

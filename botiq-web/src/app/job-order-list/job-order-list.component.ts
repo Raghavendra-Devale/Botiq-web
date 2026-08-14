@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { OrderService } from '../order.service';
+import { OrderService } from '../services/order.service';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';

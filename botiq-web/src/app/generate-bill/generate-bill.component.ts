@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { OrderestateService } from '../orderestate.service';
-import { Router } from '@angular/router';
+import { OrderestateService } from '../services/orderestate.service';
+import { Router } from '@angular/router'; 
 import { CommonModule } from '@angular/common';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -23,10 +23,6 @@ export class GenerateBillComponent {
 
   ngOnInit(): void {
     this.orderData = this.orderState.getOrderData();
-
-
-    console.log("ORDER DATA:", this.orderData);
-
     this.calculateTotalAmount();
   }
 
@@ -54,7 +50,7 @@ export class GenerateBillComponent {
     html2canvas(element, {
       scale: 2,
       useCORS: true
-    }).then(canvas => {
+    }).then((canvas: HTMLCanvasElement) => {
 
       const imgData = canvas.toDataURL('image/png');
 

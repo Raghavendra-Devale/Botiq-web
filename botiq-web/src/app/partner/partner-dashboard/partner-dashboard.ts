@@ -2,8 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { OrderService } from '../../order.service';
-import { DataService } from '../../data.service';
+import { OrderService } from '../../services/order.service';
+import { DataService } from '../../services/data.service';
 import { AuthService } from '../../auth/auth.service';
 
 @Component({
@@ -88,7 +88,6 @@ export class PartnerDashboard implements OnInit {
         }
         
         this.orders = Array.from(jobMap.values());
-        console.log("this.orders partner aggregated ", this.orders);
         this.applyFilters();
       },
       error: (err: any) => {

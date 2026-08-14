@@ -2,9 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { DataService } from '../data.service';
+import { DataService } from '../services/data.service';
 import { AuthService } from '../auth/auth.service';
-import { NotificationService, Notification } from '../notification.service';
+import { NotificationService, Notification } from '../services/notification.service';
 
 @Component({
     selector: 'app-header',

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable, Injector } from '@angular/core';
-import { PlatformAuthService } from '../platform-auth-service';
+import { PlatformAuthService } from '../services/platform-auth-service';
 import {
   Auth,
   signInWithPhoneNumber,
@@ -35,7 +35,7 @@ export class AuthService {
   setBasicDetails(details: any) {
     this.basicDetailsSubject.next(details);
     if (details) {
-      console.log("basic details ", details);
+      
       this.userRole = details.user_role || details.userRole || '';
       this.partnerId = details.partner_id || details.partnerId || null;
     } else {
@@ -81,12 +81,7 @@ export class AuthService {
   }
 
   setupRecaptcha(containerId: string) {
-    console.log('--- Firebase Auth Debug ---');
-    console.log('Firebase App Name:', this.auth.app?.name);
-    console.log('Firebase Project ID:', this.auth.app?.options?.projectId);
-    console.log('Firebase API Key:', this.auth.app?.options?.apiKey);
-    console.log('---------------------------');
-
+    
     if (this.recaptchaVerifier) {
       try {
         this.recaptchaVerifier.clear();

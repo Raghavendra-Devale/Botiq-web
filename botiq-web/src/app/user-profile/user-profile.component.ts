@@ -2,7 +2,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DataService } from '../data.service';
+import { DataService } from '../services/data.service';
 import { AuthService } from '../auth/auth.service';
 
 
@@ -102,8 +102,6 @@ export class UserProfileComponent {
 
     this.workCategories.push(formattedValue);
     this.newWorkCategory = '';
-
-    console.log("Work:", this.workCategories);
   }
 
   formatCategory(value: string): string {
@@ -111,12 +109,7 @@ export class UserProfileComponent {
   }
 
   removeWorkCategory(index: number) {
-    const removedCategory = this.workCategories[index];
-    console.log("Removing:", removedCategory);
-
     this.workCategories.splice(index, 1);
-    console.log("Updated Work Categories:", this.workCategories);
-
   }
 
 
@@ -148,13 +141,7 @@ export class UserProfileComponent {
   }
 
   removeJobCategory(index: number) {
-    const removedCategory = this.jobCategories[index];
-
-    console.log("Removing Job Category:", removedCategory);
-
     this.jobCategories.splice(index, 1);
-
-    console.log("Updated Job Categories:", this.jobCategories);
   }
 
   onStylusToggle() {
@@ -165,28 +152,8 @@ export class UserProfileComponent {
       }
     };
 
-    console.log("Saving:", payload);
-
     // TODO: call API
   }
-
-  // saveProfile() {
-  //   console.log(this.user);
-  // }
-
-  // onSaveCategories() {
-  //   const payload = {
-  //     workCategories: this.workCategories,
-  //     jobCategories: this.jobCategories
-  //   };
-
-  //   console.log("Saving payload:", payload);
-
-  //   // TODO:
-  //   // call API OR SQLite later
-
-  //   alert("Categories saved (for now frontend only)");
-  // }
 
 
   async onSaveAll() {
@@ -217,15 +184,12 @@ export class UserProfileComponent {
       })
     };
 
-    console.log("FINAL SAVE PAYLOAD:", payload);
 
     this.loading = true;
     this.loaderMessage = "Saving...";
 
     await this.dataService.saveProfile(payload).subscribe({
       next: (res: any) => {
-        console.log("Save success:", res);
-
         try {
           this.loaderMessage = "Refreshing...";
           this.fillData();
@@ -247,7 +211,6 @@ export class UserProfileComponent {
 
     this.dataService.getBasicData().subscribe({
       next: (res: any) => {
-        console.log(res);
         if (res) {
           this.authService.setBasicDetails(res);
         }
@@ -296,8 +259,6 @@ export class UserProfileComponent {
 
         this.isStylusEnabled = (settings as any).stylusEnabled || false;
 
-        console.log("Work:", this.workCategories);
-        console.log("Job:", this.jobCategories);
         this.loading = false;
         this.initialData = {
           user: { ...this.user },
@@ -308,7 +269,7 @@ export class UserProfileComponent {
 
       },
       error: (err: any) => {
-        console.log("Error fetching profile:", err);
+        console.error("Error fetching profile:", err);
         this.loading = false;
       }
     });

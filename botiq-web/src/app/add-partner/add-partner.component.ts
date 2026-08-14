@@ -2,9 +2,9 @@
 import { Component } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { OrderService } from '../order.service';
-import { PartnerService } from '../partner.service';
-import { NotificationService } from '../notification.service';
+import { OrderService } from '../services/order.service';
+import { PartnerService } from '../services/partner.service';
+import { NotificationService } from '../services/notification.service';
 
 interface Partner {
   partnerId: null;
@@ -80,7 +80,6 @@ export class AddPartnerComponent {
     this.orderService.addOrUpdatePartner(payload).subscribe({
       next: (res) => {
         this.loading = false;
-        console.log('Saved:', res);
         const action = this.isEditMode ? 'updated' : 'added';
         this.notificationService.createNotification({
           messageType: 'INFO',
@@ -94,9 +93,6 @@ export class AddPartnerComponent {
         console.error('Error:', err);
       }
     });
-
-    console.log('Final Payload:', payload);
-
 
     form.resetForm(this.getEmptyPartner());
   }

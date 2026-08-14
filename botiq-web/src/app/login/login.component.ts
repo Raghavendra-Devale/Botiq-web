@@ -3,8 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth/auth.service';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { DataService } from '../data.service';
-import { PlatformAuthService } from '../platform-auth-service';
+import { DataService } from '../services/data.service';
+import { PlatformAuthService } from '../services/platform-auth-service';
 
 @Component({
     selector: 'app-login',
